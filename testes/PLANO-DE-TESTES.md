@@ -34,3 +34,11 @@
 - Comprovar que apenas os dois perfis autorizados têm acesso administrativo e de motorista, com contas diferentes.
 - Conferir links, instalabilidade dos três PWAs e os nomes das funções.
 - Preservar o repositório privado original e conferir se não existem segredos.
+
+## Testes automatizados de ponta a ponta (simulados)
+- `testes/seguranca-firestore.test.mjs` contém a criação transacional realista de `PMR-0001` por cliente fictício.
+- O administrador tenta atribuir ao motorista pendente (negado) e depois atribui ao motorista antigo autorizado `PMM-001`.
+- O motorista confirma, inicia, conclui e o cliente vê a corrida no histórico; conclusão não pode ser reaberta.
+- Teste adicional verifica recusa do motorista, retorno da corrida a pendente e nova atribuição autorizada.
+- Esses testes exercitam permissões e documentos no emulador; não testam interface, GPS, WhatsApp nem dados em produção.
+- **Status da execução recente no GitHub Actions deve ser verificado antes de qualquer publicação.**
