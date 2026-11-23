@@ -76,6 +76,8 @@ try{
  await capture(cliente,'10-cliente-confirmacao-cadastro');
  await expose(cliente,'bookingView',['loginView','registerView','registerReview','homeView','bookingReview']);
  await cliente.evaluate(()=>{
+  document.querySelector('#bookingGreeting').textContent='Olá, Cliente Exemplo!';
+  document.querySelector('#bookingCreatedDate').value='2026-11-23';
   for(const [id,value] of Object.entries({pickup:'Avenida Exemplo, 100',destination:'Aeroporto — embarque',travelDate:'2026-12-10',travelTime:'14:30',notes:'Bagagem de mao'})){
    document.getElementById(id).value=value;
   }
@@ -83,12 +85,14 @@ try{
  await capture(cliente,'03-cliente-reserva');
  await expose(cliente,'bookingReview',['loginView','registerView','registerReview','homeView','bookingView']);
  await cliente.evaluate(()=>{
-  document.querySelector('#bookingSummary').textContent='Código: PMR-000000 (automático)\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nPassageiros: 1\nObservações: Bagagem de mão';
+  document.querySelector('#bookingSummary').textContent='Cliente: Cliente Exemplo\nCódigo do Cliente: PMC-0001\nData da Reserva: 2026-11-23 (automática)\nCódigo da Reserva: PMR-000000 (automático)\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nPassageiros: 1\nObservações: Bagagem de mão';
  });
  await capture(cliente,'13-cliente-confirmacao-reserva');
  await expose(cliente,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview']);
  await cliente.evaluate(()=>{
   document.querySelector('#profileInfo').textContent='Cliente Exemplo • PMC-0001';
+  document.querySelector('#clientWelcome').textContent='Olá, Cliente Exemplo!';
+  document.querySelector('#activeBlock').classList.remove('hidden');
   document.querySelector('#clientCode').value='PMC-0001';
   document.querySelector('#lastBookingCode').value='PMR-000001';
   document.querySelector('#copyBookingCode').disabled=false;
@@ -113,14 +117,31 @@ try{
   document.querySelector('#pendingInfo').textContent='Motorista Exemplo • Status: pendente';
  });
  await capture(motorista,'12-motorista-aguardando-aprovacao');
- await expose(motorista,'homeView',['loginView','registerView','reviewView','pendingView']);
+ await expose(motorista,'homeView',['loginView','registerView','reviewView','pendingView','serviceView']);
  await motorista.evaluate(()=>{
   document.querySelector('#profileInfo').textContent='Motorista Exemplo • PMM-001 • Veiculo demonstrativo';
   document.querySelector('#driverCode').value='PMM-001';
+  document.querySelector('#driverActiveBlock').classList.remove('hidden');
   document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-000001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button>Aceitar</button><button class="danger">Recusar</button></div></article>';
   document.querySelector('#historyReservations').innerHTML='<p>Nenhuma corrida concluida.</p>';
  });
  await capture(motorista,'07-motorista-corridas');
+ await expose(motorista,'serviceView',['loginView','registerView','reviewView','pendingView','homeView']);
+ await motorista.evaluate(()=>{
+  document.querySelector('#serviceClientName').textContent='Nome do Cliente: Cliente Exemplo';
+  document.querySelector('#serviceReservationData').textContent='Reserva: PMR-000001\nSituação: confirmada\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData e horário: 10/12/2026, 14:30\nTelefone: (51) 99999-1111\nPassageiros: 1';
+  document.querySelector('#serviceReservationData').style.whiteSpace='pre-line';
+  document.querySelector('#servicePickupGps').href='https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=Avenida%20Exemplo';
+  for(const id of ['serviceComplete','serviceDestinationGps'])document.getElementById(id).classList.add('hidden');
+ });
+ await capture(motorista,'14-motorista-inicio-atendimento');
+ await motorista.evaluate(()=>{
+  for(const id of ['serviceOnWay','servicePickupGps','serviceAvailable','serviceStart'])document.getElementById(id).classList.add('hidden');
+  document.querySelector('#serviceComplete').classList.remove('hidden');
+  document.querySelector('#serviceDestinationGps').classList.remove('hidden');
+  document.querySelector('#serviceReservationData').textContent='Reserva: PMR-000001\nSituação: em andamento\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData e horário: 10/12/2026, 14:30\nPassageiros: 1';
+ });
+ await capture(motorista,'15-motorista-conclusao-atendimento');
  await motorista.close();
 
  const admin=await pageFor('admin.html');
