@@ -511,5 +511,7 @@ body[data-pm-area="cliente"] #registerView :is(input,textarea){
   -webkit-text-fill-color:#000;
 }
 body[data-pm-area="cliente"] #registerView .codebox input[readonly]{
-  background:#fff8e5;
+  background:#fff!important;
+  color:#000!important;
+  -webkit-text-fill-color:#000!important;
 }
