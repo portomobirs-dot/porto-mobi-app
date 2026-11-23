@@ -15,7 +15,7 @@ const server=createServer((req,res)=>{
  if(file!==ROOT&&!file.startsWith(ROOT+path.sep)){res.writeHead(403).end();return}
  fs.readFile(file,(err,buffer)=>{
   if(err){res.writeHead(404).end('Not found');return}
-  const type=file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.html')?'text/html; charset=utf-8':'application/octet-stream';
+  const type=file.endsWith('.js')?'text/javascript; charset=utf-8':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':file.endsWith('.png')?'image/png':'application/octet-stream';
   res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'}).end(buffer);
  });
 });
