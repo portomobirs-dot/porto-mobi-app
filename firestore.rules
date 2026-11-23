@@ -28,7 +28,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['ultimo','ultimoUid']) &&
         request.resource.data.ultimoUid == me() &&
         request.resource.data.ultimo is int &&
-        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 20 &&
+        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 40 &&
         !exists(clientPath(me())) &&
         getAfter(clientPath(me())).data.numeroCliente == request.resource.data.ultimo &&
         getAfter(clientPath(me())).data.uid == me();
@@ -84,7 +84,7 @@ service cloud.firestore {
         request.resource.data.uid == me() &&
         request.resource.data.email == request.auth.token.email &&
         request.resource.data.numeroCliente is int &&
-        request.resource.data.numeroCliente >= 1 && request.resource.data.numeroCliente <= 20 &&
+        request.resource.data.numeroCliente >= 1 && request.resource.data.numeroCliente <= 40 &&
         request.resource.data.codigoCliente == code('PMC',request.resource.data.numeroCliente) &&
         request.resource.data.nomeCliente is string &&
         request.resource.data.nomeCliente.size() >= 3 && request.resource.data.nomeCliente.size() <= 150 &&
