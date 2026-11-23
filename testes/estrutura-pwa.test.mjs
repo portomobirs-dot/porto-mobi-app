@@ -138,11 +138,15 @@ test('Fluxos aprovados de Cliente e Motorista possuem comandos visiveis e aciona
   assert.ok(m.includes('id="'+id+'"'),'Motorista: botao '+id+' ausente');
   assert.ok(mjs.includes("$('"+id+"').onclick"),'Motorista: botao '+id+' sem acao');
  }
- assert.ok(c.includes('Seja Bem Vindo!')&&m.includes('Olá Bem Vindo!'),'Saudacao de login ausente');
+ assert.ok(c.includes('Seja Bem Vindo!')&&m.includes('Seja Bem Vindo!'),'Saudacao de login ausente');
   assert.ok(c.includes('id="accessClientAccount" type="submit"'),'Botao Acessar Cadastro nao envia login');
   assert.ok(c.includes('id="showRegister" type="button"'),'Botao Fazer Cadastro deve abrir cadastro');
   assert.ok(c.includes('id="forgotPassword" href='),'Recuperacao de senha deve ser link');
   assert.ok(c.includes('class="login-eye-button"'),'Botao olho de senha nao encontrado');
+  assert.ok(m.includes('id="accessDriverAccount" type="submit"'),'Acessar Cadastro do Motorista nao envia login');
+  assert.ok(m.includes('id="showRegister" type="button"'),'Fazer Cadastro do Motorista nao abre formulario');
+  assert.ok(m.includes('id="forgotPassword" href='),'Recuperacao do Motorista deve ser link');
+  assert.ok(m.includes('class="login-eye-button"'),'Olho da senha do Motorista ausente');
  assert.ok(c.includes('id="clientWelcome"')&&c.includes('id="bookingGreeting"'));
  assert.ok(c.includes('id="bookingCreatedDate" type="date" readonly'),'Data automatica da reserva ausente');
  assert.ok(cjs.includes("currentProfile?.nomeCliente"),'Revisao de reserva nao inclui cliente');
