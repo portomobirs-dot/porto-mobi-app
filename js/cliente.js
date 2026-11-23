@@ -1,5 +1,5 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDoc,runTransaction,collection,query,where,getDocs,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText} from './common.js';
 
@@ -11,12 +11,25 @@ const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.classNam
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
 $('travelDate').min=todayLocal();
+$('regDate').value=todayLocal();
+const setBookingCount=n=>{$('passengers').value=String(Math.min(8,Math.max(1,Number(n)||1)))};
+$('decreasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)-1);
+$('increasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)+1);
+async function copyCode(id){const code=$(id).value;if(!/^(PMC-\d{4}|PMR-\d{6})$/.test(code)||/^PM[CR]-0+$/.test(code))return message('Código ainda não disponível.',true);try{await navigator.clipboard.writeText(code);message('Código '+code+' copiado.')}catch{$(id).focus();$(id).select();message('Copie o código selecionado: '+code)}}
+$('copyClientCode').onclick=()=>copyCode('clientCode');
+$('copyBookingCode').onclick=()=>copyCode('lastBookingCode');
+$('forgotPassword').onclick=async()=>{
+ const input=$('loginEmail');
+ if(!input.value||!input.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);
+ try{await sendPasswordResetEmail(auth,input.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}
+ catch{message('Não foi possível solicitar a recuperação. Verifique o e-mail ou tente novamente.',true)}
+};
 let currentProfile=null,currentUser=null,registering=false,loadingHome=false;
 
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
  const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'Mostrar':'Ocultar';
 });
-$('showRegister').onclick=()=>show('registerView');
+$('showRegister').onclick=()=>{$('regDate').value=todayLocal();show('registerView')};
 $('backLogin').onclick=()=>show('loginView');
 $('editRegister').onclick=()=>show('registerView');
 $('backHome').onclick=()=>show('homeView');
@@ -31,7 +44,7 @@ $('reviewRegister').onclick=()=>{
  if(!$('registerForm').reportValidity())return;
  if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Informe telefone com DDD.',true);
- $('registerSummary').textContent=`Nome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
+ $('registerSummary').textContent=`Código: PMC-0000 (automático)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
  $('registerSummary').style.whiteSpace='pre-line';show('registerReview');
 };
 $('confirmRegister').onclick=async()=>{
@@ -64,7 +77,7 @@ $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
- $('bookingSummary').textContent=`Embarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nObservações: ${val('notes')||'Nenhuma'}`;
+ $('bookingSummary').textContent=`Código: PMR-000000 (automático)\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
  $('bookingSummary').style.whiteSpace='pre-line';show('bookingReview');
 };
 $('confirmBooking').onclick=async()=>{
@@ -73,20 +86,22 @@ $('confirmBooking').onclick=async()=>{
  try{
   message('Enviando solicitação...');
   const counter=doc(db,'contadores','reservas'),newRef=doc(collection(db,'reservas'));
+  let assignedCode='';
   await runTransaction(db,async t=>{
    const c=await t.get(counter),next=(c.exists()?Number(c.data().ultimo||0):0)+1;
-   if(next>9999)throw new Error('Limite de numeração atingido.');
-   const data={numeroReserva:next,codigoReserva:padCode('PMR',next),clienteUid:currentUser.uid,codigoCliente:currentProfile.codigoCliente,nomeCliente:currentProfile.nomeCliente,telefoneCliente:currentProfile.telefoneCliente,
-    codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
+   if(next>999999)throw new Error('Limite de numeração atingido.');
+   assignedCode=padCode('PMR',next);
+   const data={numeroReserva:next,codigoReserva:assignedCode,clienteUid:currentUser.uid,codigoCliente:currentProfile.codigoCliente,nomeCliente:currentProfile.nomeCliente,telefoneCliente:currentProfile.telefoneCliente,
+    codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
-  $('bookingForm').reset();$('travelDate').min=todayLocal();await loadHome();message('Solicitação enviada! Aguarde a administração.');
+  $('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();await loadHome();message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
  }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{b.disabled=false}
 };
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
 function reservationHtml(r){
  const dt=r.dataViagem?.toDate?.();const money=Number(r.valorViagem)>0?Number(r.valorViagem).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'A definir';
- return `<div class="item"><strong>${esc(r.codigoReserva)}</strong> — ${esc(r.statusReserva)}<p class="small">${esc(r.localEmbarque)} → ${esc(r.localDestino)}<br>${dt?dt.toLocaleString('pt-BR'):'Data não informada'}<br>Valor: ${money}</p></div>`;
+ return `<div class="item"><strong>${esc(r.codigoReserva)}</strong> — ${esc(r.statusReserva)}<p class="small">${esc(r.localEmbarque)} → ${esc(r.localDestino)}<br>${dt?dt.toLocaleString('pt-BR'):'Data não informada'}<br>Passageiros: ${esc(r.passageiros||1)}<br>Valor: ${money}</p></div>`;
 }
 async function loadHome(){
  if(!currentUser||loadingHome)return;loadingHome=true;
@@ -94,9 +109,12 @@ async function loadHome(){
   const snap=await getDoc(doc(db,'clientes',currentUser.uid));
   if(!snap.exists()){currentProfile=null;show('loginView');message('Sua conta não possui perfil de cliente. Contate a administração.',true);return}
   currentProfile=snap.data();$('profileInfo').textContent=`${currentProfile.nomeCliente||''} • ${currentProfile.codigoCliente||''}`;
+  $('clientCode').value=currentProfile.codigoCliente||'Aguardando cadastro';
   show('homeView');$('activeReservations').textContent='Carregando...';$('reservationHistory').textContent='Carregando...';
   const rs=await getDocs(query(collection(db,'reservas'),where('clienteUid','==',currentUser.uid)));
   const data=rs.docs.map(d=>d.data()).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));
+  $('lastBookingCode').value=data[0]?.codigoReserva||'Nenhuma reserva';
+  $('copyBookingCode').disabled=!data[0]?.codigoReserva;
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
   $('activeReservations').innerHTML=active.length?active.map(reservationHtml).join(''):'<p>Nenhuma reserva em andamento.</p>';
   $('reservationHistory').innerHTML=history.length?history.map(reservationHtml).join(''):'<p>Nenhuma reserva no histórico.</p>';
