@@ -1,6 +1,6 @@
 # Porto Mobi — revisão visual (dados fictícios)
 
-As quinze imagens abaixo são capturas **das páginas HTML do sistema** em um navegador com tamanho de celular. O teste bloqueia conexões externas e **não usa dados reais nem faz login no Firebase**. Não são telas do aplicativo em produção.
+As dezesseis imagens abaixo são capturas **das páginas HTML do sistema** em um navegador com tamanho de celular. O teste bloqueia conexões externas e **não usa dados reais nem faz login no Firebase**. Não são telas do aplicativo em produção.
 
 Se alguma imagem não aparecer, consulte o [workflow de capturas](https://github.com/portomobirs-dot/porto-mobi-app/actions/workflows/capturas-visuais.yml) para conferir se a última execução terminou corretamente.
 
@@ -41,7 +41,10 @@ Se alguma imagem não aparecer, consulte o [workflow de capturas](https://github
 ### Corridas
 ![Motorista - Corridas](./capturas-mobile/07-motorista-corridas.png)
 
-### Início do atendimento: nome do cliente, dados da reserva, aviso pelo WhatsApp e GPS ao embarque
+### Atendimento da Reserva: saudação ao Motorista, dados do Cliente e botão Iniciar Atendimento
+![Motorista - Atendimento da Reserva](./capturas-mobile/16-motorista-atendimento-da-reserva.png)
+
+### Tela Iniciar Atendimento: avisos pelo WhatsApp e GPS ao embarque
 ![Motorista - Início de atendimento](./capturas-mobile/14-motorista-inicio-atendimento.png)
 
 ### Atendimento em andamento: GPS ao destino e conclusão
