@@ -126,7 +126,15 @@ try{
   document.querySelector('#historyReservations').innerHTML='<p>Nenhuma corrida concluida.</p>';
  });
  await capture(motorista,'07-motorista-corridas');
- await expose(motorista,'serviceView',['loginView','registerView','reviewView','pendingView','homeView']);
+ await expose(motorista,'reservationView',['loginView','registerView','reviewView','pendingView','homeView','serviceView']);
+ await motorista.evaluate(()=>{
+  document.querySelector('#reservationDriverGreeting').textContent='Olá, Motorista Exemplo!';
+  document.querySelector('#reservationClientName').textContent='Nome do Cliente: Cliente Exemplo';
+  document.querySelector('#reservationDetails').textContent='Dados da Reserva\nCódigo: PMR-000001\nSituação: confirmada\nLocal do embarque: Avenida Exemplo, 100\nLocal do destino: Aeroporto\nData e horário: 10/12/2026, 14:30\nTelefone: (51) 99999-1111\nPassageiros: 1';
+  document.querySelector('#reservationDetails').style.whiteSpace='pre-line';
+ });
+ await capture(motorista,'16-motorista-atendimento-da-reserva');
+ await expose(motorista,'serviceView',['loginView','registerView','reviewView','pendingView','homeView','reservationView']);
  await motorista.evaluate(()=>{
   document.querySelector('#serviceClientName').textContent='Nome do Cliente: Cliente Exemplo';
   document.querySelector('#serviceReservationData').textContent='Reserva: PMR-000001\nSituação: confirmada\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData e horário: 10/12/2026, 14:30\nTelefone: (51) 99999-1111\nPassageiros: 1';
