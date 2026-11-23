@@ -436,3 +436,51 @@ body:is([data-pm-area="cliente"],[data-pm-area="motorista"]):has(#loginView:not(
 header.porto-header .brand-lockup strong{
   display:block!important;
 }
+
+
+/* CABEÇALHO ÚNICO APROVADO EM TODAS AS TELAS.
+   Regra visual somente: não altera formulário nem o Firebase. */
+header.porto-header,
+body:is([data-pm-area="cliente"],[data-pm-area="motorista"]):has(#registerView:not(.hidden)) header.porto-header{
+  display:flex;
+  justify-content:flex-start!important;
+  align-items:center;
+  flex-wrap:nowrap;
+  gap:13px;
+  background:#000!important;
+  border-bottom:2px solid #d7ab35!important;
+  box-shadow:none!important;
+  padding:12px 16px!important;
+  text-align:left;
+}
+header.porto-header .brand-lockup,
+body:is([data-pm-area="cliente"],[data-pm-area="motorista"]):has(#registerView:not(.hidden)) header .brand-lockup{
+  display:flex;
+  width:auto!important;
+  justify-content:flex-start!important;
+  align-items:center;
+  gap:13px;
+}
+header.porto-header .brand-logo,
+body:is([data-pm-area="cliente"],[data-pm-area="motorista"]):has(#registerView:not(.hidden)) header .brand-logo{
+  width:78px!important;
+  height:78px!important;
+  object-fit:contain;
+}
+header.porto-header .brand-lockup strong,
+body:is([data-pm-area="cliente"],[data-pm-area="motorista"]):has(#registerView:not(.hidden)) header.porto-header strong{
+  display:block!important;
+  color:#fff!important;
+  font-family:Tahoma,Arial,sans-serif!important;
+  font-size:clamp(14px,3.9vw,21px)!important;
+  font-weight:800!important;
+  line-height:1.18!important;
+  letter-spacing:.014em!important;
+}
+header.porto-header .brand-lockup strong small{
+  display:block!important;
+  color:#f7cc57!important;
+  font-size:inherit!important;
+  margin-top:4px;
+}
+header.porto-header .area-label{display:none!important}
