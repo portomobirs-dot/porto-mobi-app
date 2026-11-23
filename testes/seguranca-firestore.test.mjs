@@ -13,11 +13,11 @@ after(async()=>env.cleanup());
 const as=(uid,email=uid+'@example.invalid')=>env.authenticatedContext(uid,{email}).firestore();
 const seed=async(fn)=>env.withSecurityRulesDisabled(ctx=>fn(ctx.firestore()));
 const trip=(uid='clienteA',status='pendente',driver='')=>({
-  clienteUid:uid,codigoCliente:'PMC-0001',codigoReserva:'PMR-0001',nomeCliente:'Cliente Ficticio',
+  clienteUid:uid,codigoCliente:'PMC-0001',codigoReserva:'PMR-000001',nomeCliente:'Cliente Ficticio',
   telefoneCliente:'(51) 99999-1111',localEmbarque:'Rua Teste 100',localDestino:'Rua Teste 200',
   dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),dataSolicitacao:Timestamp.now(),
   statusReserva:status,motoristaUid:driver,codigoMotorista:driver?'PMM-001':'',
-  observacoes:'',valorViagem:0
+  passageiros:1,observacoes:'',valorViagem:0
 });
 async function reset({clients=false,driver=false,trips=false,status='pendente',assigned=false}={}){
   await env.clearFirestore();
@@ -140,15 +140,15 @@ test('Fluxo integrado: cliente cria PMR, administrador oferece, motorista aceita
     assert.equal(antigo.exists(),false);
     t.set(count,{ultimo:1,ultimoReservaId:reservaRef.id,ultimoClienteUid:'clienteA'});
     t.set(reservaRef,{
-      numeroReserva:1,codigoReserva:'PMR-0001',clienteUid:'clienteA',codigoCliente:'PMC-0001',
+      numeroReserva:1,codigoReserva:'PMR-000001',clienteUid:'clienteA',codigoCliente:'PMC-0001',
       nomeCliente:'Cliente Ficticio',telefoneCliente:'(51) 99999-1111',
       codigoMotorista:'',motoristaUid:'',localEmbarque:'Rua Embarque 100',
       localDestino:'Rua Destino 200',dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),
-      dataSolicitacao:serverTimestamp(),observacoes:'',statusReserva:'pendente',valorViagem:0
+      dataSolicitacao:serverTimestamp(),passageiros:1,observacoes:'',statusReserva:'pendente',valorViagem:0
     });
   }));
   const reservaCriada=await assertSucceeds(getDoc(reservaRef));
-  assert.equal(reservaCriada.data().codigoReserva,'PMR-0001');
+  assert.equal(reservaCriada.data().codigoReserva,'PMR-000001');
   assert.equal(reservaCriada.data().statusReserva,'pendente');
   await assertFails(getDoc(doc(terceiro,'reservas',reservaRef.id)));
   await assertFails(updateDoc(doc(cliente,'reservas',reservaRef.id),{statusReserva:'confirmada'}));
@@ -193,4 +193,28 @@ test('Motorista pode recusar oferta; administrador reatribui somente motorista a
     statusReserva:'oferecida',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',
     dataAtualizacao:serverTimestamp()
   }));
+});
+
+
+test('Codigo de reserva usa seis digitos em transacao com numero 10000',async()=>{
+  await reset({clients:true});
+  await seed(db=>setDoc(doc(db,'contadores','reservas'),{
+    ultimo:9999,ultimoReservaId:'reservaAnterior',ultimoClienteUid:'clienteA'
+  }));
+  const db=as('clienteA'),ref=doc(collection(db,'reservas'),'reservaDezMil');
+  await assertSucceeds(runTransaction(db,async t=>{
+    const count=doc(db,'contadores','reservas'),prev=await t.get(count);
+    assert.equal(prev.data().ultimo,9999);
+    t.set(count,{ultimo:10000,ultimoReservaId:ref.id,ultimoClienteUid:'clienteA'});
+    t.set(ref,{
+      numeroReserva:10000,codigoReserva:'PMR-010000',clienteUid:'clienteA',
+      codigoCliente:'PMC-0001',nomeCliente:'Cliente Ficticio',telefoneCliente:'(51) 99999-1111',
+      codigoMotorista:'',motoristaUid:'',localEmbarque:'Rua Embarque 100',
+      localDestino:'Rua Destino 200',dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),
+      dataSolicitacao:serverTimestamp(),passageiros:2,observacoes:'',statusReserva:'pendente',valorViagem:0
+    });
+  }));
+  const created=await assertSucceeds(getDoc(ref));
+  assert.equal(created.data().codigoReserva,'PMR-010000');
+  assert.equal(created.data().passageiros,2);
 });
