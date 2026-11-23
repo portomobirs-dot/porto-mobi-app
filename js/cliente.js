@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview'];
+const views=['loginView','registerView','homeView','bookingView','bookingReview'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -31,15 +31,17 @@ let currentProfile=null,currentUser=null,registering=false,loadingHome=false,cli
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
  const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';
  const hidden=el.type==='password';
- if(btn.classList.contains('login-eye-button')){
+ if(btn.classList.contains('login-eye-button')||btn.classList.contains('register-eye-button')){
   btn.setAttribute('aria-label',hidden?'Mostrar senha':'Ocultar senha');
   btn.setAttribute('title',hidden?'Mostrar senha':'Ocultar senha');
   btn.setAttribute('aria-pressed',String(!hidden));
  }else btn.textContent=hidden?'Mostrar':'Ocultar';
 });
-$('showRegister').onclick=()=>{$('regDate').value=todayLocal();show('registerView')};
-$('backLogin').onclick=()=>show('loginView');
-$('editRegister').onclick=()=>show('registerView');
+let reviewedRegistration=null;
+const registrationSnapshot=()=>['regDate','regName','regPhone','regEmail','regPassword','regConfirm'].map(id=>$(id).value).join('\u0000');
+const invalidateRegistrationReview=()=>{reviewedRegistration=null;$('confirmRegister').disabled=true;$('registerReviewDetails').classList.add('hidden')};
+for(const field of $('registerForm').querySelectorAll('input:not([readonly])'))field.addEventListener('input',invalidateRegistrationReview);
+$('showRegister').onclick=()=>{$('regDate').value=todayLocal();invalidateRegistrationReview();show('registerView')};
 $('backHome').onclick=()=>show('homeView');
 $('editBooking').onclick=()=>show('bookingView');
 function openClientPanel(which){
@@ -63,9 +65,15 @@ $('reviewRegister').onclick=()=>{
  if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Informe telefone com DDD.',true);
  $('registerSummary').textContent=`Código: PMC-0000 (automático)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
- $('registerSummary').style.whiteSpace='pre-line';show('registerReview');
+ $('registerSummary').style.whiteSpace='pre-line';
+ reviewedRegistration=registrationSnapshot();
+ $('registerReviewDetails').classList.remove('hidden');
+ $('confirmRegister').disabled=false;
+ message('Dados revisados. Confira o resumo e toque em Cadastrar para concluir.');
 };
 $('confirmRegister').onclick=async()=>{
+ if(registering||!reviewedRegistration||reviewedRegistration!==registrationSnapshot())return message('Revise os dados antes de cadastrar.',true);
+ if(!$('registerForm').reportValidity()||$('regPassword').value!==$('regConfirm').value||![10,11].includes(phoneDigits(val('regPhone')).length))return message('Confira os dados e revise novamente.',true);
  const b=$('confirmRegister');b.disabled=true;registering=true;let cred=null;
  try{
   message('Criando sua conta...');
@@ -76,8 +84,8 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){
   // Evita deixar uma conta Authentication sem perfil quando a transacao falha.
   if(cred){try{await deleteUser(cred.user);currentUser=null}catch(_){/* pode requerer suporte da administracao */}}
-  show('registerView');message('Cadastro não concluído. '+errorText(err),true);
- }finally{registering=false;b.disabled=false}
+  invalidateRegistrationReview();show('registerView');message('Cadastro não concluído. '+errorText(err),true);
+ }finally{registering=false;b.disabled=reviewedRegistration===null}
 };
 async function createProfile(user){
  const ref=doc(db,'clientes',user.uid),counter=doc(db,'contadores','clientes');
