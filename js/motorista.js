@@ -1,25 +1,28 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,errorText} from './common.js';
+import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,todayLocal,errorText} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-motoristas'),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 const views=['loginView','registerView','reviewView','pendingView','homeView'];
 const message=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
 let user=null,profile=null,registering=false,unsub=null;
+$('regDate').value=todayLocal();
+$('forgotPassword').onclick=async()=>{const email=$('loginEmail');if(!email.value||!email.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);try{await sendPasswordResetEmail(auth,email.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch{message('Não foi possível solicitar a recuperação da senha.',true)}};
+$('copyDriverCode').onclick=async()=>{const codigo=$('driverCode').value;if(!/^PMM-\d{3}$/.test(codigo)||codigo==='PMM-000')return message('O código será disponibilizado após a aprovação.',true);try{await navigator.clipboard.writeText(codigo);message('Código '+codigo+' copiado.')}catch{$('driverCode').focus();$('driverCode').select();message('Copie o código selecionado: '+codigo)}};
 function stop(){if(unsub){unsub();unsub=null}}
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'Mostrar':'Ocultar'});
 $('regPhone').oninput=e=>{e.target.value=formatPhone(e.target.value)};
 $('regPlate').oninput=e=>{let s=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);e.target.value=s.length>3?s.slice(0,3)+'-'+s.slice(3):s};
-$('showRegister').onclick=()=>show('registerView');$('backLogin').onclick=()=>show('loginView');$('editRegister').onclick=()=>show('registerView');
+$('showRegister').onclick=()=>{$('regDate').value=todayLocal();show('registerView')};$('backLogin').onclick=()=>show('loginView');$('editRegister').onclick=()=>show('registerView');
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}catch(err){message(errorText(err),true)}};
 $('reviewRegister').onclick=()=>{
  if(!$('registerForm').reportValidity())return;
  if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Telefone inválido.',true);
  if(!/^[A-Z]{3}-[0-9][A-Z0-9][0-9]{2}$/.test(val('regPlate')))return message('Placa inválida. Formato ABC-1D23 ou ABC-1234.',true);
- $('registerSummary').textContent=`Nome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}\nVeículo: ${val('regVehicle')}\nPlaca: ${val('regPlate')}\nCor: ${val('regColor')}`;
+ $('registerSummary').textContent=`Código: PMM-000 (atribuído após aprovação)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}\nVeículo: ${val('regVehicle')}\nPlaca: ${val('regPlate')}\nCor: ${val('regColor')}`;
  show('reviewView');
 };
 $('confirmRegister').onclick=async()=>{
@@ -38,8 +41,8 @@ async function loadProfile(){
   const snap=await getDoc(doc(db,'motoristas',user.uid));
   if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
   profile=snap.data();
-  if(profile.situacao!=='ativo'&&profile.aprovado!==true){show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Status: '+profile.situacao;return}
-  show('homeView');$('profileInfo').textContent=`${profile.nomeMotorista} • ${profile.codigoMotorista} • ${profile.veiculoModelo||profile.modeloVeiculo||''}`;
+  if(profile.situacao!=='ativo'&&profile.aprovado!==true){show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
+  show('homeView');$('profileInfo').textContent=`${profile.nomeMotorista} • ${profile.codigoMotorista} • ${profile.veiculoModelo||profile.modeloVeiculo||''}`;$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
   const q=query(collection(db,'reservas'),where('motoristaUid','==',user.uid));
   unsub=onSnapshot(q,snap=>renderTrips(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>message('Erro ao consultar reservas: '+errorText(err),true));
  }catch(err){message(errorText(err),true)}
