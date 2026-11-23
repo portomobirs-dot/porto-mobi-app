@@ -55,7 +55,7 @@ function renderTrips(rows){
   const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">Aceitar</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">Recusar</button></div>`:
    r.statusReserva==='confirmada'?`<div class="actions"><a class="nav secondary" target="_blank" rel="noopener noreferrer" href="${maps(r.localEmbarque)}">Navegar ao embarque (GPS)</a><button data-action="start" data-id="${esc(r.id)}">Iniciar atendimento</button></div>`:
    r.statusReserva==='em_andamento'?`<div class="actions"><a class="nav secondary" target="_blank" rel="noopener noreferrer" href="${maps(r.localDestino)}">Navegar ao destino (GPS)</a><button data-action="complete" data-id="${esc(r.id)}">Concluir corrida</button></div>`:'';
-  return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}</p>${action}</article>`;
+  return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
  };
  $('activeReservations').innerHTML=active.length?active.map(r=>html(r)).join(''):'<p>Nenhuma corrida atribuída.</p>';
  $('historyReservations').innerHTML=hist.length?hist.map(r=>html(r,true)).join(''):'<p>Histórico vazio.</p>';
