@@ -19,7 +19,8 @@ $('increasePassengers').onclick=()=>setBookingCount(Number($('passengers').value
 async function copyCode(id){const code=$(id).value;if(!/^(PMC-\d{4}|PMR-\d{6})$/.test(code)||/^PM[CR]-0+$/.test(code))return message('Código ainda não disponível.',true);try{await navigator.clipboard.writeText(code);message('Código '+code+' copiado.')}catch{$(id).focus();$(id).select();message('Copie o código selecionado: '+code)}}
 $('copyClientCode').onclick=()=>copyCode('clientCode');
 $('copyBookingCode').onclick=()=>copyCode('lastBookingCode');
-$('forgotPassword').onclick=async()=>{
+$('forgotPassword').onclick=async event=>{
+ event.preventDefault();
  const input=$('loginEmail');
  if(!input.value||!input.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);
  try{await sendPasswordResetEmail(auth,input.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}
@@ -28,7 +29,13 @@ $('forgotPassword').onclick=async()=>{
 let currentProfile=null,currentUser=null,registering=false,loadingHome=false,clientReservations=[];
 
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
- const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'Mostrar':'Ocultar';
+ const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';
+ const hidden=el.type==='password';
+ if(btn.classList.contains('login-eye-button')){
+  btn.setAttribute('aria-label',hidden?'Mostrar senha':'Ocultar senha');
+  btn.setAttribute('title',hidden?'Mostrar senha':'Ocultar senha');
+  btn.setAttribute('aria-pressed',String(!hidden));
+ }else btn.textContent=hidden?'Mostrar':'Ocultar';
 });
 $('showRegister').onclick=()=>{$('regDate').value=todayLocal();show('registerView')};
 $('backLogin').onclick=()=>show('loginView');
