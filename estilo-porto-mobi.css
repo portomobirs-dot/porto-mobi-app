@@ -522,3 +522,7 @@ body[data-pm-area="cliente"] #registerView .register-eye-button svg{display:bloc
 body[data-pm-area="cliente"] #registerView #confirmRegister{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
 body[data-pm-area="cliente"] #registerView #confirmRegister:disabled{opacity:.5!important;cursor:not-allowed}
 body[data-pm-area="cliente"] #registerReviewDetails{margin-top:18px;padding:12px;border:1px solid #c7993e;border-radius:10px}
+
+body[data-pm-area="cliente"] #registerReview .review-password{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 18px;overflow-wrap:anywhere}
+body[data-pm-area="cliente"] #registerReview #reviewPasswordEye{width:58px;min-width:58px;min-height:40px;margin:0;padding:6px;display:flex;align-items:center;justify-content:center}
+body[data-pm-area="cliente"] #registerReview #editRegister{width:100%}
