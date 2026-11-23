@@ -182,3 +182,44 @@ button:disabled,.nav[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
  header.porto-header .area-label{display:none}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Nos formulários iniciais, a marca original é o destaque central,
+   como no modelo aprovado. Nas outras telas, o cabeçalho segue compacto. */
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header.porto-header,
+body[data-pm-area="cliente"]:has(#registerView:not(.hidden)) header.porto-header,
+body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) header.porto-header,
+body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) header.porto-header{
+  border-bottom:0;
+  box-shadow:none;
+  padding:10px 16px 3px;
+  background:transparent;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header .brand-logo,
+body[data-pm-area="cliente"]:has(#registerView:not(.hidden)) header .brand-logo,
+body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) header .brand-logo,
+body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) header .brand-logo{
+  width:148px;height:148px;
+  filter:drop-shadow(0 0 13px rgba(247,182,41,.22));
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header.porto-header strong,
+body[data-pm-area="cliente"]:has(#registerView:not(.hidden)) header.porto-header strong,
+body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) header.porto-header strong,
+body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) header.porto-header strong,
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header .area-label,
+body[data-pm-area="cliente"]:has(#registerView:not(.hidden)) header .area-label,
+body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) header .area-label,
+body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) header .area-label{
+  display:none;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header .brand-lockup,
+body[data-pm-area="cliente"]:has(#registerView:not(.hidden)) header .brand-lockup,
+body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) header .brand-lockup,
+body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) header .brand-lockup{
+  width:100%;
+  justify-content:center;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) main,
+body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) main{
+  margin-top:0!important;
+}
