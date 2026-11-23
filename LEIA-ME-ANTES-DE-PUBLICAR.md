@@ -16,7 +16,7 @@
 ## Principais correções
 
 1. A criação de perfil do cliente é feita em transação com o contador; uma conta recém-criada é apagada se a criação do perfil falhar, quando o Firebase permite.
-2. As reservas continuam com códigos sequenciais `PMR-0001`, mas o contador grava também o ID da última reserva criada; as regras verificam a ligação entre o contador e a reserva na mesma transação.
+2. As reservas continuam com códigos sequenciais de seis dígitos `PMR-000001`, mas o contador grava também o ID da última reserva criada; as regras verificam a ligação entre o contador e a reserva na mesma transação.
 3. O administrador pode ser identificado por custom claim `admin` existente **ou** documento `administradores/{UID}` criado diretamente no Console Firebase. O navegador não pode criar esse documento.
 4. A autorização de motoristas é exclusiva do administrador; novos motoristas ficam pendentes até aprovação e recebem código `PMM-001` na aprovação.
 5. Cada página usa um nome diferente de Firebase App, para separar a persistência das sessões de Cliente, Motorista e Administrador dentro do mesmo navegador.
