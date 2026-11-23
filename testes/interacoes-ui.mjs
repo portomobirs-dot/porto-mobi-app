@@ -67,6 +67,17 @@ async function pageFor(file,mode='visitante'){
     nomeCliente:'Cliente Exemplo',telefoneCliente:'(51) 99999-1111',localEmbarque:'Avenida Exemplo, 100',localDestino:'Aeroporto',
     passageiros:1,observacoes:'Bagagem',dataViagem:{seconds:Math.floor(Date.now()/1000)+86400,toDate:()=>new Date(Date.now()+86400000)}};
   }
+  if(mode==='cliente-orcamento'){
+   m.user={uid:'cliente01',email:'cliente@example.invalid'};
+   m.records.clientes.cliente01={uid:'cliente01',codigoCliente:'PMC-0001',nomeCliente:'Cliente Exemplo'};
+   m.records.reservas.reserva001={
+    clienteUid:'cliente01',codigoCliente:'PMC-0001',codigoReserva:'PMR-000001',
+    nomeCliente:'Cliente Exemplo',telefoneCliente:'(51) 99999-1111',numeroOrcamento:1,
+    valorViagem:70,statusReserva:'orcamento_pendente',motoristaUid:'',codigoMotorista:'',
+    localEmbarque:'Avenida Exemplo, 100',localDestino:'Aeroporto',passageiros:1,
+    dataSolicitacao:{seconds:2000},dataViagem:{toDate:()=>new Date(Date.now()+86400000)}
+   };
+  }
   if(mode==='administrador'){
    m.records.administradores={admin01:{ativo:true,funcao:'administrador'}};
    m.records.contadores.motoristas={ultimo:1,ultimoUid:'motorista01'};
@@ -259,6 +270,42 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
   });
   await page.waitForFunction(()=>document.querySelector('#completedServices').textContent.includes('PMR-000001'));
   assert.match(await page.locator('#driverRefusals').innerText(),/PMR-000003/);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
+
+for(const [answer,status] of [['aceito','orcamento_aceito'],['recusado','orcamento_recusado']]){
+ test('Cliente '+answer+' orcamento e historico permanece registrado', {timeout:30000},async()=>{
+  const {context,page,errors}=await pageFor('cliente.html','cliente-orcamento');
+  try{
+   await page.locator('#homeView').waitFor({state:'visible'});
+   await page.locator('#viewActiveReservations').click();
+   await page.locator('[data-budget-response="'+answer+'"]').click();
+   await page.waitForFunction(expected=>window.__pm.records.reservas.reserva001.statusReserva===expected,status);
+   const event=await page.evaluate(()=>window.__pm.records.historicoOrcamentos?.['reserva001-1']);
+   assert.equal(event.resposta,answer);
+   assert.equal(event.valorTotal,70);
+   assert.equal(event.codigoReserva,'PMR-000001');
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
+}
+
+test('Motorista recusa oferta e evento historico registra a recusa', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('motorista.html','motorista-aprovado');
+ try{
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#viewAssignedReservations').click();
+  await page.locator('[data-action="reject"]').click();
+  await page.waitForFunction(()=>window.__pm.records.historicoRecusasMotoristas?.['reserva001-1']);
+  const data=await page.evaluate(()=>({
+   status:window.__pm.records.reservas.reserva001.statusReserva,
+   entry:window.__pm.records.historicoRecusasMotoristas['reserva001-1']
+  }));
+  assert.equal(data.status,'pendente');
+  assert.equal(data.entry.codigoMotorista,'PMM-001');
+  assert.equal(data.entry.numeroRecusa,1);
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
