@@ -229,3 +229,78 @@ test('Codigo de reserva usa seis digitos em transacao com numero 10000',async()=
   assert.equal(created.data().codigoReserva,'PMR-010000');
   assert.equal(created.data().passageiros,2);
 });
+
+
+test('Historicos permanentes: Cliente recusa e aceita orcamento, Motorista recusa e atendimento conclui',async()=>{
+ await reset({clients:true,driver:true,trips:true});
+ const admin=as('admin01'),cliente=as('clienteA'),motorista=as('motoristaA');
+ const reservation=doc(admin,'reservas','reservaA');
+ const quote={
+  kmPercurso:4,tempoPercursoMin:10,tarifaBase:5,valorPorKm:2,
+  valorPorTempo:1,valorExtra:2,valorViagem:25
+ };
+ // O cliente nao pode inventar preco ou mudar o orcamento do administrador.
+ await assertFails(updateDoc(doc(cliente,'reservas','reservaA'),{valorViagem:1}));
+ await assertFails(updateDoc(doc(cliente,'reservas','reservaA'),{statusReserva:'orcamento_aceito',dataAtualizacao:serverTimestamp()}));
+ await assertFails(updateDoc(reservation,{...quote,numeroOrcamento:1,valorViagem:2500,statusReserva:'orcamento_pendente',dataAtualizacao:serverTimestamp()}));
+ await assertSucceeds(updateDoc(reservation,{...quote,numeroOrcamento:1,statusReserva:'orcamento_pendente',dataAtualizacao:serverTimestamp()}));
+ const respond=async(resposta,number,total)=>{
+  const b=writeBatch(cliente);
+  b.update(doc(cliente,'reservas','reservaA'),{statusReserva:'orcamento_'+resposta,dataAtualizacao:serverTimestamp()});
+  b.set(doc(cliente,'historicoOrcamentos','reservaA-'+number),{
+   reservaId:'reservaA',codigoReserva:'PMR-000001',codigoCliente:'PMC-0001',
+   nomeCliente:'Cliente Ficticio',clienteUid:'clienteA',
+   numeroOrcamento:number,resposta,valorTotal:total,dataResposta:serverTimestamp()
+  });
+  return b.commit();
+ };
+ await assertFails(updateDoc(doc(cliente,'reservas','reservaA'),{statusReserva:'orcamento_aceito',dataAtualizacao:serverTimestamp()}));
+ await assertSucceeds(respond('recusado',1,25));
+ const rejected=await assertSucceeds(getDoc(doc(admin,'historicoOrcamentos','reservaA-1')));
+ assert.equal(rejected.data().resposta,'recusado');
+ // A recusa nao some quando a administracao envia nova proposta.
+ await assertSucceeds(updateDoc(reservation,{
+  ...quote,valorExtra:0,valorViagem:23,numeroOrcamento:2,
+  statusReserva:'orcamento_pendente',dataAtualizacao:serverTimestamp()
+ }));
+ await assertSucceeds(respond('aceito',2,23));
+ const history=await assertSucceeds(getDocs(collection(admin,'historicoOrcamentos')));
+ assert.equal(history.docs.length,2);
+ await assertFails(getDocs(collection(cliente,'historicoOrcamentos')));
+ await assertFails(updateDoc(doc(cliente,'historicoOrcamentos','reservaA-1'),{resposta:'aceito'}));
+ // A reserva aceita pode ser oferecida a motorista autorizado.
+ await assertSucceeds(updateDoc(reservation,{
+  statusReserva:'oferecida',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',
+  nomeMotoristaDesignado:'Motorista Ficticio',dataAtualizacao:serverTimestamp()
+ }));
+ const refuse=writeBatch(motorista);
+ refuse.update(doc(motorista,'reservas','reservaA'),{
+  statusReserva:'orcamento_aceito',motoristaUid:'',codigoMotorista:'',
+  nomeMotoristaDesignado:'',numeroRecusa:1,dataAtualizacao:serverTimestamp()
+ });
+ refuse.set(doc(motorista,'historicoRecusasMotoristas','reservaA-1'),{
+  reservaId:'reservaA',codigoReserva:'PMR-000001',clienteUid:'clienteA',nomeCliente:'Cliente Ficticio',
+  motoristaUid:'motoristaA',codigoMotorista:'PMM-001',nomeMotorista:'Motorista Ficticio',
+  numeroRecusa:1,dataRecusa:serverTimestamp()
+ });
+ await assertSucceeds(refuse.commit());
+ const refusals=await assertSucceeds(getDocs(collection(admin,'historicoRecusasMotoristas')));
+ assert.equal(refusals.docs.length,1);
+ await assertFails(getDocs(collection(cliente,'historicoRecusasMotoristas')));
+ // Mesmo motorista pode ser reofertado por administracao e concluir; a recusa anterior fica no historico.
+ await assertSucceeds(updateDoc(reservation,{
+  statusReserva:'oferecida',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',
+  nomeMotoristaDesignado:'Motorista Ficticio',dataAtualizacao:serverTimestamp()
+ }));
+ for(const status of ['confirmada','em_andamento','concluida']){
+  await assertSucceeds(updateDoc(doc(motorista,'reservas','reservaA'),{
+   statusReserva:status,dataAtualizacao:serverTimestamp(),
+   ...(status==='concluida'?{dataConclusao:serverTimestamp()}:{})
+  }));
+ }
+ const completed=await assertSucceeds(getDoc(reservation));
+ assert.equal(completed.data().statusReserva,'concluida');
+ assert.ok(completed.data().dataConclusao);
+ assert.equal((await getDocs(collection(admin,'historicoOrcamentos'))).docs.length,2);
+ assert.equal((await getDocs(collection(admin,'historicoRecusasMotoristas'))).docs.length,1);
+});
