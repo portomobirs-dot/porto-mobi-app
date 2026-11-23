@@ -99,3 +99,13 @@ Fonte: especificação fornecida diretamente pelo responsável, 23 de novembro d
 - Registrar a resposta do Cliente e o histórico em uma operação atômica; fazer o mesmo para a recusa do Motorista. O histórico de conclusões é extraído das reservas concluídas, com `dataConclusao` marcada pelo servidor.
 - Somente o Administrador lê as coleções de históricos; Cliente e Motorista só executam as transições permitidas em suas reservas.
 - A primeira demonstração offline no tablet **não persiste dados após reinício**. No aplicativo real, a persistência depende de testar e implantar as regras novas do Firestore; a produção permanece inalterada.
+
+## Tela 01 — Login do Cliente APROVADA (23/11/2026)
+- **Cabeçalho preto**, logotipo Porto Mobi e identidade dourada.
+- Mensagem exata **"Seja Bem Vindo!"**; subtítulo **"Login do Cliente"**.
+- Campo **"Login (e-mail)"** e campo **"Senha"**, fundo branco, Tahoma 13 pt, fonte preta.
+- Ícone **olho** à direita da senha para mostrar/ocultar a digitação; sem botão textual "Mostrar".
+- Dois botões **lado a lado**: **"Acessar Cadastro"** amarelo (faz o login da conta existente, substitui "Entrar"); **"Fazer Cadastro"** verde (abre o formulário de novo cadastro).
+- Link **"Esqueceu a senha?"** centralizado **abaixo dos botões**, usando recuperação de senha do Firebase Authentication para o e-mail informado. Nenhum destinatário externo de suporte é inventado.
+- **Não deve existir botão "Entrar" separado.**
+- Telas seguintes aguardam avaliação individual. Aprovação da Tela 01 não autoriza publicar no ambiente de produção.
