@@ -73,6 +73,7 @@ try{
   document.querySelector('#registerSummary').textContent='Código: PMC-0000 (automático)\nData de cadastro: 2026-11-23\nNome: Cliente Exemplo\nTelefone: (51) 99999-1111\nE-mail: cliente@example.invalid';
   document.querySelector('#registerSummary').style.whiteSpace='pre-line';
  });
+ await cliente.evaluate(()=>{document.querySelector('#reviewPassword').textContent='********';});
  await capture(cliente,'10-cliente-confirmacao-cadastro');
  await expose(cliente,'bookingView',['loginView','registerView','registerReview','homeView','bookingReview']);
  await cliente.evaluate(()=>{
