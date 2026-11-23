@@ -56,13 +56,21 @@ Fonte: especificação fornecida diretamente pelo responsável, 23 de novembro d
 - Cadastro fica pendente até aprovação administrativa; limite de 3 motoristas
 - Após entrar com aprovação: **Visualizar a Reserva a ser atendida**, **Histórico de Atendimentos**, **Iniciar Atendimento**, **Sair do App**
 
-## Tela Iniciar Atendimento
+## Tela Atendimento da Reserva (etapa anterior)
+- Saudação **Olá, [Nome do Motorista]**
+- Nome do Cliente
+- Dados da Reserva
+- Botão **Iniciar Atendimento**, que abre uma tela separada com os comandos da corrida
+- Botão **Sair do App**
+
+## Tela Iniciar Atendimento (segunda etapa)
 - Nome do Cliente
 - Dados da Reserva
 - Botão **Motorista à caminho**: prepara aviso ao Cliente no WhatsApp e abre GPS para o embarque
 - Botão **Motorista à disposição**: prepara aviso ao Cliente no WhatsApp
 - Botão **Iniciar Atendimento**: registra início e abre GPS para o destino
 - Botão **Concluir Atendimento**: registra conclusão e inclui no histórico
+- Botão **Sair do App**
 - A rota de GPS deve partir da localização atual determinada pelo Google Maps, respeitando a permissão do aparelho
 
 ## Limitações técnicas e segurança
