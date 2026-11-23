@@ -109,3 +109,8 @@ Fonte: especificação fornecida diretamente pelo responsável, 23 de novembro d
 - Link **"Esqueceu a senha?"** centralizado **abaixo dos botões**, usando recuperação de senha do Firebase Authentication para o e-mail informado. Nenhum destinatário externo de suporte é inventado.
 - **Não deve existir botão "Entrar" separado.**
 - Telas seguintes aguardam avaliação individual. Aprovação da Tela 01 não autoriza publicar no ambiente de produção.
+
+## Login do Motorista — mesmo modelo da Tela 01 aprovada
+- O login do Motorista usa o mesmo layout do Login do Cliente: **"Seja Bem Vindo!"**, campos brancos, fonte Tahoma 13 pt e texto preto, ícone de olho para a senha, botões lado a lado **"Acessar Cadastro"** (amarelo, efetua login) e **"Fazer Cadastro"** (verde, abre o cadastro do motorista), e link **"Esqueceu a senha?"** abaixo dos botões para recuperar acesso por e-mail do Firebase Authentication.
+- As duas linhas da marca no cabeçalho — **"PORTO MOBI"** e **"TRANSPORTE EXECUTIVO"** — devem ter **o mesmo tamanho de letra** em todas as telas, com as cores branca e dourada respectivamente.
+- A alteração é de apresentação e fluxo de login; cadastros, reservas, motoristas, valores e históricos permanecem inalterados. A versão de produção não deve ser modificada antes de nova autorização explícita.
