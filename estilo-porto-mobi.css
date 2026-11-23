@@ -515,3 +515,10 @@ body[data-pm-area="cliente"] #registerView .codebox input[readonly]{
   color:#000!important;
   -webkit-text-fill-color:#000!important;
 }
+
+/* Cadastro do Cliente: olhos de senha e Cadastrar verde ao lado da revisão. */
+body[data-pm-area="cliente"] #registerView .register-eye-button{width:52px;min-width:52px;height:46px;min-height:46px;display:flex;align-items:center;justify-content:center;padding:7px;margin:0;line-height:1}
+body[data-pm-area="cliente"] #registerView .register-eye-button svg{display:block}
+body[data-pm-area="cliente"] #registerView #confirmRegister{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
+body[data-pm-area="cliente"] #registerView #confirmRegister:disabled{opacity:.5!important;cursor:not-allowed}
+body[data-pm-area="cliente"] #registerReviewDetails{margin-top:18px;padding:12px;border:1px solid #c7993e;border-radius:10px}
