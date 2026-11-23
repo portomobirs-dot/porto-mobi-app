@@ -48,7 +48,7 @@ for(const field of $('registerForm').querySelectorAll('input:not([readonly])'))f
 $('showRegister').onclick=()=>{$('regDate').value=todayLocal();invalidateRegistrationReview();show('registerView')};
 let reviewedBooking=null,submittingBooking=false;
 const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value));
-function invalidateBookingReview(){reviewedBooking=null;$('requestBooking').disabled=true;$('confirmBooking').disabled=true;}
+function invalidateBookingReview(){reviewedBooking=null;$('requestBooking').disabled=true;}
 $('bookingForm').onsubmit=e=>e.preventDefault();
 $('bookingForm').addEventListener('input',invalidateBookingReview);
 $('bookingForm').addEventListener('change',invalidateBookingReview);
@@ -116,16 +116,15 @@ $('reviewBooking').onclick=()=>{
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
  $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')} (automática)\nCódigo da Reserva: PMR-000000 (automático)\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
- $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('requestBooking').disabled=false;$('confirmBooking').disabled=false;show('bookingReview');
+ $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('requestBooking').disabled=false;show('bookingReview');
 };
-$('confirmBooking').onclick=()=>submitBooking();
 async function submitBooking(){
  if(submittingBooking||!reviewedBooking||reviewedBooking!==bookingSnapshot())return message('Revise a solicitação antes de enviar.',true);
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
  if(!currentUser||!currentProfile)return message('Entre na sua conta novamente.',true);
- const b=$('confirmBooking');submittingBooking=true;b.disabled=true;$('requestBooking').disabled=true;
+ submittingBooking=true;$('requestBooking').disabled=true;
  try{
   message('Enviando solicitação...');
   const counter=doc(db,'contadores','reservas'),newRef=doc(collection(db,'reservas'));
@@ -139,7 +138,7 @@ async function submitBooking(){
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
   invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();openClientPanel('active');message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
- }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();b.disabled=!valid;$('requestBooking').disabled=!valid}
+ }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();$('requestBooking').disabled=!valid}
 }
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
 
