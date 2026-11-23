@@ -7,7 +7,7 @@ export const firebaseConfig = {
   messagingSenderId: '500470573196',
   appId: '1:500470573196:web:e3fc2c00e3e8b7f7a933a9'
 };
-export const padCode=(p,n)=>p+'-'+String(n).padStart(p==='PMM'?3:4,'0');
+export const padCode=(p,n)=>p+'-'+String(n).padStart(p==='PMM'?3:p==='PMR'?6:4,'0');
 export const todayLocal=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const phoneDigits=s=>String(s||'').replace(/\D/g,'');
