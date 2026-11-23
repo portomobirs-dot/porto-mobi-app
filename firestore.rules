@@ -15,7 +15,7 @@ service cloud.firestore {
       return signedIn() && exists(driverPath(me())) && (get(driverPath(me())).data.get('situacao', '') == 'ativo' || get(driverPath(me())).data.get('aprovado', false) == true);
     }
     function code(prefix, n) {
-      return prefix + '-' + (prefix == 'PMM' ? (n < 10 ? '00' : n < 100 ? '0' : '') : (n < 10 ? '000' : n < 100 ? '00' : n < 1000 ? '0' : '')) + string(n);
+      return prefix + '-' + (prefix == 'PMM' ? (n < 10 ? '00' : n < 100 ? '0' : '') : prefix == 'PMR' ? (n < 10 ? '00000' : n < 100 ? '0000' : n < 1000 ? '000' : n < 10000 ? '00' : n < 100000 ? '0' : '') : (n < 10 ? '000' : n < 100 ? '00' : n < 1000 ? '0' : '')) + string(n);
     }
     function nextCount(kind, n) {
       return n is int && n >= 1 &&
@@ -39,7 +39,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['ultimo','ultimoReservaId','ultimoClienteUid']) &&
         request.resource.data.ultimoClienteUid == me() &&
         request.resource.data.ultimo is int &&
-        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 9999 &&
+        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 999999 &&
         request.resource.data.ultimoReservaId is string &&
         request.resource.data.ultimoReservaId.size() >= 8 &&
         request.resource.data.ultimoReservaId.size() <= 30 &&
@@ -127,18 +127,19 @@ service cloud.firestore {
     }
     function clientTripCreate(id) {
       return signedIn() && exists(clientPath(me())) &&
-        request.resource.data.keys().hasAll(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','dataViagem','dataSolicitacao','observacoes','statusReserva','valorViagem']) &&
-        request.resource.data.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','dataViagem','dataSolicitacao','observacoes','statusReserva','valorViagem']) &&
+        request.resource.data.keys().hasAll(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','dataViagem','dataSolicitacao','passageiros','observacoes','statusReserva','valorViagem']) &&
+        request.resource.data.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','dataViagem','dataSolicitacao','passageiros','observacoes','statusReserva','valorViagem']) &&
         request.resource.data.clienteUid == me() &&
         request.resource.data.codigoCliente == get(clientPath(me())).data.codigoCliente &&
         request.resource.data.nomeCliente == get(clientPath(me())).data.nomeCliente &&
         request.resource.data.telefoneCliente == get(clientPath(me())).data.telefoneCliente &&
         request.resource.data.numeroReserva is int &&
-        request.resource.data.numeroReserva >= 1 && request.resource.data.numeroReserva <= 9999 &&
+        request.resource.data.numeroReserva >= 1 && request.resource.data.numeroReserva <= 999999 &&
         request.resource.data.codigoReserva == code('PMR',request.resource.data.numeroReserva) &&
         request.resource.data.codigoMotorista == '' && request.resource.data.motoristaUid == '' &&
         request.resource.data.localEmbarque is string && request.resource.data.localEmbarque.size() >= 3 && request.resource.data.localEmbarque.size() <= 500 &&
         request.resource.data.localDestino is string && request.resource.data.localDestino.size() >= 3 && request.resource.data.localDestino.size() <= 500 &&
+        request.resource.data.passageiros is int && request.resource.data.passageiros >= 1 && request.resource.data.passageiros <= 8 &&
         request.resource.data.observacoes is string && request.resource.data.observacoes.size() <= 2000 &&
         request.resource.data.dataViagem is timestamp && request.resource.data.dataViagem > request.time &&
         request.resource.data.dataSolicitacao == request.time &&
