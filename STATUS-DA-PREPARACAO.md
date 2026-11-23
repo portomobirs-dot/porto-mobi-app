@@ -42,3 +42,8 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 - Casos negativos incluem cliente alheio e motorista pendente acessando ou modificando a reserva.
 - Os testes são feitos no projeto fictício `demo-porto-mobi-testes` e usam as regras locais.
 - **Não mesclar com `main` nem ativar regras reais apenas por existir teste automatizado.** A execução GitHub Actions mais recente ainda precisa ser conferida, e testes de interface nos aparelhos seguem pendentes.
+
+## Verificação adicional das três interfaces — 23/11/2026
+- GitHub Actions agora executa `testes/estrutura-pwa.test.mjs`, verificando campos e IDs, links de manifestos, scripts JS, service worker, PNG e identificadores de instalação de Cliente, Motorista e Administrador.
+- O novo teste **não** simula cliques reais no navegador, autenticação web, GPS ou notificações. Execução deve ser conferida antes de implantar.
+- Ramificação `main` e Firebase em produção seguem inalterados.
