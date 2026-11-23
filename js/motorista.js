@@ -9,10 +9,18 @@ const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message
 const val=id=>$(id).value.trim();
 let user=null,profile=null,registering=false,unsub=null,driverTrips=[],serviceId=null;
 $('regDate').value=todayLocal();
-$('forgotPassword').onclick=async()=>{const email=$('loginEmail');if(!email.value||!email.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);try{await sendPasswordResetEmail(auth,email.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch{message('Não foi possível solicitar a recuperação da senha.',true)}};
+$('forgotPassword').onclick=async event=>{event.preventDefault();const email=$('loginEmail');if(!email.value||!email.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);try{await sendPasswordResetEmail(auth,email.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch{message('Não foi possível solicitar a recuperação da senha.',true)}};
 $('copyDriverCode').onclick=async()=>{const codigo=$('driverCode').value;if(!/^PMM-\d{3}$/.test(codigo)||codigo==='PMM-000')return message('O código será disponibilizado após a aprovação.',true);try{await navigator.clipboard.writeText(codigo);message('Código '+codigo+' copiado.')}catch{$('driverCode').focus();$('driverCode').select();message('Copie o código selecionado: '+codigo)}};
 function stop(){if(unsub){unsub();unsub=null}}
-for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'Mostrar':'Ocultar'});
+for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
+ const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';
+ const hidden=el.type==='password';
+ if(btn.classList.contains('login-eye-button')){
+  btn.setAttribute('aria-label',hidden?'Mostrar senha':'Ocultar senha');
+  btn.setAttribute('title',hidden?'Mostrar senha':'Ocultar senha');
+  btn.setAttribute('aria-pressed',String(!hidden));
+ }else btn.textContent=hidden?'Mostrar':'Ocultar';
+});
 $('regPhone').oninput=e=>{e.target.value=formatPhone(e.target.value)};
 $('regPlate').oninput=e=>{let s=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);e.target.value=s.length>3?s.slice(0,3)+'-'+s.slice(3):s};
 $('showRegister').onclick=()=>{$('regDate').value=todayLocal();show('registerView')};$('backLogin').onclick=()=>show('loginView');$('editRegister').onclick=()=>show('registerView');
