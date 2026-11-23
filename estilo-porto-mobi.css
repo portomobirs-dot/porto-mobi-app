@@ -230,3 +230,16 @@ body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) main{
 .item .quote label{color:#ffe6b2}
 .item .quote p,.item .quote .quote-note{color:#d9cebc}
 .item .quote .quote-total{color:#ffe58a}
+
+
+/* Ações finais aprovadas em verde. Revisar e demais comandos continuam amarelos. */
+button#confirmRegister,
+button#confirmBooking{
+  background:linear-gradient(180deg,#92ed74 0%,#45c945 35%,#168827 100%);
+  color:#08210c;
+  border:1px solid #167526;
+  box-shadow:inset 0 2px 2px rgba(255,255,255,.38),0 5px 14px rgba(0,0,0,.36);
+  font-weight:800;
+}
+button#confirmRegister:focus-visible,
+button#confirmBooking:focus-visible{outline:3px solid #c5ffc5;outline-offset:3px}
