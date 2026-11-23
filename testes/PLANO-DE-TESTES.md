@@ -36,7 +36,7 @@
 - Preservar o repositório privado original e conferir se não existem segredos.
 
 ## Testes automatizados de ponta a ponta (simulados)
-- `testes/seguranca-firestore.test.mjs` contém a criação transacional realista de `PMR-0001` por cliente fictício.
+- `testes/seguranca-firestore.test.mjs` contém a criação transacional realista de `PMR-000001` por cliente fictício.
 - O administrador tenta atribuir ao motorista pendente (negado) e depois atribui ao motorista antigo autorizado `PMM-001`.
 - O motorista confirma, inicia, conclui e o cliente vê a corrida no histórico; conclusão não pode ser reaberta.
 - Teste adicional verifica recusa do motorista, retorno da corrida a pendente e nova atribuição autorizada.
