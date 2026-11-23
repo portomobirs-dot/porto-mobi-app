@@ -157,14 +157,57 @@ try{
  await expose(admin,'dashboard',['login']);
  await admin.evaluate(()=>{
   document.querySelector('#who').textContent='admin-teste@example.invalid';
-  for(const [id,text] of Object.entries({total:'1',pending:'1',confirmed:'0'})){
+  for(const [id,text] of Object.entries({total:'4',pending:'1',confirmed:'1'}))
    document.getElementById(id).textContent=text;
-  }
-  document.querySelector('#reservations').innerHTML='<article class="item"><div class="top"><strong>PMR-000001</strong><span>pendente</span></div><p><b>Cliente:</b> Cliente Exemplo (PMC-0001)<br><b>Origem:</b> Avenida Exemplo, 100<br><b>Destino:</b> Aeroporto<br><b>Viagem:</b> 10/12/2026 14:30</p><div class="actions"><select><option>Escolha motorista autorizado</option><option>Motorista Exemplo • PMM-001</option></select><button>Oferecer corrida</button></div></article>';
-  document.querySelector('#driverApplicants').innerHTML='<p>Sem solicitacoes pendentes.</p>';
+  document.querySelector('#reservations').innerHTML=
+   '<article class="item"><div class="top"><strong>PMR-000001</strong><span>pendente</span></div>'+
+   '<p><b>Dados do Cliente:</b> Cliente Exemplo (PMC-0001)<br><b>Telefone:</b> (51) 99999-1111<br>'+
+   '<b>Dados da Reserva:</b> Embarque Avenida Exemplo, 100 → Destino Aeroporto<br>'+
+   '<b>Data:</b> 10/12/2026 às 14:30<br><b>Passageiros:</b> 2<br><b>Motorista Designado:</b> A definir</p>'+
+   '<div class="quote"><h3>Cálculos de Reserva</h3><div class="quote-grid">'+
+   '<label>KM do percurso<input readonly value="18,4"></label>'+
+   '<label>Tempo do percurso (minutos)<input readonly value="28"></label>'+
+   '<label>Tarifa Base (R$)<input readonly value="25,00"></label>'+
+   '<label>Valor por km (R$/km)<input readonly value="3,50"></label>'+
+   '<label>Valor por tempo (R$/min)<input readonly value="0,50"></label>'+
+   '<label>Valor extra (R$)<input readonly value="5,00"></label>'+
+   '</div><span class="quote-total">Valor total: R$ 108,40</span>'+
+   '<p class="quote-note">Prévia com valores fictícios. Tarifas definidas pelo Administrador.</p>'+
+   '<div class="actions"><button>Enviar orçamento ao Cliente</button><button class="danger">Recusar</button></div></div></article>';
+  document.querySelector('#driverApplicants').innerHTML='<p>Sem solicitações pendentes.</p>';
+  document.querySelector('#acceptedQuotes').innerHTML='<div class="item"><strong>PMR-000002</strong><p>Cliente: Cliente Exemplo A<br>Valor: R$ 85,00<br>Resposta: aceita</p></div>';
+  document.querySelector('#refusedQuotes').innerHTML='<div class="item"><strong>PMR-000003</strong><p>Cliente: Cliente Exemplo B<br>Valor: R$ 65,00<br>Resposta: recusada</p></div>';
+  document.querySelector('#completedServices').innerHTML='<div class="item"><strong>PMR-000004</strong><p>Cliente: Cliente Exemplo C<br>Motorista: PMM-001<br>Valor: R$ 92,00<br>Atendimento concluído</p></div>';
+  document.querySelector('#driverRefusals').innerHTML='<div class="item"><strong>PMR-000005</strong><p>Motorista: PMM-002<br>Cliente: Cliente Exemplo D<br>Recusa registrada</p></div>';
  });
  await capture(admin,'09-administrador-painel');
+ await admin.evaluate(()=>{
+  document.querySelector('#reservations').innerHTML=
+   '<article class="item"><strong>PMR-000001 — orçamento aceito</strong>'+
+   '<p>Cliente: Cliente Exemplo (PMC-0001)<br>Embarque: Avenida Exemplo, 100<br>'+
+   'Destino: Aeroporto<br>Valor da Reserva: R$ 108,40</p>'+
+   '<div class="actions"><select><option>Motorista Exemplo — PMM-001</option></select>'+
+   '<button>Confirmar</button><button class="danger">Recusar</button></div></article>';
+ });
+ await capture(admin,'17-administrador-motorista-designado');
  await admin.close();
+ const clienteOrcamento=await pageFor('cliente.html');
+ await expose(clienteOrcamento,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview']);
+ await clienteOrcamento.evaluate(()=>{
+  document.querySelector('#clientWelcome').textContent='Olá, Cliente Exemplo!';
+  document.querySelector('#profileInfo').textContent='Cliente Exemplo • PMC-0001';
+  document.querySelector('#clientCode').value='PMC-0001';
+  document.querySelector('#lastBookingCode').value='PMR-000001';
+  document.querySelector('#activeBlock').classList.remove('hidden');
+  document.querySelector('#activeReservations').innerHTML=
+   '<div class="item"><strong>PMR-000001 — Orçamento aguardando resposta</strong>'+
+   '<p>Embarque: Avenida Exemplo, 100 → Aeroporto<br>10/12/2026 14:30'+
+   '<br><b>Valor da Reserva:</b> R$ 108,40'+
+   '<br><b>Motorista Designado:</b> A definir</p>'+
+   '<div class="actions"><button>Aceitar Orçamento</button><button class="secondary">Recusar Orçamento</button></div></div>';
+ });
+ await capture(clienteOrcamento,'18-cliente-visualizacao-orcamento');
+ await clienteOrcamento.close();
  await context.close();
 }finally{
  await browser?.close();
