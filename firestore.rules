@@ -8,6 +8,8 @@ service cloud.firestore {
     function driverPath(uid) { return /databases/$(database)/documents/motoristas/$(uid); }
     function counterPath(kind) { return /databases/$(database)/documents/contadores/$(kind); }
     function tripPath(id) { return /databases/$(database)/documents/reservas/$(id); }
+    function quoteHistoryPath(id, n) { return /databases/$(database)/documents/historicoOrcamentos/$(id + '-' + string(n)); }
+    function refusalHistoryPath(id, n) { return /databases/$(database)/documents/historicoRecusasMotoristas/$(id + '-' + string(n)); }
     function isAdmin() {
       return signedIn() && (request.auth.token.get('admin', false) == true || (exists(adminPath(me())) && get(adminPath(me())).data.ativo == true));
     }
@@ -157,41 +159,143 @@ service cloud.firestore {
          get(driverPath(request.resource.data.motoristaUid)).data.get('aprovado', false) == true) &&
         get(driverPath(request.resource.data.motoristaUid)).data.codigoMotorista == request.resource.data.codigoMotorista;
     }
-    function adminTripUpdate() {
-      // Nesta versão, o painel só oferece ou recusa reservas pendentes.
-      // Reservas recusadas/concluidas nunca podem ser reabertas pelo painel.
-      return isAdmin() &&
-        resource.data.statusReserva == 'pendente' &&
-        resource.data.motoristaUid == '' && resource.data.codigoMotorista == '' &&
-        request.resource.data.dataAtualizacao == request.time &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusReserva','motoristaUid','codigoMotorista','dataAtualizacao']) &&
-        ((request.resource.data.statusReserva == 'oferecida' && validAssignedDriver()) ||
-         (request.resource.data.statusReserva == 'recusada' &&
-          request.resource.data.motoristaUid == '' && request.resource.data.codigoMotorista == ''));
+    function correctQuote() {
+      let q = request.resource.data;
+      let expected = q.tarifaBase + q.kmPercurso * q.valorPorKm + q.tempoPercursoMin * q.valorPorTempo + q.valorExtra;
+      return q.kmPercurso is number && q.kmPercurso >= 0 && q.kmPercurso <= 100000 &&
+        q.tempoPercursoMin is int && q.tempoPercursoMin >= 0 && q.tempoPercursoMin <= 100000 &&
+        q.tarifaBase is number && q.tarifaBase >= 0 && q.tarifaBase <= 1000000 &&
+        q.valorPorKm is number && q.valorPorKm >= 0 && q.valorPorKm <= 1000000 &&
+        q.valorPorTempo is number && q.valorPorTempo >= 0 && q.valorPorTempo <= 1000000 &&
+        q.valorExtra is number && q.valorExtra >= 0 && q.valorExtra <= 1000000 &&
+        q.valorViagem is number && q.valorViagem >= 0 &&
+        q.valorViagem >= expected - 0.011 && q.valorViagem <= expected + 0.011 &&
+        q.numeroOrcamento is int && q.numeroOrcamento >= 1 &&
+        q.numeroOrcamento == resource.data.get('numeroOrcamento',0) + 1;
     }
-    function driverTripUpdate() {
-      return activeDriver() && resource.data.motoristaUid == me() &&
-        request.resource.data.dataAtualizacao == request.time &&
-        ((resource.data.statusReserva == 'oferecida' &&
-           request.resource.data.statusReserva == 'confirmada' &&
-           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusReserva','dataAtualizacao'])) ||
-         (resource.data.statusReserva == 'oferecida' &&
-           request.resource.data.statusReserva == 'pendente' &&
-           request.resource.data.motoristaUid == '' && request.resource.data.codigoMotorista == '' &&
-           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusReserva','motoristaUid','codigoMotorista','dataAtualizacao'])) ||
-         (resource.data.statusReserva == 'confirmada' &&
-           request.resource.data.statusReserva == 'em_andamento' &&
-           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusReserva','dataAtualizacao'])) ||
-         (resource.data.statusReserva == 'em_andamento' &&
-           request.resource.data.statusReserva == 'concluida' &&
-           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusReserva','dataAtualizacao'])));
+    function adminTripUpdate() {
+      let before = resource.data;
+      let after = request.resource.data;
+      let delta = after.diff(before).affectedKeys();
+      return isAdmin() &&
+        before.motoristaUid == '' && before.codigoMotorista == '' &&
+        after.dataAtualizacao == request.time &&
+        (
+          (before.statusReserva in ['pendente','orcamento_recusado'] &&
+           after.statusReserva == 'orcamento_pendente' &&
+           delta.hasOnly(['statusReserva','dataAtualizacao','kmPercurso','tempoPercursoMin','tarifaBase','valorPorKm','valorPorTempo','valorExtra','valorViagem','numeroOrcamento']) &&
+           correctQuote()) ||
+          (before.statusReserva == 'orcamento_aceito' &&
+           after.statusReserva == 'oferecida' &&
+           delta.hasOnly(['statusReserva','motoristaUid','codigoMotorista','nomeMotoristaDesignado','dataAtualizacao']) &&
+           validAssignedDriver() &&
+           after.nomeMotoristaDesignado == get(driverPath(after.motoristaUid)).data.nomeMotorista) ||
+          // Compatibilidade temporaria com as reservas antigas, ainda sem orcamento.
+          (before.statusReserva == 'pendente' &&
+           !('numeroOrcamento' in before) &&
+           after.statusReserva == 'oferecida' &&
+           delta.hasOnly(['statusReserva','motoristaUid','codigoMotorista','dataAtualizacao']) &&
+           validAssignedDriver()) ||
+          (before.statusReserva in ['pendente','orcamento_aceito','orcamento_recusado'] &&
+           after.statusReserva == 'recusada' &&
+           delta.hasOnly(['statusReserva','dataAtualizacao']))
+        );
+    }
+    function clientQuoteAnswer(id) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let event = getAfter(quoteHistoryPath(id,before.numeroOrcamento)).data;
+      return signedIn() && me() == before.clienteUid &&
+        before.statusReserva == 'orcamento_pendente' &&
+        after.statusReserva in ['orcamento_aceito','orcamento_recusado'] &&
+        after.dataAtualizacao == request.time &&
+        after.diff(before).affectedKeys().hasOnly(['statusReserva','dataAtualizacao']) &&
+        event.clienteUid == me() && event.reservaId == id &&
+        event.numeroOrcamento == before.numeroOrcamento &&
+        event.valorTotal == before.valorViagem &&
+        event.resposta == (after.statusReserva == 'orcamento_aceito' ? 'aceito' : 'recusado') &&
+        event.dataResposta == request.time;
+    }
+    function driverTripUpdate(id) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let changed = after.diff(before).affectedKeys();
+      return activeDriver() && before.motoristaUid == me() &&
+        after.dataAtualizacao == request.time &&
+        (
+          (before.statusReserva == 'oferecida' &&
+           after.statusReserva == 'confirmada' &&
+           changed.hasOnly(['statusReserva','dataAtualizacao'])) ||
+          (before.statusReserva == 'oferecida' &&
+           (after.statusReserva == 'pendente' || after.statusReserva == 'orcamento_aceito') &&
+           after.statusReserva == (before.get('numeroOrcamento',0) > 0 ? 'orcamento_aceito' : 'pendente') &&
+           after.motoristaUid == '' && after.codigoMotorista == '' &&
+           after.nomeMotoristaDesignado == '' &&
+           after.numeroRecusa is int &&
+           after.numeroRecusa == before.get('numeroRecusa',0) + 1 &&
+           changed.hasOnly(['statusReserva','motoristaUid','codigoMotorista','nomeMotoristaDesignado','numeroRecusa','dataAtualizacao']) &&
+           getAfter(refusalHistoryPath(id,after.numeroRecusa)).data.motoristaUid == me() &&
+           getAfter(refusalHistoryPath(id,after.numeroRecusa)).data.dataRecusa == request.time) ||
+          (before.statusReserva == 'confirmada' &&
+           after.statusReserva == 'em_andamento' &&
+           changed.hasOnly(['statusReserva','dataAtualizacao'])) ||
+          (before.statusReserva == 'em_andamento' &&
+           after.statusReserva == 'concluida' &&
+           after.dataConclusao == request.time &&
+           changed.hasOnly(['statusReserva','dataAtualizacao','dataConclusao']))
+        );
+    }
+    match /historicoOrcamentos/{eventId} {
+      allow get, list: if isAdmin();
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly(['reservaId','codigoReserva','codigoCliente','nomeCliente','clienteUid','numeroOrcamento','resposta','valorTotal','dataResposta']) &&
+        request.resource.data.keys().hasAll(['reservaId','codigoReserva','codigoCliente','nomeCliente','clienteUid','numeroOrcamento','resposta','valorTotal','dataResposta']) &&
+        request.resource.data.clienteUid == me() &&
+        request.resource.data.reservaId is string &&
+        request.resource.data.resposta in ['aceito','recusado'] &&
+        request.resource.data.numeroOrcamento is int &&
+        eventId == request.resource.data.reservaId + '-' + string(request.resource.data.numeroOrcamento) &&
+        request.resource.data.dataResposta == request.time &&
+        get(tripPath(request.resource.data.reservaId)).data.statusReserva == 'orcamento_pendente' &&
+        get(tripPath(request.resource.data.reservaId)).data.clienteUid == me() &&
+        getAfter(tripPath(request.resource.data.reservaId)).data.statusReserva ==
+          (request.resource.data.resposta == 'aceito' ? 'orcamento_aceito' : 'orcamento_recusado') &&
+        request.resource.data.codigoReserva == get(tripPath(request.resource.data.reservaId)).data.codigoReserva &&
+        request.resource.data.codigoCliente == get(tripPath(request.resource.data.reservaId)).data.codigoCliente &&
+        request.resource.data.nomeCliente == get(tripPath(request.resource.data.reservaId)).data.nomeCliente &&
+        request.resource.data.numeroOrcamento == get(tripPath(request.resource.data.reservaId)).data.numeroOrcamento &&
+        request.resource.data.valorTotal == get(tripPath(request.resource.data.reservaId)).data.valorViagem;
+      allow update, delete: if false;
+    }
+    match /historicoRecusasMotoristas/{eventId} {
+      allow get, list: if isAdmin();
+      allow create: if activeDriver() &&
+        request.resource.data.keys().hasAll(['reservaId','codigoReserva','clienteUid','nomeCliente','motoristaUid','codigoMotorista','nomeMotorista','numeroRecusa','dataRecusa']) &&
+        request.resource.data.keys().hasOnly(['reservaId','codigoReserva','clienteUid','nomeCliente','motoristaUid','codigoMotorista','nomeMotorista','numeroRecusa','dataRecusa']) &&
+        request.resource.data.motoristaUid == me() &&
+        request.resource.data.reservaId is string &&
+        request.resource.data.numeroRecusa is int &&
+        eventId == request.resource.data.reservaId + '-' + string(request.resource.data.numeroRecusa) &&
+        request.resource.data.dataRecusa == request.time &&
+        get(tripPath(request.resource.data.reservaId)).data.statusReserva == 'oferecida' &&
+        get(tripPath(request.resource.data.reservaId)).data.motoristaUid == me() &&
+        request.resource.data.codigoMotorista == get(tripPath(request.resource.data.reservaId)).data.codigoMotorista &&
+        request.resource.data.codigoReserva == get(tripPath(request.resource.data.reservaId)).data.codigoReserva &&
+        request.resource.data.clienteUid == get(tripPath(request.resource.data.reservaId)).data.clienteUid &&
+        request.resource.data.nomeCliente == get(tripPath(request.resource.data.reservaId)).data.nomeCliente &&
+        request.resource.data.nomeMotorista == get(driverPath(me())).data.nomeMotorista &&
+        getAfter(tripPath(request.resource.data.reservaId)).data.numeroRecusa == request.resource.data.numeroRecusa &&
+        getAfter(tripPath(request.resource.data.reservaId)).data.motoristaUid == '' &&
+        getAfter(tripPath(request.resource.data.reservaId)).data.statusReserva ==
+          (get(tripPath(request.resource.data.reservaId)).data.get('numeroOrcamento',0) > 0 ? 'orcamento_aceito' : 'pendente');
+      allow update, delete: if false;
     }
     match /reservas/{id} {
       allow get, list: if isAdmin() ||
         (signedIn() && resource.data.clienteUid == me()) ||
         (signedIn() && resource.data.motoristaUid == me() && activeDriver());
       allow create: if clientTripCreate(id);
-      allow update: if adminTripUpdate() || driverTripUpdate();
+      allow update: if adminTripUpdate() || driverTripUpdate(id) || clientQuoteAnswer(id);
       allow delete: if false;
     }
     match /{other=**} { allow read, write: if false; }
