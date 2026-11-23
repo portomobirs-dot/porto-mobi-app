@@ -61,6 +61,9 @@ async function pageFor(file,mode='visitante'){
  await context.addInitScript(({mode})=>{
   const m={role:mode==='motorista-aprovado'?'motorista':mode==='administrador'?'administrador':'cliente',user:mode==='motorista-aprovado'?{uid:'motorista01',email:'motorista@example.invalid'}:mode==='administrador'?{uid:'admin01',email:'admin@example.invalid'}:null,
    records:{clientes:{},motoristas:{},reservas:{},contadores:{}},authListeners:[],dataListeners:[],opened:[],loginAttempts:[],resetEmails:[]};
+  if(mode==='motorista-login'){
+   m.records.motoristas.motorista01={uid:'motorista01',nomeMotorista:'Motorista Teste',codigoMotorista:'PMM-001',situacao:'ativo',veiculoModelo:'Toyota Corolla'};
+  }
   if(mode==='motorista-aprovado'){
    m.records.motoristas.motorista01={uid:'motorista01',nomeMotorista:'Motorista Exemplo',codigoMotorista:'PMM-001',situacao:'ativo',veiculoModelo:'Toyota Corolla'};
    m.records.reservas.reserva001={codigoReserva:'PMR-000001',statusReserva:'oferecida',motoristaUid:'motorista01',codigoMotorista:'PMM-001',
@@ -209,6 +212,54 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   assert.match(await page.locator('#activeBlock').innerText(),/PMR-000001/);
   await page.locator('#viewReservationHistory').click();
   await page.locator('#historyBlock').waitFor({state:'visible'});
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
+test('Login do Motorista replica Cliente e marca usa tipografia uniforme', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('motorista.html','motorista-login');
+ try{
+  const login=page.locator('#loginView');
+  assert.match(await login.innerText(),/Seja Bem Vindo!/);
+  assert.match(await login.innerText(),/Login do Motorista/);
+  assert.equal(await page.locator('#accessDriverAccount').innerText(),'Acessar Cadastro');
+  assert.equal(await page.locator('#showRegister').innerText(),'Fazer Cadastro');
+  assert.equal(await page.locator('#forgotPassword').innerText(),'Esqueceu a senha?');
+  const style=await page.evaluate(()=>{
+   const font1=getComputedStyle(document.querySelector('header .brand-lockup strong'));
+   const font2=getComputedStyle(document.querySelector('header .brand-lockup strong small'));
+   const head=getComputedStyle(document.querySelector('header'));
+   const input=getComputedStyle(document.querySelector('#loginEmail'));
+   const actions=getComputedStyle(document.querySelector('.login-actions'));
+   return {font1:font1.fontSize,font2:font2.fontSize,header:head.backgroundColor,
+    inputBg:input.backgroundColor,inputText:input.color,family:input.fontFamily,
+    columns:actions.gridTemplateColumns.split(' ').length,
+    noHorizontalOverflow:document.documentElement.scrollWidth<=window.innerWidth+1};
+  });
+  assert.equal(style.font1,style.font2);
+  assert.equal(style.header,'rgb(0, 0, 0)');
+  assert.equal(style.inputBg,'rgb(255, 255, 255)');
+  assert.equal(style.inputText,'rgb(0, 0, 0)');
+  assert.match(style.family,/Tahoma/);
+  assert.equal(style.columns,2);
+  assert.equal(style.noHorizontalOverflow,true);
+  const eye=page.locator('.login-eye-button');
+  assert.equal(await page.locator('#loginPassword').getAttribute('type'),'password');
+  await eye.click();
+  assert.equal(await page.locator('#loginPassword').getAttribute('type'),'text');
+  assert.equal(await eye.getAttribute('aria-label'),'Ocultar senha');
+  await eye.click();
+  assert.equal(await page.locator('#loginPassword').getAttribute('type'),'password');
+  await page.locator('#forgotPassword').click();
+  assert.match(await page.locator('#message').innerText(),/Informe um e-mail válido/);
+  await page.locator('#loginEmail').fill('motorista@example.invalid');
+  await page.locator('#forgotPassword').click();
+  assert.deepEqual(await page.evaluate(()=>window.__pm.resetEmails),['motorista@example.invalid']);
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessDriverAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  assert.deepEqual(await page.evaluate(()=>window.__pm.loginAttempts),
+   [{email:'motorista@example.invalid',password:'senha123'}]);
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
