@@ -27,7 +27,7 @@ jobs:
           node-version: '22'
       - name: Instalar somente dependencias Node
         run: npm install --no-audit --no-fund
-      - name: Gerar nove capturas isoladas para revisao visual
+      - name: Gerar treze capturas isoladas para revisao visual
         run: node testes/capturar-telas.mjs
       - name: Salvar imagens como artefato de teste
         uses: actions/upload-artifact@v4
@@ -36,7 +36,7 @@ jobs:
           path: testes/capturas-mobile/*.png
           if-no-files-found: error
           retention-days: 14
-      - name: Publicar capturas ficticias no GitHub para visualizacao sem ZIP
+      - name: Publicar treze capturas ficticias no GitHub para visualizacao sem ZIP
         # So imagens de teste, com dados ficticios e bloqueio de acesso externo.
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
