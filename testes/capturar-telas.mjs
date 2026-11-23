@@ -66,10 +66,11 @@ try{
  const cliente=await pageFor('cliente.html');
  await capture(cliente,'01-cliente-login');
  await expose(cliente,'registerView',['loginView','registerReview','homeView','bookingView','bookingReview']);
+ await cliente.evaluate(()=>{document.querySelector('#regDate').value='2026-11-23'});
  await capture(cliente,'02-cliente-cadastro');
  await expose(cliente,'registerReview',['loginView','registerView','homeView','bookingView','bookingReview']);
  await cliente.evaluate(()=>{
-  document.querySelector('#registerSummary').textContent='Nome: Cliente Exemplo\nTelefone: (51) 99999-1111\nE-mail: cliente@example.invalid';
+  document.querySelector('#registerSummary').textContent='Código: PMC-0000 (automático)\nData de cadastro: 2026-11-23\nNome: Cliente Exemplo\nTelefone: (51) 99999-1111\nE-mail: cliente@example.invalid';
   document.querySelector('#registerSummary').style.whiteSpace='pre-line';
  });
  await capture(cliente,'10-cliente-confirmacao-cadastro');
@@ -82,13 +83,16 @@ try{
  await capture(cliente,'03-cliente-reserva');
  await expose(cliente,'bookingReview',['loginView','registerView','registerReview','homeView','bookingView']);
  await cliente.evaluate(()=>{
-  document.querySelector('#bookingSummary').textContent='Embarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nObservações: Bagagem de mão';
+  document.querySelector('#bookingSummary').textContent='Código: PMR-000000 (automático)\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nPassageiros: 1\nObservações: Bagagem de mão';
  });
  await capture(cliente,'13-cliente-confirmacao-reserva');
  await expose(cliente,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview']);
  await cliente.evaluate(()=>{
   document.querySelector('#profileInfo').textContent='Cliente Exemplo • PMC-0001';
-  document.querySelector('#activeReservations').innerHTML='<div class="item"><strong>PMR-0001</strong> — pendente<p class="small">Avenida Exemplo, 100 → Aeroporto<br>10/12/2026 14:30<br>Valor: A definir</p></div>';
+  document.querySelector('#clientCode').value='PMC-0001';
+  document.querySelector('#lastBookingCode').value='PMR-000001';
+  document.querySelector('#copyBookingCode').disabled=false;
+  document.querySelector('#activeReservations').innerHTML='<div class="item"><strong>PMR-000001</strong> — pendente<p class="small">Avenida Exemplo, 100 → Aeroporto<br>10/12/2026 14:30<br>Valor: A definir</p></div>';
   document.querySelector('#reservationHistory').innerHTML='<p>Nenhuma reserva concluida.</p>';
  });
  await capture(cliente,'04-cliente-acompanhamento');
@@ -97,10 +101,11 @@ try{
  const motorista=await pageFor('motorista.html');
  await capture(motorista,'05-motorista-login');
  await expose(motorista,'registerView',['loginView','reviewView','pendingView','homeView']);
+ await motorista.evaluate(()=>{document.querySelector('#regDate').value='2026-11-23'});
  await capture(motorista,'06-motorista-cadastro');
  await expose(motorista,'reviewView',['loginView','registerView','pendingView','homeView']);
  await motorista.evaluate(()=>{
-  document.querySelector('#registerSummary').textContent='Nome: Motorista Exemplo\nTelefone: (51) 99999-2222\nE-mail: motorista@example.invalid\nVeículo: Toyota Corolla\nPlaca: ABC-1D23\nCor: Preto';
+  document.querySelector('#registerSummary').textContent='Código: PMM-000 (após aprovação)\nData de cadastro: 2026-11-23\nNome: Motorista Exemplo\nTelefone: (51) 99999-2222\nE-mail: motorista@example.invalid\nVeículo: Toyota Corolla\nPlaca: ABC-1D23\nCor: Preto';
  });
  await capture(motorista,'11-motorista-confirmacao-cadastro');
  await expose(motorista,'pendingView',['loginView','registerView','reviewView','homeView']);
@@ -111,7 +116,8 @@ try{
  await expose(motorista,'homeView',['loginView','registerView','reviewView','pendingView']);
  await motorista.evaluate(()=>{
   document.querySelector('#profileInfo').textContent='Motorista Exemplo • PMM-001 • Veiculo demonstrativo';
-  document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-0001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button>Aceitar</button><button class="danger">Recusar</button></div></article>';
+  document.querySelector('#driverCode').value='PMM-001';
+  document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-000001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button>Aceitar</button><button class="danger">Recusar</button></div></article>';
   document.querySelector('#historyReservations').innerHTML='<p>Nenhuma corrida concluida.</p>';
  });
  await capture(motorista,'07-motorista-corridas');
@@ -125,7 +131,7 @@ try{
   for(const [id,text] of Object.entries({total:'1',pending:'1',confirmed:'0'})){
    document.getElementById(id).textContent=text;
   }
-  document.querySelector('#reservations').innerHTML='<article class="item"><div class="top"><strong>PMR-0001</strong><span>pendente</span></div><p><b>Cliente:</b> Cliente Exemplo (PMC-0001)<br><b>Origem:</b> Avenida Exemplo, 100<br><b>Destino:</b> Aeroporto<br><b>Viagem:</b> 10/12/2026 14:30</p><div class="actions"><select><option>Escolha motorista autorizado</option><option>Motorista Exemplo • PMM-001</option></select><button>Oferecer corrida</button></div></article>';
+  document.querySelector('#reservations').innerHTML='<article class="item"><div class="top"><strong>PMR-000001</strong><span>pendente</span></div><p><b>Cliente:</b> Cliente Exemplo (PMC-0001)<br><b>Origem:</b> Avenida Exemplo, 100<br><b>Destino:</b> Aeroporto<br><b>Viagem:</b> 10/12/2026 14:30</p><div class="actions"><select><option>Escolha motorista autorizado</option><option>Motorista Exemplo • PMM-001</option></select><button>Oferecer corrida</button></div></article>';
   document.querySelector('#driverApplicants').innerHTML='<p>Sem solicitacoes pendentes.</p>';
  });
  await capture(admin,'09-administrador-painel');
