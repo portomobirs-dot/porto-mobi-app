@@ -109,7 +109,7 @@ async function pageFor(file,mode='visitante'){
  await page.goto(HOST+'/'+file,{waitUntil:'domcontentloaded'});
  if(mode==='administrador')await page.waitForFunction(()=>typeof document.getElementById('loginForm')?.onsubmit==='function');
  else await page.waitForFunction(()=>typeof document.getElementById('showRegister')?.onclick==='function');
- if(!['motorista-aprovado','administrador'].includes(mode))await page.locator('#loginView').waitFor({state:'visible'});
+ if(!['motorista-aprovado','administrador','cliente-orcamento'].includes(mode))await page.locator('#loginView').waitFor({state:'visible'});
  return {context,page,errors};
 }
 const future=()=>{const d=new Date();d.setDate(d.getDate()+30);return d.toISOString().slice(0,10)};
