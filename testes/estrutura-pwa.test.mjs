@@ -89,7 +89,7 @@ test('Cadastros de Cliente e Motorista exibem os comandos ate confirmar',()=>{
     assert.ok(html.includes('Etapa 1 de 2')&&html.includes('Etapa 2 de 2'),item.page+': etapas nao explicadas');
   }
   const driver=read('motorista.html');
-  assert.ok(driver.includes('Enviar cadastro para aprovação'),'Motorista: confirmacao de envio nao esta clara');
+  assert.ok(driver.includes('id="confirmRegister">Cadastrar</button>'),'Motorista: botao Cadastrar ausente na revisao');
   assert.ok(driver.includes('Verificar aprovação'),'Motorista: consulta de aprovacao ausente');
 });
 
@@ -119,4 +119,32 @@ test('Codigos e datas automaticas seguem os formatos PMC-0000, PMR-000000 e PMM-
   const rules=read('firestore.rules');
   assert.ok(rules.includes("prefix == 'PMR' ?"),'regras nao aceitam seis digitos PMR');
   assert.ok(rules.includes("numeroReserva <= 999999"),'limite numerico PMR incorreto');
+});
+
+
+test('Fluxos aprovados de Cliente e Motorista possuem comandos visiveis e acionaveis',()=>{
+ const c=read('cliente.html'),cjs=read('js/cliente.js'),m=read('motorista.html'),mjs=read('js/motorista.js');
+ const clientButtons=['forgotPassword','showRegister','reviewRegister','editRegister','confirmRegister',
+  'showBooking','viewActiveReservations','viewReservationHistory','logout','reviewBooking','backHome',
+  'editBooking','confirmBooking'];
+ const driverButtons=['forgotPassword','showRegister','reviewRegister','editRegister','confirmRegister',
+  'viewAssignedReservations','viewDriverHistory','openService','serviceOnWay','serviceAvailable','serviceStart',
+  'serviceComplete','serviceBack','logout','logoutPending'];
+ for(const id of clientButtons){
+  assert.ok(c.includes('id="'+id+'"'),'Cliente: botao '+id+' ausente');
+  assert.ok(cjs.includes("$('"+id+"').onclick"),'Cliente: botao '+id+' sem acao');
+ }
+ for(const id of driverButtons){
+  assert.ok(m.includes('id="'+id+'"'),'Motorista: botao '+id+' ausente');
+  assert.ok(mjs.includes("$('"+id+"').onclick"),'Motorista: botao '+id+' sem acao');
+ }
+ assert.ok(c.includes('Olá, Bem-Vindo!')&&m.includes('Olá, Bem-Vindo!'),'Saudacao de login ausente');
+ assert.ok(c.includes('id="clientWelcome"')&&c.includes('id="bookingGreeting"'));
+ assert.ok(c.includes('id="bookingCreatedDate" type="date" readonly'),'Data automatica da reserva ausente');
+ assert.ok(cjs.includes("currentProfile?.nomeCliente"),'Revisao de reserva nao inclui cliente');
+ assert.ok(m.includes('id="serviceClientName"')&&m.includes('id="serviceReservationData"'));
+ assert.ok(m.includes('id="servicePickupGps"')&&m.includes('id="serviceDestinationGps"'));
+ assert.ok(mjs.includes("https://wa.me/"),'WhatsApp do Cliente nao esta integrado');
+ assert.ok(mjs.includes('function maps('),'Link GPS nao esta implementado');
+ assert.ok(mjs.includes("'em_andamento'")&&mjs.includes("'concluida'"),'Etapas de atendimento ausentes');
 });
