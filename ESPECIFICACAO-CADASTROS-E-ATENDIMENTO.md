@@ -79,3 +79,23 @@ Fonte: especificação fornecida diretamente pelo responsável, 23 de novembro d
 - Datas oficiais gravadas usando `serverTimestamp()`; a data apresentada no formulário é uma referência visual do dia no aparelho.
 - Não armazenar senhas em documentos Firestore. Credenciais ficam no Firebase Authentication.
 - Não mesclar na `main`, publicar via Pages nem atualizar regras de produção antes de homologação.
+
+## Cálculo de Reserva — Painel do Administrador
+- Dados do Cliente e Dados da Reserva.
+- **KM do percurso** e **Tempo do percurso**, informados pela administração (estimativas manuais nesta versão).
+- **Tarifa Base**, **Valor por km**, **Valor por tempo (por minuto)** e **Valor extra**, sem preços pré-configurados.
+- **Valor total = tarifa base + (KM × valor/km) + (minutos × valor/min) + valor extra**, arredondado a centavos.
+- O Administrador envia orçamento ao Cliente. O Cliente visualiza Dados da Reserva, Valor da Reserva, Motorista Designado (quando houver) e os botões **Aceitar Orçamento** / **Recusar Orçamento**.
+- Após o aceite, o Administrador escolhe o Motorista Designado e usa **Confirmar** para oferecer a corrida; **Recusar** encerra a reserva administrativamente.
+
+## Quatro históricos obrigatórios do Administrador
+1. **Orçamentos aceitos pelo Cliente**: cada resposta inclui reserva (PMR), cliente, número da proposta, valor total e data.
+2. **Orçamentos recusados pelo Cliente**: registrar cada recusa, inclusive quando a mesma reserva for orçada novamente.
+3. **Atendimentos concluídos**: reserva, cliente, motorista, valor e data de conclusão. Uma reserva concluída é terminal.
+4. **Recusas dos Motoristas**: cada recusa inclui reserva (PMR), Cliente, Motorista, número da recusa e data, mesmo quando a corrida for oferecida novamente.
+
+### Persistência e segurança desses históricos
+- Eventos de aceite/recusa são registrados em `historicoOrcamentos` com ID formado pela reserva + número da proposta; recusas do motorista ficam em `historicoRecusasMotoristas` com ID reserva + número da recusa. Esses registros **não podem ser editados nem excluídos pelo aplicativo**.
+- Registrar a resposta do Cliente e o histórico em uma operação atômica; fazer o mesmo para a recusa do Motorista. O histórico de conclusões é extraído das reservas concluídas, com `dataConclusao` marcada pelo servidor.
+- Somente o Administrador lê as coleções de históricos; Cliente e Motorista só executam as transições permitidas em suas reservas.
+- A primeira demonstração offline no tablet **não persiste dados após reinício**. No aplicativo real, a persistência depende de testar e implantar as regras novas do Firestore; a produção permanece inalterada.
