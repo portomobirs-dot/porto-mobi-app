@@ -1,6 +1,6 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,todayLocal,errorText} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-motoristas'),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 const views=['loginView','registerView','reviewView','pendingView','homeView','reservationView','serviceView'];
@@ -70,8 +70,32 @@ $('activeReservations').addEventListener('click',async e=>{
  const status={accept:'confirmada',reject:'pendente'}[b.dataset.action];if(!status)return;
  if(!confirm('Confirmar ação: '+b.textContent+'?'))return;
  const changes={statusReserva:status,dataAtualizacao:serverTimestamp()};
- if(b.dataset.action==='reject'){changes.motoristaUid='';changes.codigoMotorista=''}
- b.disabled=true;try{await updateDoc(doc(db,'reservas',b.dataset.id),changes);message('Corrida atualizada.')}catch(err){message(errorText(err),true)}finally{b.disabled=false}
+ b.disabled=true;
+ try{
+  if(b.dataset.action==='reject'){
+   const r=driverTrips.find(x=>x.id===b.dataset.id);
+   if(!r||r.statusReserva!=='oferecida')throw Error('Oferta não está mais disponível.');
+   const number=Number(r.numeroRecusa||0)+1;
+   const nextStatus=r.numeroOrcamento&&r.valorViagem>=0?'orcamento_aceito':'pendente';
+   const batch=writeBatch(db);
+   batch.update(doc(db,'reservas',r.id),{
+    statusReserva:nextStatus,motoristaUid:'',codigoMotorista:'',nomeMotoristaDesignado:'',
+    numeroRecusa:number,dataAtualizacao:serverTimestamp()
+   });
+   batch.set(doc(db,'historicoRecusasMotoristas',r.id+'-'+number),{
+    reservaId:r.id,codigoReserva:r.codigoReserva,clienteUid:r.clienteUid||'',
+    nomeCliente:r.nomeCliente||'',motoristaUid:user.uid,
+    codigoMotorista:profile?.codigoMotorista||r.codigoMotorista,
+    nomeMotorista:profile?.nomeMotorista||'Motorista',
+    numeroRecusa:number,dataRecusa:serverTimestamp()
+   });
+   await batch.commit();
+   message('Recusa registrada no histórico da administração.');
+  }else{
+   await updateDoc(doc(db,'reservas',b.dataset.id),changes);
+   message('Corrida atualizada.');
+  }
+ }catch(err){message('Não foi possível atualizar a corrida: '+errorText(err),true)}finally{b.disabled=false}
 });
 
 function showDriverPanel(which){
@@ -177,7 +201,7 @@ $('serviceComplete').onclick=async()=>{
  if(!confirm('Concluir atendimento da reserva '+r.codigoReserva+'?'))return;
  const b=$('serviceComplete');b.disabled=true;
  try{
-  await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp()});
+  await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp(),dataConclusao:serverTimestamp()});
   serviceId=null;show('homeView');showDriverPanel('history');
   message('Atendimento concluído. Reserva registrada no histórico.');
  }catch(err){message('Não foi possível concluir atendimento: '+errorText(err),true)}
