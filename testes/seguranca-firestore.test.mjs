@@ -92,7 +92,7 @@ test('Administrador aprova PMM-002 depois do contador legado PMM-001',async()=>{
   }));
 });
 
-test('Cliente cria perfil numero 1 com transacao e nao pode criar numero 21',async()=>{
+test('Cliente 1 e cliente 40 podem cadastrar; cliente 41 nao pode',async()=>{
   await reset();
   const db=as('clienteNovo','clienteNovo@example.invalid');
   await assertSucceeds(runTransaction(db,async t=>{
@@ -103,14 +103,28 @@ test('Cliente cria perfil numero 1 com transacao e nao pode criar numero 21',asy
     t.set(profile,{uid:'clienteNovo',numeroCliente:1,codigoCliente:'PMC-0001',nomeCliente:'Cliente Novo',
       telefoneCliente:'(51) 99999-1234',email:'clienteNovo@example.invalid',dataCadastro:serverTimestamp()});
   }));
+
   await reset();
-  await seed(db2=>setDoc(doc(db2,'contadores','clientes'),{ultimo:20,ultimoUid:'cliente20'}));
-  const max=as('cliente21','cliente21@example.invalid');
-  await assertFails(runTransaction(max,async t=>{
-    const counter=doc(max,'contadores','clientes'),profile=doc(max,'clientes','cliente21');
-    await t.get(counter);await t.get(profile);
-    t.set(counter,{ultimo:21,ultimoUid:'cliente21'});
-    t.set(profile,{uid:'cliente21',numeroCliente:21,codigoCliente:'PMC-0021',nomeCliente:'Cliente Limite',
-      telefoneCliente:'(51) 99999-4321',email:'cliente21@example.invalid',dataCadastro:serverTimestamp()});
+  await seed(db2=>setDoc(doc(db2,'contadores','clientes'),{ultimo:39,ultimoUid:'cliente39'}));
+  const forty=as('cliente40','cliente40@example.invalid');
+  await assertSucceeds(runTransaction(forty,async t=>{
+    const counter=doc(forty,'contadores','clientes'),profile=doc(forty,'clientes','cliente40');
+    const c=await t.get(counter),p=await t.get(profile);
+    assert.equal(c.data().ultimo,39);assert.equal(p.exists(),false);
+    t.set(counter,{ultimo:40,ultimoUid:'cliente40'});
+    t.set(profile,{uid:'cliente40',numeroCliente:40,codigoCliente:'PMC-0040',nomeCliente:'Cliente Quarenta',
+      telefoneCliente:'(51) 99999-4321',email:'cliente40@example.invalid',dataCadastro:serverTimestamp()});
+  }));
+  const saved=await getDoc(doc(forty,'clientes','cliente40'));
+  assert.equal(saved.data().codigoCliente,'PMC-0040');
+
+  const db41=as('cliente41','cliente41@example.invalid');
+  await assertFails(runTransaction(db41,async t=>{
+    const counter=doc(db41,'contadores','clientes'),profile=doc(db41,'clientes','cliente41');
+    const c=await t.get(counter),p=await t.get(profile);
+    assert.equal(c.data().ultimo,40);assert.equal(p.exists(),false);
+    t.set(counter,{ultimo:41,ultimoUid:'cliente41'});
+    t.set(profile,{uid:'cliente41',numeroCliente:41,codigoCliente:'PMC-0041',nomeCliente:'Cliente Quarenta e Um',
+      telefoneCliente:'(51) 99999-4333',email:'cliente41@example.invalid',dataCadastro:serverTimestamp()});
   }));
 });
