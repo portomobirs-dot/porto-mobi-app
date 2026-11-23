@@ -41,7 +41,7 @@ const firestoreStub=[
  'const snap=x=>({exists:()=>Boolean(x),data:()=>x});',
  'const notify=()=>{for(const cb of m.dataListeners)queueMicrotask(cb)};',
  'export const getFirestore=app=>({app});',
- 'export const doc=(db,path,id)=>({path,id});',
+ 'export const doc=(db,path,id)=>db?.path&&path===undefined?{path:db.path,id:\'reservaFicticia01\'}:{path,id};',
  'export const collection=(db,path)=>({path});',
  'export const where=(field,op,value)=>({field,op,value});',
  'export const query=(base,...filters)=>({...base,filters});',
@@ -82,7 +82,8 @@ async function pageFor(file,mode='visitante'){
  const page=await context.newPage(),errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto(HOST+'/'+file,{waitUntil:'domcontentloaded'});
- await page.locator('#loginView').waitFor({state:'visible'});
+ await page.waitForFunction(()=>typeof document.getElementById('showRegister')?.onclick==='function');
+ if(mode!=='motorista-aprovado')await page.locator('#loginView').waitFor({state:'visible'});
  return {context,page,errors};
 }
 const future=()=>{const d=new Date();d.setDate(d.getDate()+30);return d.toISOString().slice(0,10)};
@@ -127,6 +128,7 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#reviewBooking').click();
   await page.locator('#confirmBooking').click();
   await page.locator('#homeView').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
   assert.equal(await page.locator('#lastBookingCode').inputValue(),'PMR-000001');
   await page.locator('#viewActiveReservations').click();
   assert.match(await page.locator('#activeBlock').innerText(),/PMR-000001/);
