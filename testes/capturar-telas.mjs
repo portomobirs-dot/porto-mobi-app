@@ -10,7 +10,7 @@ const OUT='testes/capturas-mobile';
 fs.mkdirSync(OUT,{recursive:true});
 // Servidor local embutido: nao depende de Python e nao acessa a rede publica.
 const ROOT=process.cwd();
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.webmanifest':'application/manifest+json','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.webmanifest':'application/manifest+json','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'};
 const server=createServer((req,res)=>{
   let pathname;
   try{pathname=decodeURIComponent(new URL(req.url,HOST).pathname)}catch{res.writeHead(400).end();return}
