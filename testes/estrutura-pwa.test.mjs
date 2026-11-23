@@ -68,3 +68,26 @@ test('Service worker limita cache ao proprio shell e exclui Firebase remoto',()=
   assert.ok(!js.includes('firestore.googleapis.com'),'Firestore nao deve entrar no cache');
   for(const role of roles){assert.ok(js.includes("'./"+role.page+"'"));}
 });
+
+
+test('Cadastros de Cliente e Motorista exibem os comandos ate confirmar',()=>{
+  const checks=[
+    {page:'cliente.html',script:'js/cliente.js',review:'registerReview',buttons:['showRegister','reviewRegister','backLogin','confirmRegister','editRegister']},
+    {page:'motorista.html',script:'js/motorista.js',review:'reviewView',buttons:['showRegister','reviewRegister','backLogin','confirmRegister','editRegister','checkApproval','logoutPending']}
+  ];
+  for(const item of checks){
+    const html=read(item.page),js=read(item.script);
+    for(const id of item.buttons){
+      assert.match(html,new RegExp('<button[^>]+id=["\\x27]'+id+'["\\x27]'),item.page+': botao '+id+' ausente');
+      assert.ok(js.includes("$('"+id+"').onclick"),item.page+': comando '+id+' sem tratamento');
+    }
+    assert.ok(html.includes('id="'+item.review+'"'),item.page+': painel de revisao ausente');
+    for(const id of ['regPassword','regConfirm']){
+      assert.ok(html.includes('data-toggle="'+id+'"'),item.page+': mostrar senha '+id+' ausente');
+    }
+    assert.ok(html.includes('Etapa 1 de 2')&&html.includes('Etapa 2 de 2'),item.page+': etapas nao explicadas');
+  }
+  const driver=read('motorista.html');
+  assert.ok(driver.includes('Enviar cadastro para aprovação'),'Motorista: confirmacao de envio nao esta clara');
+  assert.ok(driver.includes('Verificar aprovação'),'Motorista: consulta de aprovacao ausente');
+});
