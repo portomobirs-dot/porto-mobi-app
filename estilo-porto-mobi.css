@@ -288,3 +288,129 @@ body button#confirmRegister,body button#confirmBooking{
   border:1px solid #117526!important;
   font-family:Tahoma,Arial,sans-serif!important;
 }
+
+
+/* TELA 01 — LOGIN DO CLIENTE: versão aprovada individualmente.
+   Somente o login é alterado, preservando os demais formulários. */
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header.porto-header{
+  background:#000;
+  border-bottom:2px solid #d7ab35;
+  padding:12px 16px;
+  justify-content:flex-start;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header .brand-lockup{
+  justify-content:flex-start;
+  gap:13px;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header .brand-logo{
+  width:78px;height:78px;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header.porto-header strong{
+  display:block!important;
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:clamp(18px,5vw,25px);
+  line-height:1.1;
+  color:#fff;
+}
+body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) header.porto-header strong small{
+  font-size:10px;
+  color:#f8c84e;
+  margin-top:5px;
+}
+body[data-pm-area="cliente"] #loginView{
+  background:linear-gradient(145deg,#151008,#050505 40%,#020202);
+  border:2px solid #e7bd43;
+  padding:clamp(18px,4vw,30px);
+}
+body[data-pm-area="cliente"] #loginView h1{
+  text-align:left;
+  font-family:Tahoma,Arial,sans-serif;
+  color:#fff;
+  font-weight:800;
+  font-size:clamp(24px,6vw,34px);
+  margin:0 0 12px;
+}
+body[data-pm-area="cliente"] #loginView > p{
+  text-align:left;
+  color:#d9d4cd;
+  font-family:Tahoma,Arial,sans-serif;
+  margin:0 0 18px;
+}
+body[data-pm-area="cliente"] #loginView label,
+body[data-pm-area="cliente"] #loginView input{
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:13pt;
+}
+body[data-pm-area="cliente"] #loginView input{
+  color:#000!important;
+  -webkit-text-fill-color:#000!important;
+  background:#fff!important;
+  background-image:none!important;
+  border:1px solid #bdbdbd!important;
+}
+body[data-pm-area="cliente"] #loginView .login-password-row{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+body[data-pm-area="cliente"] #loginView .login-password-row input{
+  min-width:0;
+  flex:1;
+}
+body[data-pm-area="cliente"] #loginView .login-eye-button{
+  width:52px;
+  min-width:52px;
+  height:46px;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px;
+  margin:0;
+  line-height:1;
+}
+body[data-pm-area="cliente"] #loginView .login-eye-button svg{display:block}
+body[data-pm-area="cliente"] #loginView .login-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:19px;
+}
+body[data-pm-area="cliente"] #loginView .login-actions button{
+  min-width:0;
+  width:100%;
+  margin:0;
+  padding:10px 6px;
+  min-height:56px;
+  line-height:1.2;
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:clamp(12px,3.4vw,16px);
+  font-weight:800;
+  white-space:normal;
+}
+body[data-pm-area="cliente"] #loginView #showRegister{
+  background:linear-gradient(180deg,#5be965 0%,#27b936 44%,#078321 100%)!important;
+  color:#fff!important;
+  border:1px solid #16872f!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.4),0 4px 10px rgba(0,0,0,.35)!important;
+}
+body[data-pm-area="cliente"] #loginView .login-help{
+  text-align:center;
+  margin:22px 0 2px;
+}
+body[data-pm-area="cliente"] #loginView .login-help a{
+  font-family:Tahoma,Arial,sans-serif;
+  font-size:13pt;
+  font-weight:700;
+  color:#fff2d1;
+  text-decoration:underline;
+  text-underline-offset:4px;
+}
+body[data-pm-area="cliente"] #loginView .login-help a:focus-visible{
+  outline:2px solid #ffdd7d;
+  outline-offset:4px;
+}
+@media(max-width:380px){
+ body[data-pm-area="cliente"] #loginView .login-actions{gap:6px}
+ body[data-pm-area="cliente"] #loginView .login-actions button{font-size:12px;padding:9px 4px}
+}
