@@ -129,7 +129,7 @@ test('Fluxos aprovados de Cliente e Motorista possuem comandos visiveis e aciona
   'editBooking','confirmBooking'];
  const driverButtons=['forgotPassword','showRegister','reviewRegister','editRegister','confirmRegister',
   'viewAssignedReservations','viewDriverHistory','openService','serviceOnWay','serviceAvailable','serviceStart',
-  'serviceComplete','serviceBack','logout','logoutPending'];
+  'serviceComplete','serviceBack','reservationBack','reservationLogout','serviceLogout','logout','logoutPending'];
  for(const id of clientButtons){
   assert.ok(c.includes('id="'+id+'"'),'Cliente: botao '+id+' ausente');
   assert.ok(cjs.includes("$('"+id+"').onclick"),'Cliente: botao '+id+' sem acao');
@@ -142,6 +142,11 @@ test('Fluxos aprovados de Cliente e Motorista possuem comandos visiveis e aciona
  assert.ok(c.includes('id="clientWelcome"')&&c.includes('id="bookingGreeting"'));
  assert.ok(c.includes('id="bookingCreatedDate" type="date" readonly'),'Data automatica da reserva ausente');
  assert.ok(cjs.includes("currentProfile?.nomeCliente"),'Revisao de reserva nao inclui cliente');
+ assert.ok(m.includes('id="reservationView"')&&m.includes('id="serviceView"'),'Telas da reserva e do atendimento nao estao separadas');
+ assert.ok(m.includes('id="reservationDriverGreeting"')&&m.includes('id="reservationClientName"')&&m.includes('id="reservationDetails"'));
+ assert.ok(mjs.includes("$('reservationDriverGreeting').textContent='Olá, '"),'Saudacao ao motorista nao implementada');
+ assert.ok(mjs.includes("renderReservation();show('reservationView')"),'Tela da reserva nao abre antes dos comandos');
+ assert.ok(mjs.includes("renderService();show('serviceView')"),'Iniciar Atendimento nao abre a proxima tela');
  assert.ok(m.includes('id="serviceClientName"')&&m.includes('id="serviceReservationData"'));
  assert.ok(m.includes('id="servicePickupGps"')&&m.includes('id="serviceDestinationGps"'));
  assert.ok(mjs.includes("https://wa.me/"),'WhatsApp do Cliente nao esta integrado');
