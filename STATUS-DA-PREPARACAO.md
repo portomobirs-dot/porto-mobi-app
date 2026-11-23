@@ -22,3 +22,10 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 - `firestore.rules` contém suporte ao cadastro antigo de motorista `aprovado: true` e à numeração `PMM-001`.
 - O plano de casos obrigatórios está em `testes/PLANO-DE-TESTES.md`.
 - Em `main` permanece somente o README; **não foi efetuada publicação do sistema corrigido**.
+
+## Testes automatizados adicionados
+- `firebase.json` aponta somente para o arquivo de regras da ramificação de testes.
+- `package.json` tem comando `npm run test:security` usando o projeto **fictício** `demo-porto-mobi-testes`.
+- `testes/seguranca-firestore.test.mjs` simula cliente, administrador, motorista aprovado legado e motorista pendente.
+- `.github/workflows/testar-seguranca.yml` usa o GitHub Actions (Linux público) para executar Firebase Emulator no commit dessa ramificação.
+- **Importante:** criar os testes não comprova sucesso: verificar no GitHub Actions se compilaram e passaram antes de alterar Firestore ou mesclar na main.
