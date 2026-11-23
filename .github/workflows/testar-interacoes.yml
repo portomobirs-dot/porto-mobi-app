@@ -1,0 +1,30 @@
+name: Testes funcionais de botoes - Porto Mobi
+on:
+  push:
+    branches: [preparacao-correcoes-02]
+    paths:
+      - 'testes/interacoes-ui.mjs'
+      - '.github/workflows/testar-interacoes.yml'
+      - 'cliente.html'
+      - 'motorista.html'
+      - 'js/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  interacoes-mobile:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar bibliotecas para testes
+        run: npm install --no-audit --no-fund
+      - name: Conferir sintaxe JavaScript
+        run: node --check testes/interacoes-ui.mjs
+      - name: Testar botoes reais com Firebase isolado e dados ficticios
+        run: node --test testes/interacoes-ui.mjs
