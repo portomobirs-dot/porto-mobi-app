@@ -67,6 +67,12 @@ try{
  await capture(cliente,'01-cliente-login');
  await expose(cliente,'registerView',['loginView','registerReview','homeView','bookingView','bookingReview']);
  await capture(cliente,'02-cliente-cadastro');
+ await expose(cliente,'registerReview',['loginView','registerView','homeView','bookingView','bookingReview']);
+ await cliente.evaluate(()=>{
+  document.querySelector('#registerSummary').textContent='Nome: Cliente Exemplo\nTelefone: (51) 99999-1111\nE-mail: cliente@example.invalid';
+  document.querySelector('#registerSummary').style.whiteSpace='pre-line';
+ });
+ await capture(cliente,'10-cliente-confirmacao-cadastro');
  await expose(cliente,'bookingView',['loginView','registerView','registerReview','homeView','bookingReview']);
  await cliente.evaluate(()=>{
   for(const [id,value] of Object.entries({pickup:'Avenida Exemplo, 100',destination:'Aeroporto — embarque',travelDate:'2026-12-10',travelTime:'14:30',notes:'Bagagem de mao'})){
@@ -74,6 +80,11 @@ try{
   }
  });
  await capture(cliente,'03-cliente-reserva');
+ await expose(cliente,'bookingReview',['loginView','registerView','registerReview','homeView','bookingView']);
+ await cliente.evaluate(()=>{
+  document.querySelector('#bookingSummary').textContent='Embarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nObservações: Bagagem de mão';
+ });
+ await capture(cliente,'13-cliente-confirmacao-reserva');
  await expose(cliente,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview']);
  await cliente.evaluate(()=>{
   document.querySelector('#profileInfo').textContent='Cliente Exemplo • PMC-0001';
@@ -87,6 +98,16 @@ try{
  await capture(motorista,'05-motorista-login');
  await expose(motorista,'registerView',['loginView','reviewView','pendingView','homeView']);
  await capture(motorista,'06-motorista-cadastro');
+ await expose(motorista,'reviewView',['loginView','registerView','pendingView','homeView']);
+ await motorista.evaluate(()=>{
+  document.querySelector('#registerSummary').textContent='Nome: Motorista Exemplo\nTelefone: (51) 99999-2222\nE-mail: motorista@example.invalid\nVeículo: Toyota Corolla\nPlaca: ABC-1D23\nCor: Preto';
+ });
+ await capture(motorista,'11-motorista-confirmacao-cadastro');
+ await expose(motorista,'pendingView',['loginView','registerView','reviewView','homeView']);
+ await motorista.evaluate(()=>{
+  document.querySelector('#pendingInfo').textContent='Motorista Exemplo • Status: pendente';
+ });
+ await capture(motorista,'12-motorista-aguardando-aprovacao');
  await expose(motorista,'homeView',['loginView','registerView','reviewView','pendingView']);
  await motorista.evaluate(()=>{
   document.querySelector('#profileInfo').textContent='Motorista Exemplo • PMM-001 • Veiculo demonstrativo';
