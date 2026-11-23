@@ -243,3 +243,48 @@ button#confirmBooking{
 }
 button#confirmRegister:focus-visible,
 button#confirmBooking:focus-visible{outline:3px solid #c5ffc5;outline-offset:3px}
+
+
+/* CONTRASTE DO ADMINISTRADOR: FUNDO BRANCO, TAHOMA 13PT, COR PRETA.
+   Os outros aplicativos mantem sua base preta e dourada. */
+body[data-pm-area="admin"] main :is(section,.item,.history-panel,.quote,.codebox,.stats div){
+  background:#fff!important;
+  background-image:none!important;
+  color:#000!important;
+  border:1px solid #bbb!important;
+  box-shadow:none!important;
+}
+body[data-pm-area="admin"] main :is(section,.item,.history-panel,.quote,.codebox,.stats div) :is(h1,h2,h3,h4,p,label,strong,b,span,small,output,.muted,.quote-note,.quote-total){
+  font-family:Tahoma,Arial,sans-serif!important;
+  font-size:13pt!important;
+  color:#000!important;
+  text-shadow:none!important;
+}
+body[data-pm-area="admin"] main :is(section,.item,.history-panel,.quote,.codebox,.stats div){
+  font-family:Tahoma,Arial,sans-serif!important;
+  font-size:13pt!important;
+}
+body[data-pm-area="admin"] main :is(input,textarea,select,input[readonly]){
+  background:#fff!important;
+  background-image:none!important;
+  color:#000!important;
+  font-family:Tahoma,Arial,sans-serif!important;
+  font-size:13pt!important;
+  -webkit-text-fill-color:#000!important;
+  border:1px solid #aaa!important;
+}
+/* Acoes: apenas Cadastrar e Solicitar verdes; as demais amarelas. */
+body button:not(#confirmRegister):not(#confirmBooking),
+body .nav,body .nav.secondary{
+  background:linear-gradient(180deg,#ffe78c,#f6ce52 44%,#d79f2c)!important;
+  color:#111!important;
+  border:1px solid #bd8c29!important;
+  text-shadow:none!important;
+  font-family:Tahoma,Arial,sans-serif!important;
+}
+body button#confirmRegister,body button#confirmBooking{
+  background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;
+  color:#081e0b!important;
+  border:1px solid #117526!important;
+  font-family:Tahoma,Arial,sans-serif!important;
+}
