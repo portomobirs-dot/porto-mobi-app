@@ -3,7 +3,7 @@ import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,sig
 import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,todayLocal,errorText} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-motoristas'),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','reviewView','pendingView','homeView','serviceView'];
+const views=['loginView','registerView','reviewView','pendingView','homeView','reservationView','serviceView'];
 const message=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -34,7 +34,7 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=false}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
-$('logout').onclick=logout;$('logoutPending').onclick=logout;$('checkApproval').onclick=loadProfile;
+$('logout').onclick=logout;$('logoutPending').onclick=logout;$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
 async function loadProfile(){
  if(!user)return;stop();
  try{
@@ -54,18 +54,19 @@ function renderTrips(rows){
  const active=rows.filter(r=>!done.has(r.statusReserva)),hist=rows.filter(r=>done.has(r.statusReserva));
  const html=(r,history=false)=>{
   const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">Aceitar</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">Recusar</button></div>`:
-   r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Iniciar Atendimento</button></div>`:
-   r.statusReserva==='em_andamento'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Retomar Atendimento</button></div>`:'';
+   r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento da Reserva</button></div>`:
+   r.statusReserva==='em_andamento'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento em Andamento</button></div>`:'';
   return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
  };
  $('activeReservations').innerHTML=active.length?active.map(r=>html(r)).join(''):'<p>Nenhuma corrida atribuída.</p>';
  $('historyReservations').innerHTML=hist.length?hist.map(r=>html(r,true)).join(''):'<p>Histórico vazio.</p>';
+ if(serviceId && !$('reservationView').classList.contains('hidden'))renderReservation();
  if(serviceId && !$('serviceView').classList.contains('hidden'))renderService();
 }
 function maps(place){return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(place||'')}
 $('activeReservations').addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b||!user)return;
- if(b.dataset.action==='open'){openServiceById(b.dataset.id);return}
+ if(b.dataset.action==='open'){openReservationById(b.dataset.id);return}
  const status={accept:'confirmada',reject:'pendente'}[b.dataset.action];if(!status)return;
  if(!confirm('Confirmar ação: '+b.textContent+'?'))return;
  const changes={statusReserva:status,dataAtualizacao:serverTimestamp()};
@@ -79,20 +80,38 @@ function showDriverPanel(which){
 }
 $('viewAssignedReservations').onclick=()=>showDriverPanel('active');
 $('viewDriverHistory').onclick=()=>showDriverPanel('history');
+$('reservationBack').onclick=()=>{show('homeView');showDriverPanel('active')};
 $('openService').onclick=()=>{
- const eligible=driverTrips.filter(r=>['confirmada','em_andamento'].includes(r.statusReserva));
- if(eligible.length===0){showDriverPanel('active');return message('Nenhuma reserva aceita para iniciar. Aceite a oferta primeiro.',true)}
- if(eligible.length>1){showDriverPanel('active');return message('Escolha a reserva desejada e toque em Iniciar Atendimento nela.',true)}
- openServiceById(eligible[0].id);
+ const r=selectedService();
+ if(!r||!['confirmada','em_andamento'].includes(r.statusReserva))
+  return message('Aceite a reserva antes de iniciar atendimento.',true);
+ renderService();show('serviceView');
 };
-$('serviceBack').onclick=()=>{show('homeView');showDriverPanel('active')};
+$('serviceBack').onclick=()=>{renderReservation();show('reservationView')};
 
-function openServiceById(id){
+function openReservationById(id){
  const reservation=driverTrips.find(r=>r.id===id);
  if(!reservation||!['confirmada','em_andamento'].includes(reservation.statusReserva)){
   showDriverPanel('active');return message('Esta reserva ainda não está pronta para atendimento.',true);
  }
- serviceId=id;renderService();show('serviceView');
+ serviceId=id;renderReservation();show('reservationView');
+}
+function renderReservation(){
+ const r=driverTrips.find(row=>row.id===serviceId);
+ if(!r){serviceId=null;show('homeView');return}
+ $('reservationDriverGreeting').textContent='Olá, '+(profile?.nomeMotorista||'Motorista')+'!';
+ $('reservationClientName').textContent='Nome do Cliente: '+(r.nomeCliente||'Não informado');
+ $('reservationDetails').textContent=
+  'Dados da Reserva\n'+
+  'Código: '+(r.codigoReserva||'')+'\n'+
+  'Situação: '+(r.statusReserva||'')+'\n'+
+  'Local do embarque: '+(r.localEmbarque||'')+'\n'+
+  'Local do destino: '+(r.localDestino||'')+'\n'+
+  'Data e horário: '+stamp(r.dataViagem)+'\n'+
+  'Telefone: '+(r.telefoneCliente||'')+'\n'+
+  'Passageiros: '+(r.passageiros||1)+'\n'+
+  'Observações: '+(r.observacoes||'Nenhuma');
+ $('reservationDetails').style.whiteSpace='pre-line';
 }
 function renderService(){
  const r=driverTrips.find(row=>row.id===serviceId);
