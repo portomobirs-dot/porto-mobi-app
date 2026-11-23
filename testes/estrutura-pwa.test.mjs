@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {padCode} from '../js/common.js';
 
 const roles=[
   {name:'Cliente',page:'cliente.html',script:'js/cliente.js',manifest:'manifest-cliente.webmanifest',start:'./cliente.html'},
@@ -90,4 +91,32 @@ test('Cadastros de Cliente e Motorista exibem os comandos ate confirmar',()=>{
   const driver=read('motorista.html');
   assert.ok(driver.includes('Enviar cadastro para aprovação'),'Motorista: confirmacao de envio nao esta clara');
   assert.ok(driver.includes('Verificar aprovação'),'Motorista: consulta de aprovacao ausente');
+});
+
+
+test('Codigos e datas automaticas seguem os formatos PMC-0000, PMR-000000 e PMM-000',()=>{
+  assert.equal(padCode('PMC',1),'PMC-0001');
+  assert.equal(padCode('PMC',40),'PMC-0040');
+  assert.equal(padCode('PMR',1),'PMR-000001');
+  assert.equal(padCode('PMR',10000),'PMR-010000');
+  assert.equal(padCode('PMM',1),'PMM-001');
+  assert.equal(padCode('PMM',3),'PMM-003');
+  const client=read('cliente.html'),driver=read('motorista.html'),clientJS=read('js/cliente.js'),driverJS=read('js/motorista.js');
+  assert.ok(client.includes('value="PMC-0000"'));
+  assert.ok(client.includes('value="PMR-000000"'));
+  assert.ok(driver.includes('value="PMM-000"'));
+  for(const [name,html,js] of [['Cliente',client,clientJS],['Motorista',driver,driverJS]]){
+    assert.ok(html.includes('id="regDate" readonly type="date"'),name+' nao mostra data automatica');
+    assert.ok(js.includes("$('regDate').value=todayLocal()"),name+' nao atualiza data');
+    assert.ok(html.includes('id="forgotPassword"'),name+' sem recuperacao de senha');
+    assert.ok(js.includes("$('forgotPassword').onclick"),name+' recuperar senha sem comando');
+  }
+  for(const id of ['copyClientCode','copyBookingCode','increasePassengers','decreasePassengers']){
+    assert.ok(client.includes('id="'+id+'"'),id+' ausente');
+    assert.ok(clientJS.includes("$('"+id+"').onclick"),id+' sem acao');
+  }
+  assert.ok(driverJS.includes("$('copyDriverCode').onclick"),'motorista nao pode copiar codigo');
+  const rules=read('firestore.rules');
+  assert.ok(rules.includes("prefix == 'PMR' ?"),'regras nao aceitam seis digitos PMR');
+  assert.ok(rules.includes("numeroReserva <= 999999"),'limite numerico PMR incorreto');
 });
