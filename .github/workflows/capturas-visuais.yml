@@ -45,5 +45,18 @@ jobs:
           git add testes/capturas-mobile/*.png
           if ! git diff --cached --quiet; then
             git commit -m "Adicionar nove capturas de interface com dados ficticios"
-            git push origin HEAD:preparacao-correcoes-02
+            # A ramificacao pode receber atualizacoes entre checkout e publicacao.
+            # Atualizar historico antes de enviar, sem sobrescrever outros commits.
+            for tentativa in 1 2 3; do
+              git fetch origin preparacao-correcoes-02
+              git rebase FETCH_HEAD
+              if git push origin HEAD:preparacao-correcoes-02; then
+                echo "Capturas publicadas na ramificacao de preparacao."
+                break
+              fi
+              if [ "$tentativa" -eq 3 ]; then
+                echo "Falha ao publicar capturas apos 3 tentativas." >&2
+                exit 1
+              fi
+            done
           fi
