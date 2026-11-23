@@ -136,8 +136,10 @@ $('activeReservations').addEventListener('click',async event=>{
 });
 
 function reservationHtml(r){
- const dt=r.dataViagem?.toDate?.();const money=Number(r.valorViagem)>0?Number(r.valorViagem).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'A definir';
- return `<div class="item"><strong>${esc(r.codigoReserva)}</strong> — ${esc(r.statusReserva)}<p class="small">${esc(r.localEmbarque)} → ${esc(r.localDestino)}<br>${dt?dt.toLocaleString('pt-BR'):'Data não informada'}<br>Passageiros: ${esc(r.passageiros||1)}<br>Valor: ${money}</p></div>`;
+ const dt=r.dataViagem?.toDate?.();
+ const money=Number.isInteger(r.numeroOrcamento)&&r.numeroOrcamento>0&&Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A definir';
+ const response=r.statusReserva==='orcamento_pendente'?'<div class="actions"><button data-budget-response="aceito" data-id="'+esc(r.id)+'">Aceitar Orçamento</button><button class="secondary" data-budget-response="recusado" data-id="'+esc(r.id)+'">Recusar Orçamento</button></div>':'';
+ return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(r.localDestino)+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+'<br><b>Valor da Reserva:</b> '+money+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+response+'</div>';
 }
 async function loadHome(){
  if(!currentUser||loadingHome)return;loadingHome=true;
