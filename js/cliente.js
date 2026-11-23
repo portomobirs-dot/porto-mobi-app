@@ -1,7 +1,7 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,runTransaction,collection,query,where,getDocs,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText} from './common.js';
+import {getFirestore,doc,getDoc,runTransaction,writeBatch,collection,query,where,getDocs,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,moneyBRL} from './common.js';
 
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
@@ -25,7 +25,7 @@ $('forgotPassword').onclick=async()=>{
  try{await sendPasswordResetEmail(auth,input.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}
  catch{message('Não foi possível solicitar a recuperação. Verifique o e-mail ou tente novamente.',true)}
 };
-let currentProfile=null,currentUser=null,registering=false,loadingHome=false;
+let currentProfile=null,currentUser=null,registering=false,loadingHome=false,clientReservations=[];
 
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
  const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'Mostrar':'Ocultar';
@@ -125,7 +125,8 @@ async function loadHome(){
   $('clientCode').value=currentProfile.codigoCliente||'Aguardando cadastro';
   show('homeView');$('activeReservations').textContent='Carregando...';$('reservationHistory').textContent='Carregando...';
   const rs=await getDocs(query(collection(db,'reservas'),where('clienteUid','==',currentUser.uid)));
-  const data=rs.docs.map(d=>d.data()).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));
+  const data=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));
+  clientReservations=data;
   $('lastBookingCode').value=data[0]?.codigoReserva||'Nenhuma reserva';
   $('copyBookingCode').disabled=!data[0]?.codigoReserva;
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
