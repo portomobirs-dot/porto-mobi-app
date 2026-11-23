@@ -13,7 +13,7 @@
 1. Conta sem autenticação não consulta reservas nem motoristas.
 2. Cliente A cria perfil e reserva; cliente B não consegue ler reserva de A.
 3. Cliente comum não modifica valor, status, motorista ou autorização administrativa.
-4. Cliente 21 tem criação de perfil negada sem afetar os 20 anteriores.
+4. Cliente 40 consegue criar perfil PMC-0040; o 41º recebe acesso negado sem alterar os 40 anteriores.
 5. Motorista pendente não consegue receber/aceitar corrida e não pode se autoaprovar.
 6. Administrador legítimo consegue aprovar motorista 2 e 3, com PMM-002 e PMM-003.
 7. Aprovação de quarto motorista falha sem alterar nenhum perfil.
