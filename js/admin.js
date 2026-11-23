@@ -56,6 +56,28 @@ function render(){
   drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><button data-approve="${esc(d.id)}">Autorizar motorista</button></article>`).join(''):
   '<p>Nenhum motorista aguardando autorização.</p>';
 }
+function readQuoteInputs(card){
+ const data={};
+ for(const field of moneyFields){
+  const input=card.querySelector('input[data-price="'+field.name+'"]');
+  if(!input||input.value.trim()===''||!input.checkValidity())throw Error('Preencha corretamente: '+field.label);
+  data[field.name]=Number(input.value);
+ }
+ data.tempoPercursoMin=Number(data.tempoPercursoMin);
+ const total=calculateFare(data);
+ return {...data,valorViagem:total};
+}
+$('reservations').addEventListener('input',e=>{
+ const card=e.target.closest('.quote[data-quote-id]');
+ if(!card)return;
+ const id=card.dataset.quoteId,draft={};
+ for(const field of moneyFields)draft[field.name]=card.querySelector('[data-price="'+field.name+'"]').value;
+ quoteDrafts.set(id,draft);
+ try{
+  const quote=readQuoteInputs(card);
+  card.querySelector('[data-total]').textContent='Valor total: '+moneyBRL(quote.valorViagem);
+ }catch{card.querySelector('[data-total]').textContent='Valor total: preencher os campos corretamente'}
+});
 $('reservations').addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b)return;
  const r=rows.find(x=>x.id===b.dataset.id);if(!r)return;
@@ -66,18 +88,32 @@ $('reservations').addEventListener('click',async e=>{
   const texto=`Porto Mobi - Nova corrida ${r.codigoReserva}\nEmbarque: ${r.localEmbarque}\nDestino: ${r.localDestino}\nData: ${stamp(r.dataViagem)}\nEntre no aplicativo do motorista para aceitar ou recusar.`;
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(texto),'_blank','noopener,noreferrer');return;
  }
- if(r.statusReserva!=='pendente')return msg('Esta reserva não está pendente.',true);
+ if(b.dataset.action==='quote'){
+  if(!['pendente','orcamento_recusado'].includes(r.statusReserva))return msg('Esta reserva não pode receber novo orçamento.',true);
+  const card=b.closest('.quote');let data;
+  try{data=readQuoteInputs(card)}catch(err){return msg(err.message,true)}
+  const number=Number(r.numeroOrcamento||0)+1;
+  if(!confirm('Enviar orçamento de '+moneyBRL(data.valorViagem)+' para o Cliente da reserva '+r.codigoReserva+'?'))return;
+  b.disabled=true;
+  try{
+   await updateDoc(doc(db,'reservas',r.id),{...data,numeroOrcamento:number,statusReserva:'orcamento_pendente',dataAtualizacao:serverTimestamp()});
+   quoteDrafts.delete(r.id);msg('Orçamento '+moneyBRL(data.valorViagem)+' enviado para avaliação do Cliente.');
+  }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
+  return;
+ }
+ if(!['pendente','orcamento_aceito','orcamento_recusado'].includes(r.statusReserva))return msg('Esta reserva não pode ser alterada.',true);
  if(b.dataset.action==='refuse'){
   if(!confirm('Recusar a reserva '+r.codigoReserva+'?'))return;
   b.disabled=true;try{await updateDoc(doc(db,'reservas',r.id),{statusReserva:'recusada',motoristaUid:'',codigoMotorista:'',dataAtualizacao:serverTimestamp()});msg('Reserva recusada.')}catch(err){msg(errorText(err),true)}finally{b.disabled=false}return;
  }
  if(b.dataset.action==='assign'){
   const selected=$('reservations').querySelector(`select[data-driver-for="${CSS.escape(r.id)}"]`)?.value;
+  if(r.statusReserva!=='orcamento_aceito')return msg('Aguarde o Cliente aceitar o orçamento.',true);
   const d=drivers.find(x=>x.id===selected&&(x.situacao==='ativo'||x.aprovado===true));
   if(!d)return msg('Selecione um motorista autorizado.',true);
   if(!confirm('Oferecer '+r.codigoReserva+' para '+d.nomeMotorista+'?'))return;
   b.disabled=true;try{
-   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'oferecida',motoristaUid:d.id,codigoMotorista:d.codigoMotorista,dataAtualizacao:serverTimestamp()});
+   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'oferecida',motoristaUid:d.id,codigoMotorista:d.codigoMotorista,nomeMotoristaDesignado:d.nomeMotorista,dataAtualizacao:serverTimestamp()});
    msg('Corrida oferecida. Use o botão WhatsApp para avisar o motorista.');
   }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
  }
@@ -112,5 +148,7 @@ onAuthStateChanged(auth,async user=>{
   $('who').textContent=user.email||'';$('login').classList.add('hidden');$('dashboard').classList.remove('hidden');msg('');
   unsubs.push(onSnapshot(collection(db,'reservas'),snap=>{rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));render()},err=>msg('Erro ao carregar reservas: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'motoristas'),snap=>{drivers=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao carregar motoristas: '+errorText(err),true)));
+  unsubs.push(onSnapshot(collection(db,'historicoOrcamentos'),snap=>{quoteHistory=snap.docs.map(d=>({id:d.id,...d.data()}));renderHistory()},err=>msg('Erro ao consultar histórico de orçamentos: '+errorText(err),true)));
+  unsubs.push(onSnapshot(collection(db,'historicoRecusasMotoristas'),snap=>{refusalHistory=snap.docs.map(d=>({id:d.id,...d.data()}));renderHistory()},err=>msg('Erro ao consultar recusas dos motoristas: '+errorText(err),true)));
  }catch(err){msg('Erro ao validar autorização: '+errorText(err),true)}
 });
