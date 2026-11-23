@@ -51,6 +51,7 @@ const firestoreStub=[
  'export async function getDocs(q){let a=Object.entries(records[q.path]||{}).map(([id,value])=>({id,data:()=>value}));for(const f of q.filters||[])if(f.op===\'==\')a=a.filter(x=>x.data()[f.field]===f.value);return {docs:a}}',
  'export async function setDoc(ref,data){(records[ref.path]??={})[ref.id]=data;notify()}',
  'export async function updateDoc(ref,data){if(!records[ref.path]?.[ref.id])throw Error(\'Not found\');Object.assign(records[ref.path][ref.id],data);notify()}',
+ 'export function writeBatch(db){const ops=[];return {update(ref,data){ops.push(()=>Object.assign(records[ref.path][ref.id],data))},set(ref,data){ops.push(()=>{(records[ref.path]??={})[ref.id]=data})},async commit(){for(const op of ops)op();notify()}}}',
  'export function onSnapshot(q,cb,err){const trigger=async()=>{try{cb(await getDocs(q))}catch(e){err?.(e)}};m.dataListeners.push(trigger);queueMicrotask(trigger);return ()=>{m.dataListeners=m.dataListeners.filter(x=>x!==trigger)}}',
  'export async function runTransaction(db,cb){const ops=[];const t={get:getDoc,set(ref,data){ops.push(()=>{(records[ref.path]??={})[ref.id]=data})},update(ref,data){ops.push(()=>Object.assign(records[ref.path][ref.id],data))}};const x=await cb(t);for(const op of ops)op();notify();return x}'
 ].join('\n');
@@ -213,24 +214,51 @@ test('Motorista aprovado: reserva, WhatsApp, GPS, inicio e conclusao', {timeout:
 });
 
 
-test('Administrador: autoriza motorista, oferece reserva e prepara WhatsApp', {timeout:30000},async()=>{
+test('Administrador: orcamento calculado, historicos, autorizacao e designacao', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('admin.html','administrador');
  try{
   await page.locator('#dashboard').waitFor({state:'visible'});
-  await page.locator('#reservations [data-action="assign"]').waitFor({state:'visible'});
-  assert.match(await page.locator('#reservations').innerText(),/PMR-000001/);
   await page.locator('#driverApplicants [data-approve="motorista02"]').click();
   await page.waitForFunction(()=>window.__pm.records.motoristas.motorista02.codigoMotorista==='PMM-002');
-  const approved=await page.evaluate(()=>window.__pm.records.motoristas.motorista02.codigoMotorista);
-  assert.equal(approved,'PMM-002');
+  await page.locator('.quote[data-quote-id="reserva001"]').waitFor({state:'visible'});
+  for(const [key,value] of Object.entries({
+   kmPercurso:'12.5',tempoPercursoMin:'35',tarifaBase:'10',
+   valorPorKm:'3',valorPorTempo:'0.5',valorExtra:'5'
+  }))await page.locator('.quote[data-quote-id="reserva001"] [data-price="'+key+'"]').fill(value);
+  assert.match(await page.locator('.quote[data-quote-id="reserva001"] [data-total]').innerText(),/70,00/);
+  await page.locator('[data-action="quote"][data-id="reserva001"]').click();
+  await page.waitForFunction(()=>window.__pm.records.reservas.reserva001.statusReserva==='orcamento_pendente');
+  assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.valorViagem),70);
+  await page.evaluate(async()=>{
+   const m=window.__pm,r=m.records.reservas.reserva001;
+   r.statusReserva='orcamento_aceito';
+   m.records.historicoOrcamentos={
+    'reserva001-1':{reservaId:'reserva001',resposta:'aceito',nomeCliente:'Cliente Exemplo',codigoReserva:'PMR-000001',numeroOrcamento:1,valorTotal:70,dataResposta:{seconds:1000,toDate:()=>new Date('2026-11-23')}},
+    'reserva002-1':{reservaId:'reserva002',resposta:'recusado',nomeCliente:'Cliente Exemplo 2',codigoReserva:'PMR-000002',numeroOrcamento:1,valorTotal:90,dataResposta:{seconds:2000,toDate:()=>new Date('2026-11-23')}}
+   };
+   await Promise.all(m.dataListeners.map(fn=>fn()));
+  });
+  await page.locator('#reservations [data-action="assign"]').waitFor({state:'visible'});
+  assert.match(await page.locator('#acceptedQuotes').innerText(),/PMR-000001/);
+  assert.match(await page.locator('#refusedQuotes').innerText(),/PMR-000002/);
   await page.locator('#reservations select[data-driver-for="reserva001"]').selectOption('motorista01');
   await page.locator('#reservations [data-action="assign"]').click();
   await page.locator('#reservations [data-action="whatsapp"]').waitFor({state:'visible'});
-  const status=await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva);
-  assert.equal(status,'oferecida');
+  assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva),'oferecida');
+  assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.nomeMotoristaDesignado),'Motorista Exemplo');
   await page.locator('#reservations [data-action="whatsapp"]').click();
   const opened=await page.evaluate(()=>window.__pm.opened);
-  assert.ok(opened.some(url=>url.includes('wa.me/')&&url.includes('PMR-000001')),'Aviso ao motorista pelo WhatsApp nao preparado');
+  assert.ok(opened.some(x=>x.includes('wa.me/')&&x.includes('PMR-000001')));
+  await page.evaluate(async()=>{
+   const m=window.__pm,r=m.records.reservas.reserva001;
+   r.statusReserva='concluida';r.dataConclusao={seconds:3000,toDate:()=>new Date('2026-11-23')};
+   m.records.historicoRecusasMotoristas={
+    'reserva003-1':{codigoReserva:'PMR-000003',nomeMotorista:'Motorista Teste',nomeCliente:'Cliente 3',dataRecusa:{seconds:3000,toDate:()=>new Date('2026-11-23')}}
+   };
+   await Promise.all(m.dataListeners.map(fn=>fn()));
+  });
+  await page.waitForFunction(()=>document.querySelector('#completedServices').textContent.includes('PMR-000001'));
+  assert.match(await page.locator('#driverRefusals').innerText(),/PMR-000003/);
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
