@@ -3,11 +3,11 @@ import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,sig
 import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,todayLocal,errorText} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-motoristas'),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','reviewView','pendingView','homeView'];
+const views=['loginView','registerView','reviewView','pendingView','homeView','serviceView'];
 const message=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
-let user=null,profile=null,registering=false,unsub=null;
+let user=null,profile=null,registering=false,unsub=null,driverTrips=[],serviceId=null;
 $('regDate').value=todayLocal();
 $('forgotPassword').onclick=async()=>{const email=$('loginEmail');if(!email.value||!email.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);try{await sendPasswordResetEmail(auth,email.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch{message('Não foi possível solicitar a recuperação da senha.',true)}};
 $('copyDriverCode').onclick=async()=>{const codigo=$('driverCode').value;if(!/^PMM-\d{3}$/.test(codigo)||codigo==='PMM-000')return message('O código será disponibilizado após a aprovação.',true);try{await navigator.clipboard.writeText(codigo);message('Código '+codigo+' copiado.')}catch{$('driverCode').focus();$('driverCode').select();message('Copie o código selecionado: '+codigo)}};
@@ -33,7 +33,7 @@ $('confirmRegister').onclick=async()=>{
   await loadProfile();message('Cadastro enviado. Aguarde autorização do administrador.');
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=false}
 };
-const logout=async()=>{stop();await signOut(auth);show('loginView')};
+const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
 $('logout').onclick=logout;$('logoutPending').onclick=logout;$('checkApproval').onclick=loadProfile;
 async function loadProfile(){
  if(!user)return;stop();
@@ -50,23 +50,116 @@ async function loadProfile(){
 const done=new Set(['concluida','recusada','cancelada']);
 function renderTrips(rows){
  rows.sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));
+ driverTrips=rows;
  const active=rows.filter(r=>!done.has(r.statusReserva)),hist=rows.filter(r=>done.has(r.statusReserva));
  const html=(r,history=false)=>{
   const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">Aceitar</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">Recusar</button></div>`:
-   r.statusReserva==='confirmada'?`<div class="actions"><a class="nav secondary" target="_blank" rel="noopener noreferrer" href="${maps(r.localEmbarque)}">Navegar ao embarque (GPS)</a><button data-action="start" data-id="${esc(r.id)}">Iniciar atendimento</button></div>`:
-   r.statusReserva==='em_andamento'?`<div class="actions"><a class="nav secondary" target="_blank" rel="noopener noreferrer" href="${maps(r.localDestino)}">Navegar ao destino (GPS)</a><button data-action="complete" data-id="${esc(r.id)}">Concluir corrida</button></div>`:'';
+   r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Iniciar Atendimento</button></div>`:
+   r.statusReserva==='em_andamento'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Retomar Atendimento</button></div>`:'';
   return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
  };
  $('activeReservations').innerHTML=active.length?active.map(r=>html(r)).join(''):'<p>Nenhuma corrida atribuída.</p>';
  $('historyReservations').innerHTML=hist.length?hist.map(r=>html(r,true)).join(''):'<p>Histórico vazio.</p>';
+ if(serviceId && !$('serviceView').classList.contains('hidden'))renderService();
 }
 function maps(place){return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(place||'')}
 $('activeReservations').addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b||!user)return;
- const status={accept:'confirmada',reject:'pendente',start:'em_andamento',complete:'concluida'}[b.dataset.action];if(!status)return;
+ if(b.dataset.action==='open'){openServiceById(b.dataset.id);return}
+ const status={accept:'confirmada',reject:'pendente'}[b.dataset.action];if(!status)return;
  if(!confirm('Confirmar ação: '+b.textContent+'?'))return;
  const changes={statusReserva:status,dataAtualizacao:serverTimestamp()};
  if(b.dataset.action==='reject'){changes.motoristaUid='';changes.codigoMotorista=''}
  b.disabled=true;try{await updateDoc(doc(db,'reservas',b.dataset.id),changes);message('Corrida atualizada.')}catch(err){message(errorText(err),true)}finally{b.disabled=false}
 });
+
+function showDriverPanel(which){
+ $('driverActiveBlock').classList.toggle('hidden',which!=='active');
+ $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
+}
+$('viewAssignedReservations').onclick=()=>showDriverPanel('active');
+$('viewDriverHistory').onclick=()=>showDriverPanel('history');
+$('openService').onclick=()=>{
+ const eligible=driverTrips.filter(r=>['confirmada','em_andamento'].includes(r.statusReserva));
+ if(eligible.length===0){showDriverPanel('active');return message('Nenhuma reserva aceita para iniciar. Aceite a oferta primeiro.',true)}
+ if(eligible.length>1){showDriverPanel('active');return message('Escolha a reserva desejada e toque em Iniciar Atendimento nela.',true)}
+ openServiceById(eligible[0].id);
+};
+$('serviceBack').onclick=()=>{show('homeView');showDriverPanel('active')};
+
+function openServiceById(id){
+ const reservation=driverTrips.find(r=>r.id===id);
+ if(!reservation||!['confirmada','em_andamento'].includes(reservation.statusReserva)){
+  showDriverPanel('active');return message('Esta reserva ainda não está pronta para atendimento.',true);
+ }
+ serviceId=id;renderService();show('serviceView');
+}
+function renderService(){
+ const r=driverTrips.find(row=>row.id===serviceId);
+ if(!r){serviceId=null;show('homeView');return}
+ $('serviceClientName').textContent='Nome do Cliente: '+(r.nomeCliente||'Não informado');
+ $('serviceReservationData').textContent=
+  'Reserva: '+(r.codigoReserva||'')+'\n'+
+  'Situação: '+(r.statusReserva||'')+'\n'+
+  'Embarque: '+(r.localEmbarque||'')+'\n'+
+  'Destino: '+(r.localDestino||'')+'\n'+
+  'Data e horário: '+stamp(r.dataViagem)+'\n'+
+  'Telefone: '+(r.telefoneCliente||'')+'\n'+
+  'Passageiros: '+(r.passageiros||1)+'\n'+
+  'Observações: '+(r.observacoes||'Nenhuma');
+ $('serviceReservationData').style.whiteSpace='pre-line';
+ const accepted=r.statusReserva==='confirmada',ongoing=r.statusReserva==='em_andamento';
+ for(const id of ['serviceOnWay','servicePickupGps','serviceAvailable','serviceStart'])
+  $(id).classList.toggle('hidden',!accepted);
+ $('serviceComplete').classList.toggle('hidden',!ongoing);
+ $('serviceDestinationGps').classList.toggle('hidden',!ongoing);
+ $('servicePickupGps').href=maps(r.localEmbarque);
+ $('serviceDestinationGps').href=maps(r.localDestino);
+}
+function selectedService(){return driverTrips.find(r=>r.id===serviceId)}
+function whatsappClient(r,text){
+ const digits=phoneDigits(r.telefoneCliente);
+ const phone=digits.startsWith('55')&&[12,13].includes(digits.length)?digits:'55'+digits;
+ if(!/^55\d{10,11}$/.test(phone)){message('Telefone do Cliente inválido para WhatsApp.',true);return}
+ const link='https://wa.me/'+phone+'?text='+encodeURIComponent(text);
+ const tab=window.open(link,'_blank');
+ if(tab)tab.opener=null;else window.location.assign(link);
+ message('Mensagem preparada. Confirme o envio no WhatsApp; o app não envia mensagens sozinho.');
+}
+$('serviceOnWay').onclick=()=>{
+ const r=selectedService();if(!r||r.statusReserva!=='confirmada')return;
+ whatsappClient(r,'Porto Mobi - Transporte Executivo\nOlá, '+r.nomeCliente+'! O motorista está a caminho do embarque da reserva '+r.codigoReserva+'.');
+ message('Confirme o envio no WhatsApp e depois toque em GPS até o embarque. O GPS usa a posição atual fornecida pelo Google Maps.');
+};
+$('serviceAvailable').onclick=()=>{
+ const r=selectedService();if(!r||r.statusReserva!=='confirmada')return;
+ whatsappClient(r,'Porto Mobi - Transporte Executivo\nOlá, '+r.nomeCliente+'! O motorista está à sua disposição no ponto de embarque da reserva '+r.codigoReserva+'.');
+};
+$('serviceStart').onclick=async()=>{
+ const r=selectedService();
+ if(!r||r.statusReserva!=='confirmada')return message('Esta reserva não está confirmada para iniciar.',true);
+ if(!confirm('Iniciar atendimento da reserva '+r.codigoReserva+' e abrir GPS até o destino?'))return;
+ const b=$('serviceStart');b.disabled=true;
+ // A aba vazia é aberta no clique do usuário; só recebe a rota após gravar no Firestore.
+ const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;
+ try{
+  await updateDoc(doc(db,'reservas',r.id),{statusReserva:'em_andamento',dataAtualizacao:serverTimestamp()});
+  message('Atendimento iniciado. Abrindo rota até o destino.');
+  if(tab&&!tab.closed)tab.location.replace(maps(r.localDestino));
+  else window.location.assign(maps(r.localDestino));
+ }catch(err){if(tab&&!tab.closed)tab.close();message('Não foi possível iniciar atendimento: '+errorText(err),true)}
+ finally{b.disabled=false}
+};
+$('serviceComplete').onclick=async()=>{
+ const r=selectedService();if(!r||r.statusReserva!=='em_andamento')return;
+ if(!confirm('Concluir atendimento da reserva '+r.codigoReserva+'?'))return;
+ const b=$('serviceComplete');b.disabled=true;
+ try{
+  await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp()});
+  serviceId=null;show('homeView');showDriverPanel('history');
+  message('Atendimento concluído. Reserva registrada no histórico.');
+ }catch(err){message('Não foi possível concluir atendimento: '+errorText(err),true)}
+ finally{b.disabled=false}
+};
+
 onAuthStateChanged(auth,async next=>{if(registering)return;user=next;if(!user){stop();profile=null;show('loginView');return}await loadProfile()});
