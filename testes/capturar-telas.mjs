@@ -1,14 +1,28 @@
 // Capturas reais de HTML/CSS em um navegador isolado, com conteudo ficticio.
 // NUNCA faz login ou grava informacoes no Firebase da empresa.
 import {chromium} from 'playwright';
-import {spawn} from 'node:child_process';
+import {createServer} from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const HOST='http://127.0.0.1:4173';
 const OUT='testes/capturas-mobile';
 fs.mkdirSync(OUT,{recursive:true});
-const server=spawn('python3',['-m','http.server','4173','--bind','127.0.0.1'],{stdio:'ignore'});
+// Servidor local embutido: nao depende de Python e nao acessa a rede publica.
+const ROOT=process.cwd();
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.webmanifest':'application/manifest+json','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'};
+const server=createServer((req,res)=>{
+  let pathname;
+  try{pathname=decodeURIComponent(new URL(req.url,HOST).pathname)}catch{res.writeHead(400).end();return}
+  const file=path.resolve(ROOT,'.'+pathname);
+  if(file!==ROOT&&!file.startsWith(ROOT+path.sep)){res.writeHead(403).end();return}
+  fs.readFile(file,(err,body)=>{
+    if(err){res.writeHead(404).end('Nao encontrado');return}
+    res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});
+    res.end(body);
+  });
+});
+server.listen(4173,'127.0.0.1');
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function ready(){
  for(let i=0;i<45;i++){
@@ -98,5 +112,5 @@ try{
  await context.close();
 }finally{
  await browser?.close();
- server.kill();
+ server.close();
 }
