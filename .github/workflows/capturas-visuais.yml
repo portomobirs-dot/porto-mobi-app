@@ -1,0 +1,37 @@
+name: Capturas visuais - Porto Mobi
+on:
+  push:
+    branches: [preparacao-correcoes-02]
+    paths:
+      - 'testes/capturar-telas.mjs'
+      - '.github/workflows/capturas-visuais.yml'
+      - 'cliente.html'
+      - 'motorista.html'
+      - 'admin.html'
+      - 'index.html'
+      - 'js/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capturas-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar navegador de testes
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Gerar nove capturas isoladas para revisao visual
+        run: node testes/capturar-telas.mjs
+      - name: Salvar imagens como artefato de teste
+        uses: actions/upload-artifact@v4
+        with:
+          name: porto-mobi-capturas-mobile
+          path: testes/capturas-mobile/*.png
+          if-no-files-found: error
+          retention-days: 14
