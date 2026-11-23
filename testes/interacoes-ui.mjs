@@ -29,10 +29,10 @@ const authStub=[
  'export const getAuth=app=>({app});',
  'export function onAuthStateChanged(auth,cb){m.authListeners.push(cb);queueMicrotask(()=>cb(m.user));return ()=>{}}',
  'export async function createUserWithEmailAndPassword(auth,email,password){m.user={uid:m.role===\'motorista\'?\'motoristaNovo\':\'clienteNovo\',email};return {user:m.user}}',
- 'export async function signInWithEmailAndPassword(auth,email,password){m.user={uid:email.includes(\'motorista\')?\'motorista01\':\'cliente01\',email};for(const cb of m.authListeners)await cb(m.user);return {user:m.user}}',
+ 'export async function signInWithEmailAndPassword(auth,email,password){m.loginAttempts.push({email,password});m.user={uid:email.includes(\'motorista\')?\'motorista01\':\'cliente01\',email};for(const cb of m.authListeners)await cb(m.user);return {user:m.user}}',
  'export async function signOut(){m.user=null;for(const cb of m.authListeners)await cb(null)}',
  'export async function deleteUser(){m.user=null}',
- 'export async function sendPasswordResetEmail(){return}',
+ 'export async function sendPasswordResetEmail(auth,email){m.resetEmails.push(email);return}',
  'export async function getIdTokenResult(){return {claims:{}}}'
 ].join('\n');
 const firestoreStub=[
@@ -60,13 +60,14 @@ async function pageFor(file,mode='visitante'){
  const context=await browser.newContext({viewport:{width:390,height:844},locale:'pt-BR',timezoneId:'America/Sao_Paulo',serviceWorkers:'block'});
  await context.addInitScript(({mode})=>{
   const m={role:mode==='motorista-aprovado'?'motorista':mode==='administrador'?'administrador':'cliente',user:mode==='motorista-aprovado'?{uid:'motorista01',email:'motorista@example.invalid'}:mode==='administrador'?{uid:'admin01',email:'admin@example.invalid'}:null,
-   records:{clientes:{},motoristas:{},reservas:{},contadores:{}},authListeners:[],dataListeners:[],opened:[]};
+   records:{clientes:{},motoristas:{},reservas:{},contadores:{}},authListeners:[],dataListeners:[],opened:[],loginAttempts:[],resetEmails:[]};
   if(mode==='motorista-aprovado'){
    m.records.motoristas.motorista01={uid:'motorista01',nomeMotorista:'Motorista Exemplo',codigoMotorista:'PMM-001',situacao:'ativo',veiculoModelo:'Toyota Corolla'};
    m.records.reservas.reserva001={codigoReserva:'PMR-000001',statusReserva:'oferecida',motoristaUid:'motorista01',codigoMotorista:'PMM-001',
     nomeCliente:'Cliente Exemplo',telefoneCliente:'(51) 99999-1111',localEmbarque:'Avenida Exemplo, 100',localDestino:'Aeroporto',
     passageiros:1,observacoes:'Bagagem',dataViagem:{seconds:Math.floor(Date.now()/1000)+86400,toDate:()=>new Date(Date.now()+86400000)}};
   }
+  if(mode==='cliente-login')m.records.clientes.cliente01={uid:'cliente01',codigoCliente:'PMC-0001',nomeCliente:'Cliente Teste Login'};
   if(mode==='cliente-orcamento'){
    m.user={uid:'cliente01',email:'cliente@example.invalid'};
    m.records.clientes.cliente01={uid:'cliente01',codigoCliente:'PMC-0001',nomeCliente:'Cliente Exemplo'};
@@ -114,10 +115,58 @@ async function pageFor(file,mode='visitante'){
 }
 const future=()=>{const d=new Date();d.setDate(d.getDate()+30);return d.toISOString().slice(0,10)};
 
+test('Login do Cliente aprovado: olho, cadastro verde, acesso amarelo e link de recuperação', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  const login=page.locator('#loginView');
+  assert.match(await login.innerText(),/Seja Bem Vindo!/);
+  assert.equal(await page.locator('#accessClientAccount').innerText(),'Acessar Cadastro');
+  assert.equal(await page.locator('#showRegister').innerText(),'Fazer Cadastro');
+  assert.equal(await page.locator('#accessClientAccount').getAttribute('type'),'submit');
+  assert.equal(await page.locator('#showRegister').getAttribute('type'),'button');
+  assert.equal(await page.locator('#forgotPassword').innerText(),'Esqueceu a senha?');
+  assert.equal(await page.locator('#loginView button').count(),3);
+  const colors=await page.evaluate(()=>{
+    const get=id=>getComputedStyle(document.getElementById(id));
+    return {bg:get('loginEmail').backgroundColor,color:get('loginEmail').color,
+      font:get('loginEmail').fontFamily,size:get('loginEmail').fontSize,
+      green:get('showRegister').backgroundImage,yellow:get('accessClientAccount').backgroundImage,
+      actions:getComputedStyle(document.querySelector('.login-actions')).gridTemplateColumns,
+      header:getComputedStyle(document.querySelector('header')).backgroundColor};
+  });
+  assert.equal(colors.bg,'rgb(255, 255, 255)');
+  assert.equal(colors.color,'rgb(0, 0, 0)');
+  assert.match(colors.font,/Tahoma/);
+  assert.match(colors.green,/linear-gradient/);
+  assert.match(colors.yellow,/linear-gradient/);
+  assert.equal(colors.header,'rgb(0, 0, 0)');
+  assert.equal(colors.actions.split(' ').length,2);
+
+  await page.locator('#forgotPassword').click();
+  assert.match(await page.locator('#message').innerText(),/Informe um e-mail válido/);
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#forgotPassword').click();
+  assert.deepEqual(await page.evaluate(()=>window.__pm.resetEmails),['cliente@example.invalid']);
+  assert.match(await page.locator('#message').innerText(),/instruções para redefinir a senha/);
+  await page.locator('#loginPassword').fill('senha123');
+  const eye=page.locator('.login-eye-button');
+  await eye.click();
+  assert.equal(await page.locator('#loginPassword').getAttribute('type'),'text');
+  assert.equal(await eye.getAttribute('aria-label'),'Ocultar senha');
+  await eye.click();
+  assert.equal(await page.locator('#loginPassword').getAttribute('type'),'password');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  assert.deepEqual(await page.evaluate(()=>window.__pm.loginAttempts),
+   [{email:'cliente@example.invalid',password:'senha123'}]);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
-  assert.match(await page.locator('#loginView').innerText(),/Olá Bem Vindo!/);
+  assert.match(await page.locator('#loginView').innerText(),/Seja Bem Vindo!/);
   await page.locator('#showRegister').click();
   await page.locator('#registerView').waitFor({state:'visible'});
   assert.equal(await page.locator('#clientCodePreview').inputValue(),'PMC-0000');
