@@ -1,6 +1,6 @@
 // Cache limitado ao shell publico. Dados pessoais e respostas do Firebase NAO sao salvos aqui.
-const CACHE='porto-mobi-shell-v1';
-const SHELL=['./index.html','./cliente.html','./motorista.html','./admin.html','./js/common.js','./js/cliente.js','./js/motorista.js','./js/admin.js','./icon-192.png','./icon-512.png','./manifest-cliente.webmanifest','./manifest-motorista.webmanifest','./manifest-admin.webmanifest'];
+const CACHE='porto-mobi-shell-v2-visual-dourado';
+const SHELL=['./index.html','./cliente.html','./motorista.html','./admin.html','./js/common.js','./js/cliente.js','./js/motorista.js','./js/admin.js','./estilo-porto-mobi.css','./logo-porto-mobi.png','./icon-192.png','./icon-512.png','./manifest-cliente.webmanifest','./manifest-motorista.webmanifest','./manifest-admin.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
