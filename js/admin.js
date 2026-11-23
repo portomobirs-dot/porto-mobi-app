@@ -1,15 +1,44 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,collection,doc,getDoc,onSnapshot,updateDoc,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-import {firebaseConfig,padCode,esc,stamp,phoneDigits,errorText} from './common.js';
+import {firebaseConfig,padCode,esc,stamp,phoneDigits,errorText,calculateFare,moneyBRL} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-admin');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-let unsubs=[],rows=[],drivers=[];
+let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
+const quoteDrafts=new Map();
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
-const stop=()=>{for(const f of unsubs)f();unsubs=[];rows=[];drivers=[]};
+const stop=()=>{for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[]};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 $('logout').onclick=()=>signOut(auth);
 $('filter').onchange=render;
+const moneyFields=[
+ {name:'kmPercurso',label:'KM do percurso',step:'0.01'},
+ {name:'tempoPercursoMin',label:'Tempo do percurso (minutos)',step:'1'},
+ {name:'tarifaBase',label:'Tarifa Base (R$)',step:'0.01'},
+ {name:'valorPorKm',label:'Valor por km (R$/km)',step:'0.01'},
+ {name:'valorPorTempo',label:'Valor por tempo (R$/min)',step:'0.01'},
+ {name:'valorExtra',label:'Valor extra (R$)',step:'0.01'}
+];
+function quoteForm(r){
+ const data=quoteDrafts.get(r.id)||r;
+ const inputs=moneyFields.map(field=>{
+  const value=data[field.name]??'';
+  return '<label>'+field.label+'<input type="number" min="0" step="'+field.step+'" required data-price="'+field.name+'" value="'+esc(value)+'"></label>';
+ }).join('');
+ return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos de Reserva</h3><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Insira a distância e o tempo estimados. O sistema não consulta GPS automaticamente.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">Enviar orçamento ao Cliente</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">Recusar</button></div></div>';
+}
+function renderHistory(){
+ const sorted=items=>[...items].sort((a,b)=>(b.dataResposta?.seconds||b.dataRecusa?.seconds||0)-(a.dataResposta?.seconds||a.dataRecusa?.seconds||0));
+ const quoteHtml=(r)=>'<div class="item"><strong>'+esc(r.codigoReserva)+' — '+esc(r.codigoCliente||'')+'</strong><p><b>Cliente:</b> '+esc(r.nomeCliente||'')+'<br><b>Orçamento nº:</b> '+esc(r.numeroOrcamento)+'<br><b>Valor:</b> '+moneyBRL(r.valorTotal||0)+'<br><b>Resposta:</b> '+esc(stamp(r.dataResposta))+'</p></div>';
+ for(const [id,status,label] of [['acceptedQuotes','aceito','Nenhum orçamento aceito'],['refusedQuotes','recusado','Nenhum orçamento recusado']]){
+  const items=sorted(quoteHistory.filter(x=>x.resposta===status));
+  $(id).innerHTML=items.length?items.map(quoteHtml).join(''):'<p class="muted">'+label+'.</p>';
+ }
+ const completed=rows.filter(r=>r.statusReserva==='concluida').sort((a,b)=>(b.dataConclusao?.seconds||0)-(a.dataConclusao?.seconds||0));
+ $('completedServices').innerHTML=completed.length?completed.map(r=>'<div class="item"><strong>'+esc(r.codigoReserva)+'</strong><p><b>Cliente:</b> '+esc(r.nomeCliente)+'<br><b>Motorista:</b> '+esc(r.nomeMotoristaDesignado||r.codigoMotorista||'Não informado')+'<br><b>Valor:</b> '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'Não informado')+'<br><b>Conclusão:</b> '+esc(stamp(r.dataConclusao))+'</p></div>').join(''):'<p class="muted">Nenhum atendimento concluído.</p>';
+ const refusals=sorted(refusalHistory);
+ $('driverRefusals').innerHTML=refusals.length?refusals.map(r=>'<div class="item"><strong>'+esc(r.codigoReserva)+'</strong><p><b>Motorista:</b> '+esc(r.nomeMotorista||r.codigoMotorista||'')+'<br><b>Cliente:</b> '+esc(r.nomeCliente||'')+'<br><b>Data da recusa:</b> '+esc(stamp(r.dataRecusa))+'</p></div>').join(''):'<p class="muted">Nenhuma recusa de motorista registrada.</p>';
+}
 function render(){
  const f=$('filter').value,visible=rows.filter(r=>f==='todas'||r.statusReserva===f);
  $('total').textContent=rows.length;
@@ -17,11 +46,12 @@ function render(){
  $('confirmed').textContent=rows.filter(r=>['confirmada','em_andamento'].includes(r.statusReserva)).length;
  const available=drivers.filter(d=>d.situacao==='ativo'||d.aprovado===true);
  $('reservations').innerHTML=visible.length?visible.map(r=>{
-  const controls=r.statusReserva==='pendente'?`<div class="actions"><select aria-label="Motorista para reserva ${esc(r.codigoReserva)}" data-driver-for="${esc(r.id)}"><option value="">Escolha motorista autorizado</option>${available.map(d=>`<option value="${esc(d.id)}">${esc(d.nomeMotorista)} — ${esc(d.codigoMotorista)}</option>`).join('')}</select><button data-action="assign" data-id="${esc(r.id)}">Oferecer corrida</button><button class="danger" data-action="refuse" data-id="${esc(r.id)}">Recusar</button></div>`:'';
+  const controls=['pendente','orcamento_recusado'].includes(r.statusReserva)?quoteForm(r):r.statusReserva==='orcamento_aceito'?`<div class="actions"><select aria-label="Motorista para reserva ${esc(r.codigoReserva)}" data-driver-for="${esc(r.id)}"><option value="">Escolha motorista autorizado</option>${available.map(d=>`<option value="${esc(d.id)}">${esc(d.nomeMotorista)} — ${esc(d.codigoMotorista)}</option>`).join('')}</select><button data-action="assign" data-id="${esc(r.id)}">Confirmar</button><button class="danger" data-action="refuse" data-id="${esc(r.id)}">Recusar</button></div>`:'';
   const notify=r.statusReserva==='oferecida'?`<div class="actions"><button class="secondary" data-action="whatsapp" data-id="${esc(r.id)}">Avisar motorista pelo WhatsApp</button></div>`:'';
   const driver=drivers.find(d=>d.id===r.motoristaUid);
-  return `<article class="item"><div class="top"><strong>${esc(r.codigoReserva||r.id)}</strong><span>${esc(r.statusReserva||'')}</span></div><p><b>Cliente:</b> ${esc(r.nomeCliente)} (${esc(r.codigoCliente)})<br><b>Telefone:</b> ${esc(r.telefoneCliente)}<br><b>Origem:</b> ${esc(r.localEmbarque)}<br><b>Destino:</b> ${esc(r.localDestino)}<br><b>Viagem:</b> ${esc(stamp(r.dataViagem))}<br><b>Passageiros:</b> ${esc(r.passageiros||1)}<br><b>Motorista:</b> ${esc(driver?.nomeMotorista||'Não atribuído')}<br><b>Observações:</b> ${esc(r.observacoes||'Nenhuma')}</p>${controls}${notify}</article>`;
+  return `<article class="item"><div class="top"><strong>${esc(r.codigoReserva||r.id)}</strong><span>${esc(r.statusReserva||'')}</span></div><p><b>Cliente:</b> ${esc(r.nomeCliente)} (${esc(r.codigoCliente)})<br><b>Telefone:</b> ${esc(r.telefoneCliente)}<br><b>Origem:</b> ${esc(r.localEmbarque)}<br><b>Destino:</b> ${esc(r.localDestino)}<br><b>Viagem:</b> ${esc(stamp(r.dataViagem))}<br><b>Passageiros:</b> ${esc(r.passageiros||1)}<br><b>Motorista designado:</b> ${esc(driver?.nomeMotorista||r.nomeMotoristaDesignado||'Não atribuído')}<br><b>Valor da Reserva:</b> ${Number.isFinite(r.valorViagem)&&r.numeroOrcamento?moneyBRL(r.valorViagem):'A calcular'}<br><b>Observações:</b> ${esc(r.observacoes||'Nenhuma')}</p>${controls}${notify}</article>`;
  }).join(''):'<p>Nenhuma reserva encontrada.</p>';
+ renderHistory();
  $('driverApplicants').innerHTML=drivers.filter(d=>d.situacao==='pendente').length?
   drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><button data-approve="${esc(d.id)}">Autorizar motorista</button></article>`).join(''):
   '<p>Nenhum motorista aguardando autorização.</p>';
