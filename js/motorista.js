@@ -128,8 +128,11 @@ function whatsappClient(r,text){
 }
 $('serviceOnWay').onclick=()=>{
  const r=selectedService();if(!r||r.statusReserva!=='confirmada')return;
+ // Tenta abrir a rota no mesmo gesto do usuario; navegadores podem bloquear multiplas abas.
+ const gpsTab=window.open(maps(r.localEmbarque),'_blank');
+ if(gpsTab)gpsTab.opener=null;
  whatsappClient(r,'Porto Mobi - Transporte Executivo\nOlá, '+r.nomeCliente+'! O motorista está a caminho do embarque da reserva '+r.codigoReserva+'.');
- message('Confirme o envio no WhatsApp e depois toque em GPS até o embarque. O GPS usa a posição atual fornecida pelo Google Maps.');
+ message('Confirme o envio no WhatsApp. GPS até o embarque solicitado; se não abrir, use o botão GPS até o embarque.');
 };
 $('serviceAvailable').onclick=()=>{
  const r=selectedService();if(!r||r.statusReserva!=='confirmada')return;
