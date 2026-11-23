@@ -9,7 +9,7 @@
 - `admin.html` + `js/admin.js`: login de administração, reservas, autorização de até três motoristas, atribuição de corridas e link manual para WhatsApp.
 - `motorista.html` + `js/motorista.js`: cadastro sujeito a aprovação, login, aceitar/recusar corrida, abrir o Google Maps para embarque/destino e concluir corrida.
 - `js/common.js`: configuração web do projeto `porto-mobi-executivo-2026` e auxiliares compartilhados.
-- `firestore.rules`: proposta de controle de acesso, códigos/contadores, limite de 20 perfis de clientes e de 3 motoristas aprovados.
+- `firestore.rules`: proposta de controle de acesso, códigos/contadores, limite de 40 perfis de clientes e de 3 motoristas aprovados.
 - `manifest-*.webmanifest` e `sw.js`: início da instalação separada dos três PWAs; arquivos estáticos compartilhados em cache, sem armazenamento de dados de reservas pelo service worker.
 - `logo-porto-mobi.png`, `icon-512.png`, `icon.svg`: **imagens originais, preservadas**; `icon-192.png` foi apenas reduzido do PNG original. Os três manifestos ainda usam esse ícone original compartilhado; **ícones específicos por perfil dependem dos arquivos aprovados pelo proprietário**.
 
@@ -31,7 +31,7 @@
 
 **3. BACKUP:** antes de trocar regras, copie a regra atual para um local seguro e faça backup dos dados do Firestore, se houver dados reais. Não apague o projeto Firebase adicional sem auditoria.
 
-**4. TESTE AS REGRAS NO EMULADOR/PLAYGROUND ANTES DE PUBLICAR:** arquivo `firestore.rules` é uma proposta técnica não validada contra o banco real. Teste: cliente não lê reservas de outro; cliente não altera status/valores/papéis; motorista não se autoaprova; motorista não vê corridas de outro; conta comum não é administrador; admin consegue aprovar e atribuir; criação do 21º perfil de cliente é negada; aprovação do 4º motorista é negada. Execute também o fluxo completo com contas de teste. O simulador de regras isolado pode não reproduzir uma transação com `getAfter`; prefira o emulador para testes transacionais.
+**4. TESTE AS REGRAS NO EMULADOR/PLAYGROUND ANTES DE PUBLICAR:** arquivo `firestore.rules` é uma proposta técnica não validada contra o banco real. Teste: cliente não lê reservas de outro; cliente não altera status/valores/papéis; motorista não se autoaprova; motorista não vê corridas de outro; conta comum não é administrador; admin consegue aprovar e atribuir; criação do 40º perfil de cliente é permitida, mas do 41º é negada; aprovação do 4º motorista é negada. Execute também o fluxo completo com contas de teste. O simulador de regras isolado pode não reproduzir uma transação com `getAfter`; prefira o emulador para testes transacionais.
 
 **5. Compatibilidade dos contadores:** o código original tinha contadores `{ultimo: N}`. Os novos fluxos passam a salvar mais campos, por exemplo `{ultimo: N, ultimoUid: UID}` ou `{ultimo: N, ultimoReservaId: ID, ultimoClienteUid: UID}`. **Não zere esses contadores** se já houver cadastros ou reservas. A estrutura existente pode continuar e ser atualizada na próxima operação, mas deve ser verificada.
 
@@ -47,7 +47,7 @@ URLs planejadas para a hospedagem pública:
 
 ## Limitações importantes
 
-- **O limite de 20 clientes é um limite de documentos de perfil no Firestore**, não um bloqueio da criação de novas contas no serviço Firebase Authentication; da mesma forma, três é o limite de motoristas aprovados, não necessariamente o total de contas Auth registradas. Impedir rigorosamente todo cadastro Auth acima de 24 requer controle de identidade do lado servidor ou processo administrativo adicional.
+- **O limite de 40 clientes é um limite de documentos de perfil no Firestore**, não um bloqueio da criação de novas contas no serviço Firebase Authentication; da mesma forma, três é o limite de motoristas aprovados, não necessariamente o total de contas Auth registradas. Impedir rigorosamente todo cadastro Auth acima de 44 requer controle de identidade do lado servidor ou processo administrativo adicional.
 - Não há notificação automática gratuita de WhatsApp: o administrador **clica** para abrir uma mensagem pronta. Não há push em segundo plano quando o app do motorista estiver fechado.
 - Google Maps é aberto pelo link com o destino, usando a posição atual quando o Google Maps a disponibiliza. Não há rastreamento GPS em tempo real no Firestore, cálculo de preço ou comprovante de viagem.
 - O formulário e regras não foram testados contra o Firebase de produção, e o emulador de segurança não estava disponível neste ambiente de preparação.
