@@ -6,7 +6,7 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 
 ## Pendente antes de publicação
 - Adicionar os PNG originais: `logo-porto-mobi.png`, `icon-192.png`, `icon-512.png`. No momento, os manifestos e o service worker referenciam ícones PNG ainda ausentes nesta ramificação.
-- Acrescentar e validar em emulador as regras de segurança do Firestore; manter as regras atuais de produção inalteradas.
+- Arquivo `firestore.rules` adicionado a ESTA ramificação apenas para revisão. **Compilação e testes no emulador ainda pendentes**; manter regras do Firebase de produção inalteradas.
 - Testar autenticação, segregação das sessões de Cliente, Motorista e Administrador, criação de reservas, atribuição e conclusão de corridas.
 - Verificar a compatibilidade com motorista existente `PMM-001`, contador `contadores/motoristas` já iniciado em 1 e documento de teste de reserva.
 - Conferir os três ícones definitivos fornecidos pelo proprietário antes da publicação final.
@@ -16,3 +16,9 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 - **Não executar `firebase deploy` de regras ou Functions a partir deste rascunho.**
 - O GitHub Pages está configurado para `main`; esta ramificação não foi publicada.
 - Não inserir senhas, credenciais administrativas, tokens ou chaves de conta de serviço no repositório.
+
+## Evidências de revisão (23/11/2026)
+- As imagens de 512px e o logotipo são byte a byte idênticos aos arquivos do projeto original local; o PNG de 192px é uma redução derivada do ícone original.
+- `firestore.rules` contém suporte ao cadastro antigo de motorista `aprovado: true` e à numeração `PMM-001`.
+- O plano de casos obrigatórios está em `testes/PLANO-DE-TESTES.md`.
+- Em `main` permanece somente o README; **não foi efetuada publicação do sistema corrigido**.
