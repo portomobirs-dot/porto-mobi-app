@@ -47,3 +47,13 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 - GitHub Actions agora executa `testes/estrutura-pwa.test.mjs`, verificando campos e IDs, links de manifestos, scripts JS, service worker, PNG e identificadores de instalação de Cliente, Motorista e Administrador.
 - O novo teste **não** simula cliques reais no navegador, autenticação web, GPS ou notificações. Execução deve ser conferida antes de implantar.
 - Ramificação `main` e Firebase em produção seguem inalterados.
+
+## Formatos de cadastro aprovados — atualização em 23/11/2026
+- Cliente: campo não editável com máscara `PMC-0000`; cadastro real começa em `PMC-0001` e vai até 40 perfis.
+- Reserva: campo não editável com máscara `PMR-000000`; a numeração real começa em `PMR-000001` e tem 6 posições (contador máximo proposto: 999999).
+- Motorista: campo não editável com máscara `PMM-000`; código real `PMM-001` a `PMM-003`, somente após autorização administrativa.
+- Data de cadastro: exibida automaticamente no formulário de Cliente e Motorista, e gravada no Firestore com `serverTimestamp()` na criação, para não confiar no relógio do celular.
+- Interfaces: mostrar/ocultar senha, recuperação de senha por e-mail, revisão/confirmação/voltar e cópia dos códigos atribuídos; quantidade de passageiros incluída na solicitação e validada pelas regras propostas.
+- Campos de ano do veículo e de próxima revisão, adicionados fora do escopo, foram retirados da ficha do motorista.
+- **Compatibilidade:** dados antigos que eventualmente usem o código `PMR-0001` não devem ser renomeados ou apagados sem análise e backup. A nova numeração será usada somente após homologação. Contadores existentes devem ser auditados antes de ativar as regras.
+- Testes automatizados validam os formatos e as regras no ambiente `demo-porto-mobi-testes`. **Produção e `main` ainda não alteradas.**
