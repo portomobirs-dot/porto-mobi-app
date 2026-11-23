@@ -8,6 +8,15 @@ export const firebaseConfig = {
   appId: '1:500470573196:web:e3fc2c00e3e8b7f7a933a9'
 };
 export const padCode=(p,n)=>p+'-'+String(n).padStart(p==='PMM'?3:p==='PMR'?6:4,'0');
+// Valores monetarios em reais, arredondados a centavos somente no total.
+export const moneyBRL=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+export function calculateFare(p){
+ const keys=['kmPercurso','tempoPercursoMin','tarifaBase','valorPorKm','valorPorTempo','valorExtra'];
+ for(const key of keys){if(typeof p[key]!=='number'||!Number.isFinite(p[key])||p[key]<0)throw new Error('Valor de tarifa inválido: '+key);}
+ if(!Number.isInteger(p.tempoPercursoMin))throw new Error('Informe o tempo em minutos inteiros.');
+ const total=p.tarifaBase+p.kmPercurso*p.valorPorKm+p.tempoPercursoMin*p.valorPorTempo+p.valorExtra;
+ return Math.round((total+Number.EPSILON)*100)/100;
+}
 export const todayLocal=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const phoneDigits=s=>String(s||'').replace(/\D/g,'');
