@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','homeView','bookingView','bookingReview'];
+const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -38,8 +38,12 @@ for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener
  }else btn.textContent=hidden?'Mostrar':'Ocultar';
 });
 let reviewedRegistration=null;
+function hideReviewPassword(){ $('reviewPassword').textContent='********';const b=$('reviewPasswordEye');b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Mostrar senha');b.title='Mostrar senha'; }
+$('reviewPasswordEye').onclick=()=>{const b=$('reviewPasswordEye');if(b.getAttribute('aria-pressed')==='true')return hideReviewPassword();$('reviewPassword').textContent=$('regPassword').value;b.setAttribute('aria-pressed','true');b.setAttribute('aria-label','Ocultar senha');b.title='Ocultar senha';};
+$('editRegister').onclick=()=>{hideReviewPassword();show('registerView')};
+$('registerForm').onsubmit=e=>e.preventDefault();
 const registrationSnapshot=()=>['regDate','regName','regPhone','regEmail','regPassword','regConfirm'].map(id=>$(id).value).join('\u0000');
-const invalidateRegistrationReview=()=>{reviewedRegistration=null;$('confirmRegister').disabled=true;$('registerReviewDetails').classList.add('hidden')};
+const invalidateRegistrationReview=()=>{reviewedRegistration=null;$('confirmRegister').disabled=true;hideReviewPassword()};
 for(const field of $('registerForm').querySelectorAll('input:not([readonly])'))field.addEventListener('input',invalidateRegistrationReview);
 $('showRegister').onclick=()=>{$('regDate').value=todayLocal();invalidateRegistrationReview();show('registerView')};
 $('backHome').onclick=()=>show('homeView');
@@ -67,9 +71,9 @@ $('reviewRegister').onclick=()=>{
  $('registerSummary').textContent=`Código: PMC-0000 (automático)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
  $('registerSummary').style.whiteSpace='pre-line';
  reviewedRegistration=registrationSnapshot();
- $('registerReviewDetails').classList.remove('hidden');
+ hideReviewPassword();
  $('confirmRegister').disabled=false;
- message('Dados revisados. Confira o resumo e toque em Cadastrar para concluir.');
+ show('registerReview');
 };
 $('confirmRegister').onclick=async()=>{
  if(registering||!reviewedRegistration||reviewedRegistration!==registrationSnapshot())return message('Revise os dados antes de cadastrar.',true);
