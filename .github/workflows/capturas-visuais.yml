@@ -16,16 +16,17 @@ permissions:
 jobs:
   capturas-mobile:
     runs-on: ubuntu-latest
+    # Navegador Chromium e bibliotecas ja incluidos. Sem download manual.
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Instalar navegador de testes
-        run: |
-          npm install --no-save --no-audit --no-fund playwright@1.57.0
-          npx playwright install --with-deps chromium
+      - name: Instalar somente dependencias Node
+        run: npm install --no-audit --no-fund
       - name: Gerar nove capturas isoladas para revisao visual
         run: node testes/capturar-telas.mjs
       - name: Salvar imagens como artefato de teste
