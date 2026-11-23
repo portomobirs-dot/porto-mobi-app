@@ -12,6 +12,7 @@ const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message
 const val=id=>$(id).value.trim();
 $('travelDate').min=todayLocal();
 $('regDate').value=todayLocal();
+$('bookingCreatedDate').value=todayLocal();
 const setBookingCount=n=>{$('passengers').value=String(Math.min(8,Math.max(1,Number(n)||1)))};
 $('decreasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)-1);
 $('increasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)+1);
@@ -34,7 +35,17 @@ $('backLogin').onclick=()=>show('loginView');
 $('editRegister').onclick=()=>show('registerView');
 $('backHome').onclick=()=>show('homeView');
 $('editBooking').onclick=()=>show('bookingView');
-$('showBooking').onclick=()=>show('bookingView');
+function openClientPanel(which){
+ $('activeBlock').classList.toggle('hidden',which!=='active');
+ $('historyBlock').classList.toggle('hidden',which!=='history');
+}
+$('viewActiveReservations').onclick=()=>openClientPanel('active');
+$('viewReservationHistory').onclick=()=>openClientPanel('history');
+$('showBooking').onclick=()=>{
+ $('bookingCreatedDate').value=todayLocal();
+ $('bookingGreeting').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
+ show('bookingView');
+};
 $('regPhone').addEventListener('input',e=>{e.target.value=formatPhone(e.target.value)});
 $('loginForm').onsubmit=async e=>{
  e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}
@@ -77,7 +88,7 @@ $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
- $('bookingSummary').textContent=`Código: PMR-000000 (automático)\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
+ $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')} (automática)\nCódigo da Reserva: PMR-000000 (automático)\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
  $('bookingSummary').style.whiteSpace='pre-line';show('bookingReview');
 };
 $('confirmBooking').onclick=async()=>{
@@ -95,7 +106,7 @@ $('confirmBooking').onclick=async()=>{
     codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
-  $('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();await loadHome();message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
+  $('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();openClientPanel('active');message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
  }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{b.disabled=false}
 };
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
@@ -109,6 +120,8 @@ async function loadHome(){
   const snap=await getDoc(doc(db,'clientes',currentUser.uid));
   if(!snap.exists()){currentProfile=null;show('loginView');message('Sua conta não possui perfil de cliente. Contate a administração.',true);return}
   currentProfile=snap.data();$('profileInfo').textContent=`${currentProfile.nomeCliente||''} • ${currentProfile.codigoCliente||''}`;
+  $('clientWelcome').textContent='Olá, '+(currentProfile.nomeCliente||'Cliente')+'!';
+  $('bookingGreeting').textContent='Olá, '+(currentProfile.nomeCliente||'Cliente')+'!';
   $('clientCode').value=currentProfile.codigoCliente||'Aguardando cadastro';
   show('homeView');$('activeReservations').textContent='Carregando...';$('reservationHistory').textContent='Carregando...';
   const rs=await getDocs(query(collection(db,'reservas'),where('clienteUid','==',currentUser.uid)));
