@@ -5,6 +5,8 @@ on:
     paths:
       - 'testes/capturar-telas.mjs'
       - '.github/workflows/capturas-visuais.yml'
+      - 'estilo-porto-mobi.css'
+      - 'logo-porto-mobi.png'
       - 'cliente.html'
       - 'motorista.html'
       - 'admin.html'
