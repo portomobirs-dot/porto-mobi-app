@@ -128,3 +128,69 @@ test('Cliente 1 e cliente 40 podem cadastrar; cliente 41 nao pode',async()=>{
       telefoneCliente:'(51) 99999-4333',email:'cliente41@example.invalid',dataCadastro:serverTimestamp()});
   }));
 });
+
+
+test('Fluxo integrado: cliente cria PMR, administrador oferece, motorista aceita, inicia e conclui',async()=>{
+  await reset({clients:true,driver:true});
+  const cliente=as('clienteA'),admin=as('admin01'),motorista=as('motoristaA'),terceiro=as('clienteB');
+  const reservaRef=doc(collection(cliente,'reservas'),'reservaC001');
+  await assertSucceeds(runTransaction(cliente,async t=>{
+    const count=doc(cliente,'contadores','reservas');
+    const antigo=await t.get(count);
+    assert.equal(antigo.exists(),false);
+    t.set(count,{ultimo:1,ultimoReservaId:reservaRef.id,ultimoClienteUid:'clienteA'});
+    t.set(reservaRef,{
+      numeroReserva:1,codigoReserva:'PMR-0001',clienteUid:'clienteA',codigoCliente:'PMC-0001',
+      nomeCliente:'Cliente Ficticio',telefoneCliente:'(51) 99999-1111',
+      codigoMotorista:'',motoristaUid:'',localEmbarque:'Rua Embarque 100',
+      localDestino:'Rua Destino 200',dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),
+      dataSolicitacao:serverTimestamp(),observacoes:'',statusReserva:'pendente',valorViagem:0
+    });
+  }));
+  const reservaCriada=await assertSucceeds(getDoc(reservaRef));
+  assert.equal(reservaCriada.data().codigoReserva,'PMR-0001');
+  assert.equal(reservaCriada.data().statusReserva,'pendente');
+  await assertFails(getDoc(doc(terceiro,'reservas',reservaRef.id)));
+  await assertFails(updateDoc(doc(cliente,'reservas',reservaRef.id),{statusReserva:'confirmada'}));
+  await assertFails(getDoc(doc(motorista,'reservas',reservaRef.id)));
+  await assertFails(updateDoc(doc(admin,'reservas',reservaRef.id),{
+    statusReserva:'oferecida',motoristaUid:'motoristaB',codigoMotorista:'PMM-002',
+    dataAtualizacao:serverTimestamp()
+  }));
+
+  await assertSucceeds(updateDoc(doc(admin,'reservas',reservaRef.id),{
+    statusReserva:'oferecida',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',
+    dataAtualizacao:serverTimestamp()
+  }));
+  await assertSucceeds(getDoc(doc(motorista,'reservas',reservaRef.id)));
+  for (const proximoStatus of ['confirmada','em_andamento','concluida']) {
+    await assertSucceeds(updateDoc(doc(motorista,'reservas',reservaRef.id),{
+      statusReserva:proximoStatus,dataAtualizacao:serverTimestamp()
+    }));
+  }
+  const historico=await assertSucceeds(getDocs(query(collection(cliente,'reservas'),where('clienteUid','==','clienteA'))));
+  assert.equal(historico.docs.length,1);
+  assert.equal(historico.docs[0].data().statusReserva,'concluida');
+  await assertFails(updateDoc(doc(motorista,'reservas',reservaRef.id),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
+  await assertFails(updateDoc(doc(admin,'reservas',reservaRef.id),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
+});
+
+test('Motorista pode recusar oferta; administrador reatribui somente motorista autorizado',async()=>{
+  await reset({driver:true,trips:true,status:'oferecida',assigned:true});
+  const admin=as('admin01'),motorista=as('motoristaA'),pending=as('motoristaB');
+  await assertFails(updateDoc(doc(pending,'reservas','reservaA'),{statusReserva:'confirmada',dataAtualizacao:serverTimestamp()}));
+  await assertSucceeds(updateDoc(doc(motorista,'reservas','reservaA'),{
+    statusReserva:'pendente',motoristaUid:'',codigoMotorista:'',dataAtualizacao:serverTimestamp()
+  }));
+  const r=await assertSucceeds(getDoc(doc(admin,'reservas','reservaA')));
+  assert.equal(r.data().statusReserva,'pendente');
+  assert.equal(r.data().motoristaUid,'');
+  await assertFails(updateDoc(doc(admin,'reservas','reservaA'),{
+    statusReserva:'oferecida',motoristaUid:'motoristaB',codigoMotorista:'PMM-002',
+    dataAtualizacao:serverTimestamp()
+  }));
+  await assertSucceeds(updateDoc(doc(admin,'reservas','reservaA'),{
+    statusReserva:'oferecida',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',
+    dataAtualizacao:serverTimestamp()
+  }));
+});
