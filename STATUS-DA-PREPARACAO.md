@@ -29,3 +29,10 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 - `testes/seguranca-firestore.test.mjs` simula cliente, administrador, motorista aprovado legado e motorista pendente.
 - `.github/workflows/testar-seguranca.yml` usa o GitHub Actions (Linux público) para executar Firebase Emulator no commit dessa ramificação.
 - **Importante:** criar os testes não comprova sucesso: verificar no GitHub Actions se compilaram e passaram antes de alterar Firestore ou mesclar na main.
+
+## Capacidade de clientes — ampliada em 23/11/2026
+- Aplicativo do cliente: até **40 perfis** numerados de `PMC-0001` a `PMC-0040`.
+- Regras propostas do Firestore: limite de contador e número do perfil atualizado para 40.
+- Testes do emulador: cadastra o 40º perfil e rejeita o 41º; resultado de execução ainda precisa ser conferido.
+- Motoristas continuam limitados a três aprovados (`PMM-001` a `PMM-003`), e há uma conta administrativa.
+- O limite é sobre **perfis Firestore**, não sobre contas no Authentication. O número sequencial não é reutilizado após exclusões.
