@@ -11,6 +11,9 @@ on:
       - 'index.html'
       - 'js/**'
   workflow_dispatch:
+concurrency:
+  group: porto-mobi-capturas-preparacao
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:
@@ -27,7 +30,7 @@ jobs:
           node-version: '22'
       - name: Instalar somente dependencias Node
         run: npm install --no-audit --no-fund
-      - name: Gerar treze capturas isoladas para revisao visual
+      - name: Gerar dezesseis capturas isoladas para revisao visual
         run: node testes/capturar-telas.mjs
       - name: Salvar imagens como artefato de teste
         uses: actions/upload-artifact@v4
@@ -36,27 +39,34 @@ jobs:
           path: testes/capturas-mobile/*.png
           if-no-files-found: error
           retention-days: 14
-      - name: Publicar treze capturas ficticias no GitHub para visualizacao sem ZIP
-        # So imagens de teste, com dados ficticios e bloqueio de acesso externo.
+      - name: Publicar dezesseis capturas ficticias no GitHub para visualizacao sem ZIP
+        # Publica somente imagens de teste, ignorando capturas de codigo antigo.
         run: |
+          set -eu
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add testes/capturas-mobile/*.png
-          if ! git diff --cached --quiet; then
-            git commit -m "Adicionar nove capturas de interface com dados ficticios"
-            # A ramificacao pode receber atualizacoes entre checkout e publicacao.
-            # Atualizar historico antes de enviar, sem sobrescrever outros commits.
-            for tentativa in 1 2 3; do
-              git fetch origin preparacao-correcoes-02
-              git rebase FETCH_HEAD
-              if git push origin HEAD:preparacao-correcoes-02; then
-                echo "Capturas publicadas na ramificacao de preparacao."
-                break
-              fi
-              if [ "$tentativa" -eq 3 ]; then
-                echo "Falha ao publicar capturas apos 3 tentativas." >&2
-                exit 1
-              fi
-            done
-          fi
+          pasta=$(mktemp -d)
+          cp testes/capturas-mobile/*.png "$pasta/"
+          for tentativa in 1 2 3; do
+            git fetch origin preparacao-correcoes-02
+            if ! git diff --quiet "$GITHUB_SHA" FETCH_HEAD -- cliente.html motorista.html admin.html js/ testes/capturar-telas.mjs; then
+              echo "Uma versao mais nova alterou as telas; nao publicar imagens antigas."
+              exit 0
+            fi
+            git reset --hard FETCH_HEAD
+            mkdir -p testes/capturas-mobile
+            cp "$pasta"/*.png testes/capturas-mobile/
+            git add testes/capturas-mobile/*.png
+            if git diff --cached --quiet; then
+              echo "Capturas ja estavam atualizadas."
+              exit 0
+            fi
+            git commit -m "Atualizar capturas de interface com dados ficticios"
+            if git push origin HEAD:preparacao-correcoes-02; then
+              echo "Capturas publicadas na ramificacao de preparacao."
+              exit 0
+            fi
+          done
+          echo "Falha ao publicar capturas apos 3 tentativas." >&2
+          exit 1
