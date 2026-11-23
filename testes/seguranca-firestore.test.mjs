@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {initializeTestEnvironment,assertFails,assertSucceeds} from '@firebase/rules-unit-testing';
-import {collection,doc,getDoc,getDocs,query,where,setDoc,updateDoc,runTransaction,serverTimestamp,Timestamp} from 'firebase/firestore';
+import {collection,doc,getDoc,getDocs,query,where,setDoc,updateDoc,writeBatch,runTransaction,serverTimestamp,Timestamp} from 'firebase/firestore';
 
 // DADOS FICTICIOS + PROJETO DEMO. NENHUM ACESSO AO FIREBASE DE PRODUCAO.
 const env=await initializeTestEnvironment({
@@ -66,7 +66,7 @@ test('Administrador oferece e motorista antigo aprovado aceita e conclui',async(
   await assertSucceeds(getDoc(doc(driver,'reservas','reservaA')));
   await assertFails(getDoc(doc(other,'reservas','reservaA')));
   for(const status of ['confirmada','em_andamento','concluida']){
-    await assertSucceeds(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:status,dataAtualizacao:serverTimestamp()}));
+    await assertSucceeds(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:status,dataAtualizacao:serverTimestamp(),...(status==='concluida'?{dataConclusao:serverTimestamp()}:{})}));
   }
   await assertFails(updateDoc(doc(admin,'reservas','reservaA'),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
   await assertFails(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
@@ -165,7 +165,7 @@ test('Fluxo integrado: cliente cria PMR, administrador oferece, motorista aceita
   await assertSucceeds(getDoc(doc(motorista,'reservas',reservaRef.id)));
   for (const proximoStatus of ['confirmada','em_andamento','concluida']) {
     await assertSucceeds(updateDoc(doc(motorista,'reservas',reservaRef.id),{
-      statusReserva:proximoStatus,dataAtualizacao:serverTimestamp()
+      statusReserva:proximoStatus,dataAtualizacao:serverTimestamp(),...(proximoStatus==='concluida'?{dataConclusao:serverTimestamp()}:{})
     }));
   }
   const historico=await assertSucceeds(getDocs(query(collection(cliente,'reservas'),where('clienteUid','==','clienteA'))));
@@ -179,9 +179,20 @@ test('Motorista pode recusar oferta; administrador reatribui somente motorista a
   await reset({driver:true,trips:true,status:'oferecida',assigned:true});
   const admin=as('admin01'),motorista=as('motoristaA'),pending=as('motoristaB');
   await assertFails(updateDoc(doc(pending,'reservas','reservaA'),{statusReserva:'confirmada',dataAtualizacao:serverTimestamp()}));
-  await assertSucceeds(updateDoc(doc(motorista,'reservas','reservaA'),{
-    statusReserva:'pendente',motoristaUid:'',codigoMotorista:'',dataAtualizacao:serverTimestamp()
-  }));
+  const batch=writeBatch(motorista);
+  batch.update(doc(motorista,'reservas','reservaA'),{
+    statusReserva:'pendente',motoristaUid:'',codigoMotorista:'',nomeMotoristaDesignado:'',
+    numeroRecusa:1,dataAtualizacao:serverTimestamp()
+  });
+  batch.set(doc(motorista,'historicoRecusasMotoristas','reservaA-1'),{
+    reservaId:'reservaA',codigoReserva:'PMR-000001',clienteUid:'clienteA',
+    nomeCliente:'Cliente Ficticio',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',
+    nomeMotorista:'Motorista Ficticio',numeroRecusa:1,dataRecusa:serverTimestamp()
+  });
+  await assertSucceeds(batch.commit());
+  const recusas=await assertSucceeds(getDocs(collection(admin,'historicoRecusasMotoristas')));
+  assert.equal(recusas.docs.length,1);
+  await assertFails(getDocs(collection(motorista,'historicoRecusasMotoristas')));
   const r=await assertSucceeds(getDoc(doc(admin,'reservas','reservaA')));
   assert.equal(r.data().statusReserva,'pendente');
   assert.equal(r.data().motoristaUid,'');
