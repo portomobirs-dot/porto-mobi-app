@@ -58,13 +58,26 @@ const firestoreStub=[
 async function pageFor(file,mode='visitante'){
  const context=await browser.newContext({viewport:{width:390,height:844},locale:'pt-BR',timezoneId:'America/Sao_Paulo',serviceWorkers:'block'});
  await context.addInitScript(({mode})=>{
-  const m={role:mode==='motorista-aprovado'?'motorista':'cliente',user:mode==='motorista-aprovado'?{uid:'motorista01',email:'motorista@example.invalid'}:null,
+  const m={role:mode==='motorista-aprovado'?'motorista':mode==='administrador'?'administrador':'cliente',user:mode==='motorista-aprovado'?{uid:'motorista01',email:'motorista@example.invalid'}:mode==='administrador'?{uid:'admin01',email:'admin@example.invalid'}:null,
    records:{clientes:{},motoristas:{},reservas:{},contadores:{}},authListeners:[],dataListeners:[],opened:[]};
   if(mode==='motorista-aprovado'){
    m.records.motoristas.motorista01={uid:'motorista01',nomeMotorista:'Motorista Exemplo',codigoMotorista:'PMM-001',situacao:'ativo',veiculoModelo:'Toyota Corolla'};
    m.records.reservas.reserva001={codigoReserva:'PMR-000001',statusReserva:'oferecida',motoristaUid:'motorista01',codigoMotorista:'PMM-001',
     nomeCliente:'Cliente Exemplo',telefoneCliente:'(51) 99999-1111',localEmbarque:'Avenida Exemplo, 100',localDestino:'Aeroporto',
     passageiros:1,observacoes:'Bagagem',dataViagem:{seconds:Math.floor(Date.now()/1000)+86400,toDate:()=>new Date(Date.now()+86400000)}};
+  }
+  if(mode==='administrador'){
+   m.records.administradores={admin01:{ativo:true,funcao:'administrador'}};
+   m.records.contadores.motoristas={ultimo:1,ultimoUid:'motorista01'};
+   m.records.motoristas.motorista01={nomeMotorista:'Motorista Exemplo',codigoMotorista:'PMM-001',aprovado:true,
+    telefoneMotorista:'(51) 99999-2222',veiculoModelo:'Toyota Corolla'};
+   m.records.motoristas.motorista02={nomeMotorista:'Motorista Pendente',codigoMotorista:'',situacao:'pendente',
+    telefoneMotorista:'(51) 99999-3333',veiculoModelo:'Fiat Cronos',veiculoPlaca:'ABC-1D23',veiculoCor:'Preto'};
+   m.records.reservas.reserva001={codigoReserva:'PMR-000001',statusReserva:'pendente',
+    clienteUid:'cliente01',codigoCliente:'PMC-0001',nomeCliente:'Cliente Exemplo',
+    telefoneCliente:'(51) 99999-1111',motoristaUid:'',codigoMotorista:'',
+    localEmbarque:'Avenida Exemplo, 100',localDestino:'Aeroporto',
+    passageiros:1,observacoes:'Bagagem',dataViagem:{toDate:()=>new Date(Date.now()+86400000)}};
   }
   window.__pm=m;window.confirm=()=>true;
   window.open=url=>{m.opened.push(String(url));return {opener:null,closed:false,location:{replace(next){m.opened.push(String(next))}},close(){this.closed=true}}};
@@ -82,8 +95,9 @@ async function pageFor(file,mode='visitante'){
  const page=await context.newPage(),errors=[];
  page.on('pageerror',err=>errors.push(err.message));
  await page.goto(HOST+'/'+file,{waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>typeof document.getElementById('showRegister')?.onclick==='function');
- if(mode!=='motorista-aprovado')await page.locator('#loginView').waitFor({state:'visible'});
+ if(mode==='administrador')await page.waitForFunction(()=>typeof document.getElementById('loginForm')?.onsubmit==='function');
+ else await page.waitForFunction(()=>typeof document.getElementById('showRegister')?.onclick==='function');
+ if(!['motorista-aprovado','administrador'].includes(mode))await page.locator('#loginView').waitFor({state:'visible'});
  return {context,page,errors};
 }
 const future=()=>{const d=new Date();d.setDate(d.getDate()+30);return d.toISOString().slice(0,10)};
@@ -194,6 +208,29 @@ test('Motorista aprovado: reserva, WhatsApp, GPS, inicio e conclusao', {timeout:
   assert.match(await page.locator('#driverHistoryBlock').innerText(),/PMR-000001/);
   const status=await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva);
   assert.equal(status,'concluida');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
+
+test('Administrador: autoriza motorista, oferece reserva e prepara WhatsApp', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('admin.html','administrador');
+ try{
+  await page.locator('#dashboard').waitFor({state:'visible'});
+  await page.locator('#reservations [data-action="assign"]').waitFor({state:'visible'});
+  assert.match(await page.locator('#reservations').innerText(),/PMR-000001/);
+  await page.locator('#driverApplicants [data-approve="motorista02"]').click();
+  await page.waitForFunction(()=>window.__pm.records.motoristas.motorista02.codigoMotorista==='PMM-002');
+  const approved=await page.evaluate(()=>window.__pm.records.motoristas.motorista02.codigoMotorista);
+  assert.equal(approved,'PMM-002');
+  await page.locator('#reservations select[data-driver-for="reserva001"]').selectOption('motorista01');
+  await page.locator('#reservations [data-action="assign"]').click();
+  await page.locator('#reservations [data-action="whatsapp"]').waitFor({state:'visible'});
+  const status=await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva);
+  assert.equal(status,'oferecida');
+  await page.locator('#reservations [data-action="whatsapp"]').click();
+  const opened=await page.evaluate(()=>window.__pm.opened);
+  assert.ok(opened.some(url=>url.includes('wa.me/')&&url.includes('PMR-000001')),'Aviso ao motorista pelo WhatsApp nao preparado');
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
