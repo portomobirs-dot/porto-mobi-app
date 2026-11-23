@@ -29,5 +29,8 @@ jobs:
           node --check js/common.js
           node --check sw.js
           node --check testes/seguranca-firestore.test.mjs
+          node --check testes/estrutura-pwa.test.mjs
+      - name: Conferir formularios, manifestos e icones PWA
+        run: node --test testes/estrutura-pwa.test.mjs
       - name: Testar permissao no Firestore Emulator, com dados ficticios
         run: npm run test:security
