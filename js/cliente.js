@@ -110,6 +110,31 @@ $('confirmBooking').onclick=async()=>{
  }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{b.disabled=false}
 };
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
+
+$('activeReservations').addEventListener('click',async event=>{
+ const button=event.target.closest('button[data-budget-response]');
+ if(!button||!currentUser)return;
+ const r=clientReservations.find(x=>x.id===button.dataset.id);
+ if(!r||r.statusReserva!=='orcamento_pendente'||!Number.isInteger(r.numeroOrcamento)||r.numeroOrcamento<1)return message('Orçamento indisponível para resposta.',true);
+ const response=button.dataset.budgetResponse;
+ if(!['aceito','recusado'].includes(response))return;
+ if(!confirm((response==='aceito'?'Aceitar':'Recusar')+' orçamento de '+moneyBRL(r.valorViagem)+' da reserva '+r.codigoReserva+'?'))return;
+ const batch=writeBatch(db),status='orcamento_'+response;
+ batch.update(doc(db,'reservas',r.id),{statusReserva:status,dataAtualizacao:serverTimestamp()});
+ batch.set(doc(db,'historicoOrcamentos',r.id+'-'+r.numeroOrcamento),{
+  reservaId:r.id,codigoReserva:r.codigoReserva,codigoCliente:r.codigoCliente,
+  nomeCliente:r.nomeCliente,clienteUid:currentUser.uid,
+  numeroOrcamento:r.numeroOrcamento,resposta:response,valorTotal:r.valorViagem,dataResposta:serverTimestamp()
+ });
+ button.disabled=true;
+ try{
+  await batch.commit();
+  await loadHome();
+  message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');
+ }catch(err){message('Não foi possível registrar sua resposta: '+errorText(err),true)}
+ finally{button.disabled=false}
+});
+
 function reservationHtml(r){
  const dt=r.dataViagem?.toDate?.();const money=Number(r.valorViagem)>0?Number(r.valorViagem).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'A definir';
  return `<div class="item"><strong>${esc(r.codigoReserva)}</strong> — ${esc(r.statusReserva)}<p class="small">${esc(r.localEmbarque)} → ${esc(r.localDestino)}<br>${dt?dt.toLocaleString('pt-BR'):'Data não informada'}<br>Passageiros: ${esc(r.passageiros||1)}<br>Valor: ${money}</p></div>`;
