@@ -23,3 +23,9 @@ As imagens são capturas das páginas HTML reais, feitas em um navegador Chromiu
 Essas imagens verificam a **aparência**, não o clique, o login, o GPS, o WhatsApp ou a persistência. O verdadeiro teste de instalação PWA e de login com as regras ativadas requer um ambiente seguro de homologação, separado do banco real, antes de liberar o uso público.
 
 A ramificação `main` e o Firebase em produção não são alterados por esse processo.
+
+## Correção do ambiente de testes (23/11/2026)
+- A primeira execução falhou em **Instalar navegador de testes**, antes de gerar PNGs.
+- O fluxo agora usa a imagem oficial `mcr.microsoft.com/playwright:v1.57.0-noble`, com Chromium e dependências prontas, evitando `npx playwright install --with-deps`.
+- O servidor de pré-visualização agora usa o módulo `node:http` embutido, sem Python.
+- **Não afirmar sucesso até a execução mais recente ficar verde e o artefato ser criado.**
