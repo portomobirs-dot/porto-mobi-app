@@ -1,0 +1,184 @@
+/* Porto Mobi — identidade preto e dourado baseada nos modelos aprovados.
+   APENAS ESTILO. Nao altera dados, regras ou comandos. */
+:root{
+  --pm-preto:#050505; --pm-preto-painel:#0b0b0b;
+  --pm-ouro-claro:#ffe994; --pm-ouro:#efc650; --pm-ouro-medio:#cb9634;
+  --pm-texto:#f8f6ef; --pm-suave:#c9c4b9; --pm-borda:rgba(237,188,77,.55);
+  color-scheme:dark;
+  background:var(--pm-preto);
+  color:var(--pm-texto);
+}
+*, *::before, *::after{box-sizing:border-box}
+html{min-height:100%}
+body{
+  min-height:100vh; min-height:100dvh;
+  background:
+    radial-gradient(ellipse 60% 28% at 50% 2%,rgba(216,160,43,.18),transparent 85%),
+    radial-gradient(ellipse 60% 45% at 0% 50%,rgba(162,104,15,.10),transparent 85%),
+    linear-gradient(180deg,#050505 0%,#080706 44%,#030303 100%);
+  color:var(--pm-texto);
+}
+header.porto-header{
+  display:flex;justify-content:center;align-items:center;flex-wrap:wrap;
+  gap:14px 22px;padding:19px 18px 18px;
+  border-bottom:1px solid var(--pm-borda);
+  background:linear-gradient(180deg,rgba(5,5,5,.98),rgba(18,14,7,.94) 82%,rgba(3,3,3,.96));
+  box-shadow:0 2px 26px rgba(218,158,40,.12);
+  text-align:center;
+}
+.brand-lockup{display:flex;align-items:center;justify-content:center;gap:15px;min-width:0}
+.brand-logo{width:94px;height:94px;object-fit:contain;flex:none;filter:drop-shadow(0 0 10px rgba(252,194,50,.26))}
+header.porto-header strong{color:#fff;display:block;text-align:left;letter-spacing:.055em;font-weight:850;line-height:1.1;font-size:clamp(21px,3.4vw,29px);text-shadow:0 2px 10px rgba(0,0,0,.9)}
+header.porto-header strong small{display:block;color:var(--pm-ouro);font-size:.41em;letter-spacing:.18em;font-weight:750;margin-top:7px}
+header.porto-header .area-label{font-size:12px;color:var(--pm-ouro-claro);border:1px solid var(--pm-borda);border-radius:999px;padding:6px 11px;background:rgba(12,10,7,.8)}
+body[data-pm-area="cliente"] main{max-width:560px}
+body[data-pm-area="motorista"] main{max-width:675px}
+body[data-pm-area="admin"] main{max-width:1140px}
+main{margin-top:25px!important;margin-bottom:36px!important}
+section{
+  background:
+    radial-gradient(ellipse 70% 25% at 50% 0%,rgba(198,141,30,.12),transparent),
+    linear-gradient(160deg,rgba(17,17,17,.98),rgba(3,3,3,.98));
+  border:1px solid var(--pm-borda);
+  border-radius:20px;
+  box-shadow:0 15px 36px rgba(0,0,0,.65),inset 0 1px rgba(255,223,120,.12);
+  padding:clamp(18px,4vw,28px);
+}
+#loginView,#registerView,#registerReview,#reviewView,#bookingView,#bookingReview,#reservationView,#serviceView,#pendingView{
+  border-top:3px solid var(--pm-ouro);
+}
+#loginView h1,#login h1,#registerView h2,#reviewView h2,#registerReview h2{
+  text-align:center;
+}
+#loginView h1,#login h1{color:var(--pm-texto);text-shadow:0 1px 10px rgba(220,171,63,.24);font-size:clamp(23px,4vw,29px);margin:0 0 12px}
+#loginView > p,#login > p{color:var(--pm-suave);text-align:center}
+h1{color:var(--pm-texto)}
+h2,h3{color:var(--pm-ouro-claro)}
+p,.muted,.hint,.quote-note{color:var(--pm-suave)}
+label{color:#fff2c7;font-weight:650;letter-spacing:.01em}
+input,textarea,select,
+.quote-grid input, .count input{
+  background:linear-gradient(180deg,#fff,#eeeae2);
+  color:#171717;
+  border:1px solid #c9c1ac;
+  border-radius:8px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.1);
+  min-height:45px;
+  font-size:16px;
+}
+input::placeholder,textarea::placeholder{color:#666}
+input:focus,textarea:focus,select:focus{
+  outline:2px solid var(--pm-ouro);outline-offset:2px;border-color:#a97819;
+  box-shadow:0 0 0 3px rgba(234,184,69,.18);
+}
+input[readonly], .codebox input[readonly]{
+  color:#5b3b08;
+  font-weight:750;
+  background:linear-gradient(180deg,#fff8e7,#f5e4bd);
+  border:1px solid var(--pm-ouro-medio);
+}
+.codebox{
+  background:linear-gradient(130deg,#18130a,#0e0c08);
+  border:1px solid var(--pm-borda);
+  border-radius:13px;
+}
+.codebox label{color:var(--pm-ouro-claro)}
+button,.nav,button:not(.secondary):not(.danger),
+.actions button:not(.secondary):not(.danger){
+  background:linear-gradient(180deg,#ffe58d 0%,#f7d15a 34%,#d69b2c 78%,#e3b339 100%);
+  color:#111;
+  border:1px solid #c8982e;
+  border-radius:10px;
+  box-shadow:inset 0 2px 2px rgba(255,255,255,.45),0 5px 14px rgba(0,0,0,.36);
+  font-weight:800;
+  min-height:46px;
+  text-shadow:none;
+}
+button.secondary,.nav.secondary,
+#loginView button.secondary,#registerView button.secondary,#homeView button.secondary,
+#registerReview button.secondary,#bookingView button.secondary,
+#bookingReview button.secondary,.actions button.secondary{
+  background:linear-gradient(180deg,rgba(23,20,14,.98),rgba(8,8,8,.98));
+  color:#ffe18b;
+  border:1px solid #c7993e;
+  box-shadow:inset 0 1px rgba(255,215,104,.1);
+}
+button.danger,.actions button.danger{
+  background:linear-gradient(#6e1c19,#50100e);
+  color:#fff;
+  border-color:#d17664;
+}
+button:focus-visible,.nav:focus-visible{
+  outline:3px solid #ffeaa3;outline-offset:3px;
+}
+button:active,.nav:active{filter:brightness(.92)}
+button:disabled,.nav[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+.password button,[data-toggle]{min-width:74px;font-size:13px}
+.password input{min-width:0}
+.count{justify-content:center}
+.count button{min-width:50px;padding-left:0;padding-right:0}
+.count input{max-width:96px}
+.item{
+  background:linear-gradient(180deg,#fcfaf5,#f1eee7);
+  border:1px solid #d9c79f;
+  border-radius:12px;
+  color:#171717;
+  box-shadow:0 4px 14px rgba(0,0,0,.2);
+  overflow-wrap:anywhere;
+}
+.item p,.item b,.item strong,.item label{color:#1b1b1b}
+.item strong{font-weight:800}
+.item .muted,.item .small{color:#454545}
+.item h3{color:#493005}
+.item .actions{margin-top:14px}
+.item select,.item input{background:#fff;color:#151515;border-color:#baa36e}
+#registerSummary,#bookingSummary,.item [id$="Data"],#reservationDetails,#serviceReservationData{
+  white-space:pre-line;
+  line-height:1.7;
+}
+#message{white-space:pre-wrap}
+#homeView .topline,#homeView .top{align-items:flex-start}
+#homeView h1{font-size:clamp(21px,4vw,27px)}
+#homeView .topline button,#homeView .top button{white-space:nowrap}
+.stats{gap:10px}
+.stats div{
+  background:linear-gradient(145deg,#fff8df,#f9e3a8 58%,#dfb34d);
+  color:#121212;
+  border:1px solid #dcb65a;
+  box-shadow:inset 0 1px #fff,0 6px 16px rgba(0,0,0,.25);
+}
+.stats b{color:#17120b}
+.stats span{font-size:12px;font-weight:700;color:#272018}
+.quote{background:#10100f;padding:13px;border-radius:13px;border:1px solid rgba(227,180,64,.7);margin-top:16px;color:#fff}
+.quote-grid label{color:#ffe4a0}
+.quote-total{color:var(--pm-ouro-claro)}
+.history-panel{background:linear-gradient(#111,#070707);border:1px solid var(--pm-borda);border-radius:14px}
+.history-panel h3{color:var(--pm-ouro-claro)}
+.history-panel .item{background:#faf4e5}
+.history-panel .item p,.history-panel .item strong{color:#202020}
+.filters select{color:#151515;background:#fff5dc}
+@media(max-width:620px){
+  header.porto-header{padding:15px 10px;gap:8px}
+  .brand-logo{width:78px;height:78px}
+  header.porto-header strong{font-size:21px}
+  header.porto-header strong small{font-size:10px;letter-spacing:.08em}
+  header.porto-header .area-label{font-size:10px}
+  section{border-radius:16px;padding:18px}
+  main{margin-top:16px!important}
+  .topline,.top{gap:8px;flex-wrap:wrap}
+  .topline button,.top button{max-width:100%}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stats div{padding:10px 5px}
+  .stats b{font-size:21px}
+  .stats span{font-size:10px}
+  .actions{gap:8px}
+  .actions>*{min-width:0}
+  .quote-grid,.history-grid{grid-template-columns:1fr}
+}
+@media(max-width:380px){
+ .brand-logo{width:66px;height:66px}
+ header.porto-header strong{font-size:18px}
+ .brand-lockup{gap:8px}
+ header.porto-header .area-label{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
