@@ -223,3 +223,10 @@ body[data-pm-area="cliente"]:has(#loginView:not(.hidden)) main,
 body[data-pm-area="motorista"]:has(#loginView:not(.hidden)) main{
   margin-top:0!important;
 }
+
+
+/* Conteúdo do cálculo permanece legível dentro de cartões brancos. */
+.item .quote h3{color:#ffe298}
+.item .quote label{color:#ffe6b2}
+.item .quote p,.item .quote .quote-note{color:#d9cebc}
+.item .quote .quote-total{color:#ffe58a}
