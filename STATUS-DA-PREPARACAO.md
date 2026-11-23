@@ -36,3 +36,9 @@ Esta ramificação contém uma cópia de preparação dos arquivos HTML/JS e man
 - Testes do emulador: cadastra o 40º perfil e rejeita o 41º; resultado de execução ainda precisa ser conferido.
 - Motoristas continuam limitados a três aprovados (`PMM-001` a `PMM-003`), e há uma conta administrativa.
 - O limite é sobre **perfis Firestore**, não sobre contas no Authentication. O número sequencial não é reutilizado após exclusões.
+
+## Fluxo de reservas — testes integrados adicionados
+- Dois testes novos em `testes/seguranca-firestore.test.mjs`: solicitação PMR → atribuição → aceite → início → conclusão → histórico; e recusa/reoferta.
+- Casos negativos incluem cliente alheio e motorista pendente acessando ou modificando a reserva.
+- Os testes são feitos no projeto fictício `demo-porto-mobi-testes` e usam as regras locais.
+- **Não mesclar com `main` nem ativar regras reais apenas por existir teste automatizado.** A execução GitHub Actions mais recente ainda precisa ser conferida, e testes de interface nos aparelhos seguem pendentes.
