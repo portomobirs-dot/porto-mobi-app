@@ -602,3 +602,15 @@ html body header.porto-header.porto-header{display:flex!important;justify-conten
 html body header.porto-header.porto-header .brand-lockup{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important;grid-template-columns:1fr!important}
 html body header.porto-header.porto-header .brand-lockup strong,html body header.porto-header.porto-header .area-label{display:none!important}
 html body header.porto-header.porto-header .brand-logo{display:block!important;margin:0 auto!important}
+
+/* Padronização aprovada de títulos e subtítulos */
+body[data-pm-area] main :is(h1,h2,h3){font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
+body[data-pm-area] main section > h1,body[data-pm-area] main section > h2{text-align:center!important}
+body[data-pm-area="cliente"] main #homeView h2,body[data-pm-area="motorista"] main #homeView h2,body[data-pm-area="admin"] main #dashboard#dashboard :is(h2,h3){text-align:left!important;text-transform:none!important}
+body[data-pm-area="admin"] main #dashboard .top{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+body[data-pm-area="admin"] main #dashboard .top h1{grid-column:2;text-align:center!important;margin:0}
+body[data-pm-area="admin"] main #dashboard .top #logout{grid-column:3;justify-self:end}
+body[data-pm-area="admin"] main #dashboard#dashboard .quote .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+body[data-pm-area="admin"] main #dashboard#dashboard button:is([data-action="quote"],[data-approve]){background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+body[data-pm-area="admin"] main #dashboard#dashboard .quote button[data-action="refuse"]{background:#c52229!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#c52229!important}
+body[data-pm-area="admin"] main #dashboard .quote .actions button{width:100%;height:100%;white-space:normal;overflow-wrap:anywhere}
