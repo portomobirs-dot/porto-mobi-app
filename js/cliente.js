@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking'];
+const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -142,7 +142,7 @@ async function submitBooking(){
 }
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
 
-$('activeReservations').addEventListener('click',async event=>{
+async function respondBudget(event){
  const button=event.target.closest('button[data-budget-response]');
  if(!button||!currentUser)return;
  const r=clientReservations.find(x=>x.id===button.dataset.id);
@@ -164,15 +164,28 @@ $('activeReservations').addEventListener('click',async event=>{
   message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');
  }catch(err){message('Não foi possível registrar sua resposta: '+errorText(err),true)}
  finally{button.disabled=false}
-});
+}
+$('activeReservations').addEventListener('click',respondBudget);
+$('budgetDetails').addEventListener('click',respondBudget);
+$('budgetLogout').onclick=()=>$('logout').click();
 
 function reservationHtml(r){
  const dt=r.dataViagem?.toDate?.();
  const money=Number.isInteger(r.numeroOrcamento)&&r.numeroOrcamento>0&&Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A definir';
- const response=r.statusReserva==='orcamento_pendente'?'<div class="actions"><button data-budget-response="aceito" data-id="'+esc(r.id)+'">Aceitar Orçamento</button><button class="secondary" data-budget-response="recusado" data-id="'+esc(r.id)+'">Recusar Orçamento</button></div>':'';
+ const response=r.statusReserva==='orcamento_pendente'?'<div class="actions"><button data-budget-response="aceito" data-id="'+esc(r.id)+'">Aceitar</button><button class="secondary" data-budget-response="recusado" data-id="'+esc(r.id)+'">Recusar</button></div>':'';
  return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(r.localDestino)+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+'<br><b>Valor da Reserva:</b> '+money+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+response+'</div>';
 }
+function showBudget(r){
+ $('budgetWelcome').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
+ $('budgetProfile').textContent=(currentProfile?.nomeCliente||'')+' • '+(currentProfile?.codigoCliente||'');
+ $('budgetClientCode').value=currentProfile?.codigoCliente||'';
+ $('budgetCode').value=r.codigoReserva||'';
+ $('budgetDetails').innerHTML=reservationHtml(r);
+ show('budgetView');
+ if(!history.state?.bookingTracking)history.pushState({bookingTracking:true},'');
+}
 function showTracking(r){
+ if(r?.statusReserva==='orcamento_pendente')return showBudget(r);
  if(!r)return;
  $('trackingClient').textContent=currentProfile?.nomeCliente||'';
  $('trackingClientCode').value=currentProfile?.codigoCliente||'';
@@ -202,6 +215,7 @@ async function loadHome(){
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
   $('activeReservations').innerHTML=active.length?active.map(reservationHtml).join(''):'<p>Nenhuma reserva em andamento.</p>';
   $('reservationHistory').innerHTML=history.length?history.map(reservationHtml).join(''):'<p>Nenhuma reserva no histórico.</p>';
+  const pendingBudget=active.find(r=>r.statusReserva==='orcamento_pendente');if(pendingBudget)showBudget(pendingBudget);
  }catch(err){message('Não foi possível carregar suas reservas. '+errorText(err),true)}finally{loadingHome=false}
 }
 onAuthStateChanged(auth,async user=>{
