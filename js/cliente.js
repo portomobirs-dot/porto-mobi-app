@@ -45,7 +45,12 @@ $('registerForm').onsubmit=e=>e.preventDefault();
 const registrationSnapshot=()=>['regDate','regName','regPhone','regEmail','regPassword','regConfirm'].map(id=>$(id).value).join('\u0000');
 const invalidateRegistrationReview=()=>{reviewedRegistration=null;$('confirmRegister').disabled=true;hideReviewPassword()};
 for(const field of $('registerForm').querySelectorAll('input:not([readonly])'))field.addEventListener('input',invalidateRegistrationReview);
-$('showRegister').onclick=()=>{$('regDate').value=todayLocal();invalidateRegistrationReview();show('registerView')};
+$('showRegister').onclick=()=>{
+ for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=false;
+ $('registerForm').reset();$('clientCodePreview').value='PMC-0000';$('regDate').value=todayLocal();
+ $('reviewRegister').disabled=false;$('registerViewTracking').disabled=true;$('registerViewHistory').disabled=true;
+ invalidateRegistrationReview();show('registerView');
+};
 let reviewedBooking=null,submittingBooking=false;
 const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value));
 function invalidateBookingReview(){reviewedBooking=null;$('requestBooking').disabled=true;}
@@ -67,6 +72,20 @@ $('viewReservationHistory').onclick=()=>{
  $('historyBookingCode').value=$('lastBookingCode').value;
  show('historyView');
  if(!history.state?.clientHistory)history.pushState({clientHistory:true},'');
+};
+$('historyBackToRegister').onclick=()=>{
+ if(!currentUser||!currentProfile)return;
+ invalidateRegistrationReview();
+ $('clientCodePreview').value=currentProfile.codigoCliente||'';
+ const date=currentProfile.dataCadastro?.toDate?.();
+ $('regDate').value=date?date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'):'';
+ $('regName').value=currentProfile.nomeCliente||'';
+ $('regPhone').value=currentProfile.telefoneCliente||'';
+ $('regEmail').value=currentProfile.email||currentUser.email||'';
+ $('regPassword').value='';$('regConfirm').value='';
+ for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=true;
+ $('reviewRegister').disabled=true;$('registerViewTracking').disabled=false;$('registerViewHistory').disabled=false;
+ show('registerView');
 };
 $('showBooking').onclick=()=>{
  invalidateBookingReview();
@@ -120,7 +139,7 @@ async function createProfile(user){
 $('logout').onclick=async()=>{await signOut(auth);currentProfile=null;currentUser=null;show('loginView')};
 /* Ações da tela de cadastro: dados pessoais só após autenticação. */
 $('registerViewTracking').onclick=()=>{if(!currentUser||!currentProfile)return;const r=clientReservations[0];if(r)showTracking(r);else message('Você ainda não possui uma solicitação.');};
-$('registerViewHistory').onclick=()=>{if(!currentUser||!currentProfile)return;$('viewHistory').click();};
+$('registerViewHistory').onclick=()=>{if(!currentUser||!currentProfile)return;$('viewReservationHistory').click();};
 $('registerViewLogout').onclick=async()=>{if(currentUser)await $('logout').click();else show('loginView');};
 
 $('reviewBooking').onclick=()=>{
