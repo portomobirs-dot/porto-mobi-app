@@ -155,14 +155,14 @@ try{
  await expose(admin,'dashboard',['login']);
  await admin.evaluate(()=>{
   document.querySelector('#who').textContent='admin-teste@example.invalid';
-  for(const [id,text] of Object.entries({total:'4',pending:'1',confirmed:'1'}))
+  for(const [id,text] of Object.entries({total:'5',pending:'1',confirmed:'1',completed:'1',clientRefused:'1',driverRefused:'1'}))
    document.getElementById(id).textContent=text;
   document.querySelector('#reservations').innerHTML=
-   '<article class="item"><div class="top"><strong>PMR-000001</strong><span>pendente</span></div>'+
+   '<article class="item"><h3>Reserva solicitada</h3><div class="top"><strong>PMR-000001</strong><span>pendente</span></div>'+
    '<p><b>Dados do Cliente:</b> Cliente Exemplo (PMC-0001)<br><b>Telefone:</b> (51) 99999-1111<br>'+
    '<b>Dados da Reserva:</b> Embarque Avenida Exemplo, 100 → Destino Aeroporto<br>'+
    '<b>Data:</b> 10/12/2026 às 14:30<br><b>Passageiros:</b> 2<br><b>Motorista Designado:</b> A definir</p>'+
-   '<div class="quote"><h3>Cálculos de Reserva</h3><div class="quote-grid">'+
+   '<div class="quote"><h3>Cálculos da reserva</h3><div class="quote-grid">'+
    '<label>KM do percurso<input readonly value="18,4"></label>'+
    '<label>Tempo do percurso (minutos)<input readonly value="28"></label>'+
    '<label>Tarifa Base (R$)<input readonly value="25,00"></label>'+
@@ -171,7 +171,7 @@ try{
    '<label>Valor extra (R$)<input readonly value="5,00"></label>'+
    '</div><span class="quote-total">Valor total: R$ 108,40</span>'+
    '<p class="quote-note">Prévia com valores fictícios. Tarifas definidas pelo Administrador.</p>'+
-   '<div class="actions"><button>Enviar orçamento ao Cliente</button><button class="danger">Recusar</button></div></div></article>';
+   '<div class="actions"><button data-action="quote">ENVIAR PROPOSTA AO CLIENTE</button><button class="danger" data-action="refuse">RECUSAR RESERVA</button></div></div></article>';
   document.querySelector('#driverApplicants').innerHTML='<p>Sem solicitações pendentes.</p>';
   document.querySelector('#acceptedQuotes').innerHTML='<div class="item"><strong>PMR-000002</strong><p>Cliente: Cliente Exemplo A<br>Valor: R$ 85,00<br>Resposta: aceita</p></div>';
   document.querySelector('#refusedQuotes').innerHTML='<div class="item"><strong>PMR-000003</strong><p>Cliente: Cliente Exemplo B<br>Valor: R$ 65,00<br>Resposta: recusada</p></div>';
@@ -181,11 +181,11 @@ try{
  await capture(admin,'09-administrador-painel');
  await admin.evaluate(()=>{
   document.querySelector('#reservations').innerHTML=
-   '<article class="item"><strong>PMR-000001 — orçamento aceito</strong>'+
+   '<article class="item"><h3>Reserva solicitada</h3><strong>PMR-000001 — orçamento aceito</strong>'+
    '<p>Cliente: Cliente Exemplo (PMC-0001)<br>Embarque: Avenida Exemplo, 100<br>'+
    'Destino: Aeroporto<br>Valor da Reserva: R$ 108,40</p>'+
    '<div class="actions"><select><option>Motorista Exemplo — PMM-001</option></select>'+
-   '<button>Confirmar</button><button class="danger">Recusar</button></div></article>';
+   '<button data-action="assign">CONFIRMAR</button></div></article>';
  });
  await capture(admin,'17-administrador-motorista-designado');
  await admin.close();
