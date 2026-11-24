@@ -55,6 +55,7 @@ $('bookingForm').addEventListener('change',invalidateBookingReview);
 for(const id of ['decreasePassengers','increasePassengers'])$(id).addEventListener('click',invalidateBookingReview);
 $('requestBooking').onclick=()=>submitBooking();
 $('editBooking').onclick=()=>show('bookingView');
+$('backToBooking').onclick=()=>show('bookingView');
 function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
 
