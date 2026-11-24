@@ -585,3 +585,14 @@ body[data-pm-area="motorista"] main #homeView#homeView button#backHomeRegister{d
 
 body[data-pm-area="motorista"] main #homeView#homeView input:is(#driverCode,#homeDriverName){width:100%;box-sizing:border-box;background:#fff!important;color:#000!important;-webkit-text-fill-color:#000!important;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
 body[data-pm-area="motorista"] main #homeView#homeView label:is([for="driverCode"],[for="homeDriverName"]){font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important}
+
+/* Iniciar atendimento: cabeçalho e ações exclusivos */
+body[data-pm-area="motorista"]:has(#reservationView:not(.hidden)) header.porto-header{display:flex!important;justify-content:center!important;align-items:center!important}
+body[data-pm-area="motorista"]:has(#reservationView:not(.hidden)) header.porto-header .brand-lockup{display:flex!important;justify-content:center!important;width:100%!important}
+body[data-pm-area="motorista"]:has(#reservationView:not(.hidden)) header.porto-header strong,body[data-pm-area="motorista"]:has(#reservationView:not(.hidden)) header.porto-header .area-label{display:none!important}
+body[data-pm-area="motorista"]:has(#reservationView:not(.hidden)) header.porto-header .brand-logo{margin:0 auto!important}
+body[data-pm-area="motorista"] main #reservationView h2{text-align:center!important;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
+body[data-pm-area="motorista"] main #reservationView .actions{display:grid;grid-template-columns:1fr;gap:8px}
+body[data-pm-area="motorista"] main #reservationView#reservationView button{width:100%;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
+body[data-pm-area="motorista"] main #reservationView#reservationView button:is(#openService,#reservationComplete){background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+body[data-pm-area="motorista"] main #reservationView#reservationView button:is(#reservationDestination,#reservationBackRegister,#reservationAvailable){background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important}
