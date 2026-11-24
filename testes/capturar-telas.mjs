@@ -193,7 +193,6 @@ try{
  await expose(clienteOrcamento,'budgetView',['loginView','registerView','registerReview','bookingView','bookingReview','homeView','bookingTracking']);
  await clienteOrcamento.evaluate(()=>{
   document.querySelector('#budgetWelcome').textContent='Olá, Cliente Exemplo!';
-  document.querySelector('#budgetProfile').textContent='Cliente Exemplo • PMC-0001';
   document.querySelector('#budgetClientCode').value='PMC-0001';
   document.querySelector('#budgetCode').value='PMR-000001';
   document.querySelector('#budgetDetails').innerHTML=
