@@ -596,3 +596,9 @@ body[data-pm-area="motorista"] main #reservationView .actions{display:grid;grid-
 body[data-pm-area="motorista"] main #reservationView#reservationView button{width:100%;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
 body[data-pm-area="motorista"] main #reservationView#reservationView button:is(#openService,#reservationComplete){background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
 body[data-pm-area="motorista"] main #reservationView#reservationView button:is(#reservationDestination,#reservationBackRegister,#reservationAvailable){background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important}
+
+/* Padrao global aprovado: somente logotipo centralizado nos formularios. */
+html body header.porto-header.porto-header{display:flex!important;justify-content:center!important;align-items:center!important;background:#000!important}
+html body header.porto-header.porto-header .brand-lockup{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important;grid-template-columns:1fr!important}
+html body header.porto-header.porto-header .brand-lockup strong,html body header.porto-header.porto-header .area-label{display:none!important}
+html body header.porto-header.porto-header .brand-logo{display:block!important;margin:0 auto!important}
