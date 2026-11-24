@@ -663,3 +663,9 @@ html body[data-pm-area="cliente"] main #registerView#registerView .register-acti
 
 /* Tela 09: botão de cadastro do motorista */
 html body[data-pm-area="motorista"] main #loginView#loginView button#showRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+
+/* Tela 10: cadastro do motorista */
+html body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) #portoBrandHeader .brand-lockup{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+html body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) #portoBrandHeader .brand-slogan{width:100%!important;text-align:center!important}
+html body[data-pm-area="motorista"] main #registerView#registerView button#reviewRegister{background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#c7993e!important}
+html body[data-pm-area="motorista"] main #registerView#registerView button#confirmRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
