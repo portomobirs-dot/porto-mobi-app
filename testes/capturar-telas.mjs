@@ -206,13 +206,11 @@ try{
  await capture(clienteOrcamento,'18-cliente-visualizacao-orcamento');
  await clienteOrcamento.close();
  const clienteHistorico=await pageFor('cliente.html');
- await expose(clienteHistorico,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview','bookingTracking','budgetView']);
+ await expose(clienteHistorico,'historyView',['loginView','registerView','registerReview','bookingView','bookingReview','bookingTracking','budgetView','homeView']);
  await clienteHistorico.evaluate(()=>{
-  document.querySelector('#clientWelcome').textContent='Olá, Cliente Exemplo!';
-  document.querySelector('#profileInfo').textContent='Cliente Exemplo • PMC-0001';
-  document.querySelector('#clientCode').value='PMC-0001';
-  document.querySelector('#lastBookingCode').value='PMR-000001';
-  document.querySelector('#historyBlock').classList.remove('hidden');
+  document.querySelector('#historyWelcome').textContent='Olá, Cliente Exemplo!';
+  document.querySelector('#historyClientCode').value='PMC-0001';
+  document.querySelector('#historyBookingCode').value='PMR-000001';
   document.querySelector('#reservationHistory').innerHTML='<div class="item"><strong>PMR-000001 — Atendimento concluído</strong><p class="small">Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>10/11/2026 14:30<br>Passageiros: 1<br><b>Valor da Reserva:</b> R$ 108,40<br><b>Motorista Designado:</b> Motorista Exemplo</p></div>';
  });
  await capture(clienteHistorico,'19-cliente-historico-atendimentos');
