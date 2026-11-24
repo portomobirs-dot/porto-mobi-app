@@ -632,7 +632,7 @@ html body[data-pm-area] #portoBrandHeader.porto-header{box-sizing:border-box!imp
 html body[data-pm-area] #portoBrandHeader.porto-header::before,html body[data-pm-area] #portoBrandHeader.porto-header::after,html body[data-pm-area] #portoBrandHeader .brand-lockup::before,html body[data-pm-area] #portoBrandHeader .brand-lockup::after{content:none!important;display:none!important}
 html body[data-pm-area] #portoBrandHeader .brand-lockup{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;border:0!important;box-shadow:none!important;width:100%!important}
 html body[data-pm-area] #portoBrandHeader .brand-logo{display:block!important;margin:0 auto!important;border:0!important;box-shadow:none!important}
-html body[data-pm-area] #portoBrandHeader .brand-slogan{display:block!important;color:#D4AF37!important;font:italic 13pt Tahoma,Arial,sans-serif!important;text-align:center!important;border:0!important;margin:0!important;padding:0!important}
+html body[data-pm-area] #portoBrandHeader .brand-slogan{display:block!important;color:#D4AF37!important;font: bold 13pt Tahoma,Arial,sans-serif!important;text-align:center!important;border:0!important;margin:0!important;padding:0!important}
 
 /* Padrão global aprovado: molduras alinhadas, arredondadas, preto e dourado. */
 body[data-pm-area="cliente"]{--pm-form-width:560px;--pm-form-gutter:18px}
