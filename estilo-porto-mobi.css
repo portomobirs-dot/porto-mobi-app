@@ -619,3 +619,5 @@ body[data-pm-area="admin"] main #dashboard#dashboard .stats{display:grid;grid-te
 body[data-pm-area="admin"] main #dashboard#dashboard .stats div{min-width:0;overflow-wrap:anywhere}
 body[data-pm-area="admin"] main #dashboard#dashboard .stats :is(#completed,#confirmed){color:#218638!important}
 body[data-pm-area="admin"] main #dashboard#dashboard .stats :is(#clientRefused,#driverRefused){color:#c52229!important}
+
+body[data-pm-area="admin"] main #dashboard#dashboard button[data-action="assign"]{display:block;width:100%;flex:1 0 100%;background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
