@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView'];
+const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView','historyView'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -57,10 +57,16 @@ $('requestBooking').onclick=()=>submitBooking();
 $('editBooking').onclick=()=>show('bookingView');
 function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
- $('historyBlock').classList.toggle('hidden',which!=='history');
+
 }
 $('viewActiveReservations').onclick=()=>{const r=clientReservations[0];if(r)showTracking(r);else openClientPanel('active')};
-$('viewReservationHistory').onclick=()=>openClientPanel('history');
+$('viewReservationHistory').onclick=()=>{
+ $('historyWelcome').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
+ $('historyClientCode').value=currentProfile?.codigoCliente||'';
+ $('historyBookingCode').value=$('lastBookingCode').value;
+ show('historyView');
+ if(!history.state?.clientHistory)history.pushState({clientHistory:true},'');
+};
 $('showBooking').onclick=()=>{
  invalidateBookingReview();
  $('bookingCreatedDate').value=todayLocal();
@@ -213,7 +219,7 @@ async function loadHome(){
   $('copyBookingCode').disabled=!data[0]?.codigoReserva;
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
   $('activeReservations').innerHTML=active.length?active.map(reservationHtml).join(''):'<p>Nenhuma reserva em andamento.</p>';
-  $('reservationHistory').innerHTML=history.length?history.map(reservationHtml).join(''):'<p>Nenhuma reserva no histórico.</p>';
+  $('reservationHistory').innerHTML=history.length?history.map(r=>reservationHtml(r)).join(''):'<p>Nenhuma reserva no histórico.</p>';
   const pendingBudget=active.find(r=>r.statusReserva==='orcamento_pendente');if(pendingBudget)showBudget(pendingBudget);
  }catch(err){message('Não foi possível carregar suas reservas. '+errorText(err),true)}finally{loadingHome=false}
 }
