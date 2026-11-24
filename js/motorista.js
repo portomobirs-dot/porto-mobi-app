@@ -23,7 +23,7 @@ for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener
 });
 $('regPhone').oninput=e=>{e.target.value=formatPhone(e.target.value)};
 $('regPlate').oninput=e=>{let s=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);e.target.value=s.length>3?s.slice(0,3)+'-'+s.slice(3):s};
-$('showRegister').onclick=()=>{invalidateDriverReview();$('regDate').value=todayLocal();show('registerView')};$('editRegister').onclick=()=>show('registerView');
+$('showRegister').onclick=()=>{for(const el of $('registerForm').querySelectorAll('input:not(#driverCodePreview):not(#regDate)'))el.readOnly=false;$('reviewRegister').disabled=false;invalidateDriverReview();$('regDate').value=todayLocal();show('registerView')};$('editRegister').onclick=()=>show('registerView');
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}catch(err){message(errorText(err),true)}};
 let reviewedDriver=null;
 const driverSnapshot=()=>JSON.stringify([...$('registerForm').querySelectorAll('input')].map(el=>el.value));
@@ -41,7 +41,7 @@ $('reviewRegister').onclick=()=>{
  show('reviewView');
 };
 $('confirmRegister').onclick=async()=>{
- if(registering||!reviewedDriver||reviewedDriver!==driverSnapshot()||!$('registerForm').reportValidity())return message('Revise os dados antes de cadastrar.',true);
+ if(user||registering||!reviewedDriver||reviewedDriver!==driverSnapshot()||!$('registerForm').reportValidity())return message('Revise os dados antes de cadastrar.',true);
  const b=$('confirmRegister');b.disabled=true;registering=true;let cred=null;
  try{
   cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);user=cred.user;
@@ -50,7 +50,21 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
-$('logout').onclick=logout;$('logoutPending').onclick=logout;$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
+$('logout').onclick=logout;$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
+$('backPendingRegister').onclick=()=>{
+ if(!user||!profile)return;
+ invalidateDriverReview();
+ const fields={regName:profile.nomeMotorista,regPhone:profile.telefoneMotorista,regEmail:profile.email||user.email,regVehicle:profile.veiculoModelo,regPlate:profile.veiculoPlaca,regColor:profile.veiculoCor};
+ for(const [id,value] of Object.entries(fields))$(id).value=value||'';
+ const date=profile.dataCadastro?.toDate?.();if(date)$('regDate').value=date.toLocaleDateString('sv-SE');
+ $('regPassword').value='';$('regConfirm').value='';
+ for(const el of $('registerForm').querySelectorAll('input'))el.readOnly=true;
+ $('reviewRegister').disabled=true;
+ show('registerView');
+ message('Cadastro já enviado. Consulta dos dados; use o retorno do navegador para voltar à autorização.');
+ if(!history.state?.pendingRegister)history.pushState({pendingRegister:true},'');
+};
+window.addEventListener('popstate',()=>{if(user&&profile&&profile.situacao!=='ativo'&&profile.aprovado!==true)loadProfile()});
 async function loadProfile(){
  if(!user)return;stop();
  try{
