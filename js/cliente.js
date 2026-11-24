@@ -82,7 +82,7 @@ $('reviewRegister').onclick=()=>{
  if(!$('registerForm').reportValidity())return;
  if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Informe telefone com DDD.',true);
- $('registerSummary').textContent=`Código: PMC-0000 (automático)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
+ $('registerSummary').textContent=`Código do Cliente: PMC-0000\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
  $('registerSummary').style.whiteSpace='pre-line';
  reviewedRegistration=registrationSnapshot();
  hideReviewPassword();
