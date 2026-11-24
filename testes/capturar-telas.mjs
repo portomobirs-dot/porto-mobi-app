@@ -147,7 +147,7 @@ try{
   document.querySelector('#serviceDestinationGps').classList.remove('hidden');
   document.querySelector('#serviceReservationData').textContent='Reserva: PMR-000001\nSituação: em andamento\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData e horário: 10/12/2026, 14:30\nPassageiros: 1';
  });
- await capture(motorista,'15-motorista-conclusao-atendimento');
+ // Conclusão incorporada à tela reservationView; sem etapa visual independente.
  await motorista.close();
 
  const admin=await pageFor('admin.html');
