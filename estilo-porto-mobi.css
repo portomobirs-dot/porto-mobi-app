@@ -543,3 +543,6 @@ body[data-pm-area="cliente"] #budgetView #budgetValue{background:#fff!important;
 /* Prioridade exclusiva dos botões do orçamento sobre a regra global dourada. */
 body[data-pm-area="cliente"] main #budgetView#budgetView button[data-budget-response="aceito"]{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
 body[data-pm-area="cliente"] main #budgetView#budgetView button[data-budget-response="recusado"]{background:#c52229!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#c52229!important}
+
+/* Valor da Reserva: padrão aprovado, somente na tela de orçamento. */
+body[data-pm-area="cliente"] main #budgetView#budgetView label.budget-value-title[for="budgetValue"]{font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;text-align:center!important}
