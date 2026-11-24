@@ -140,7 +140,7 @@ try{
   document.querySelector('#servicePickupGps').href='https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=Avenida%20Exemplo';
   for(const id of ['serviceComplete','serviceDestinationGps'])document.getElementById(id).classList.add('hidden');
  });
- await capture(motorista,'14-motorista-inicio-atendimento');
+ // Etapa independente retirada: ações incorporadas à tela reservationView.
  await motorista.evaluate(()=>{
   for(const id of ['serviceOnWay','servicePickupGps','serviceAvailable','serviceStart'])document.getElementById(id).classList.add('hidden');
   document.querySelector('#serviceComplete').classList.remove('hidden');
