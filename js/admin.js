@@ -25,7 +25,7 @@ function quoteForm(r){
   const value=data[field.name]??'';
   return '<label>'+field.label+'<input type="number" min="0" step="'+field.step+'" required data-price="'+field.name+'" value="'+esc(value)+'"></label>';
  }).join('');
- return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos de Reserva</h3><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Insira a distância e o tempo estimados. O sistema não consulta GPS automaticamente.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">Enviar orçamento ao Cliente</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">Recusar</button></div></div>';
+ return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos da reserva</h3><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Insira a distância e o tempo estimados. O sistema não consulta GPS automaticamente.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">ENVIAR PROPOSTA AO CLIENTE</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">RECUSAR RESERVA</button></div></div>';
 }
 function renderHistory(){
  const sorted=items=>[...items].sort((a,b)=>(b.dataResposta?.seconds||b.dataRecusa?.seconds||0)-(a.dataResposta?.seconds||a.dataRecusa?.seconds||0));
@@ -53,7 +53,7 @@ function render(){
  }).join(''):'<p>Nenhuma reserva encontrada.</p>';
  renderHistory();
  $('driverApplicants').innerHTML=drivers.filter(d=>d.situacao==='pendente').length?
-  drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><button data-approve="${esc(d.id)}">Autorizar motorista</button></article>`).join(''):
+  drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><button data-approve="${esc(d.id)}">APROVAR</button></article>`).join(''):
   '<p>Nenhum motorista aguardando autorização.</p>';
 }
 function readQuoteInputs(card){
