@@ -560,3 +560,14 @@ body[data-pm-area="motorista"] main #reviewView #editRegister{display:block;widt
 
 /* Autorização do motorista */
 body[data-pm-area="motorista"] main #pendingView #backPendingRegister{display:block;width:100%;box-sizing:border-box;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important}
+
+/* Autorização de cadastro: cabeçalho e ações exclusivos desta tela */
+body[data-pm-area="motorista"]:has(#pendingView:not(.hidden)) header.porto-header{display:flex!important;justify-content:center!important;align-items:center!important}
+body[data-pm-area="motorista"]:has(#pendingView:not(.hidden)) header.porto-header .brand-lockup{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important}
+body[data-pm-area="motorista"]:has(#pendingView:not(.hidden)) header.porto-header strong,body[data-pm-area="motorista"]:has(#pendingView:not(.hidden)) header.porto-header .area-label{display:none!important}
+body[data-pm-area="motorista"]:has(#pendingView:not(.hidden)) header.porto-header .brand-logo{margin:0 auto!important}
+body[data-pm-area="motorista"] main #pendingView h2{text-align:center!important;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
+body[data-pm-area="motorista"] main #pendingView .authorization-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:12px}
+body[data-pm-area="motorista"] main #pendingView .authorization-actions button{width:100%;min-width:0;margin:0;padding:10px 4px;white-space:normal;overflow-wrap:anywhere;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important}
+body[data-pm-area="motorista"] main #pendingView#pendingView button#checkApproval{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+body[data-pm-area="motorista"] main #pendingView#pendingView button#backPendingRegister{background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#c7993e!important}
