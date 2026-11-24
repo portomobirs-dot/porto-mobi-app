@@ -660,3 +660,6 @@ html body[data-pm-area="cliente"] main #registerView#registerView button:is(#reg
 html body[data-pm-area="cliente"] main #registerView#registerView button#confirmRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
 html body[data-pm-area="cliente"] main #registerView#registerView button#registerViewLogout{grid-column:1/-1!important}
 html body[data-pm-area="cliente"] main #registerView#registerView .register-actions button:disabled{opacity:.55!important;cursor:not-allowed!important}
+
+/* Tela 09: botão de cadastro do motorista */
+html body[data-pm-area="motorista"] main #loginView#loginView button#showRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
