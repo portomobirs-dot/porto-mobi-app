@@ -531,3 +531,6 @@ body[data-pm-area="cliente"] #bookingView .booking-actions{display:grid;grid-tem
 body[data-pm-area="cliente"] #bookingView .booking-actions button{margin:0;min-height:50px;min-width:0}
 body[data-pm-area="cliente"] #bookingView #requestBooking{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
 body[data-pm-area="cliente"] #bookingView #requestBooking:disabled{opacity:.5!important;cursor:not-allowed}
+
+body[data-pm-area="cliente"] #budgetView [data-budget-response="aceito"]{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
+body[data-pm-area="cliente"] #budgetView .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
