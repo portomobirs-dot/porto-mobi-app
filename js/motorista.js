@@ -10,7 +10,6 @@ const val=id=>$(id).value.trim();
 let user=null,profile=null,registering=false,unsub=null,driverTrips=[],serviceId=null;
 $('regDate').value=todayLocal();
 $('forgotPassword').onclick=async event=>{event.preventDefault();const email=$('loginEmail');if(!email.value||!email.checkValidity())return message('Informe um e-mail válido na tela de acesso.',true);try{await sendPasswordResetEmail(auth,email.value.trim());message('Se o e-mail estiver cadastrado, você receberá instruções para redefinir a senha.')}catch{message('Não foi possível solicitar a recuperação da senha.',true)}};
-$('copyDriverCode').onclick=async()=>{const codigo=$('driverCode').value;if(!/^PMM-\d{3}$/.test(codigo)||codigo==='PMM-000')return message('O código será disponibilizado após a aprovação.',true);try{await navigator.clipboard.writeText(codigo);message('Código '+codigo+' copiado.')}catch{$('driverCode').focus();$('driverCode').select();message('Copie o código selecionado: '+codigo)}};
 function stop(){if(unsub){unsub();unsub=null}}
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
  const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';
@@ -72,7 +71,7 @@ async function loadProfile(){
   if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
   profile=snap.data();
   if(profile.situacao!=='ativo'&&profile.aprovado!==true){show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
-  show('homeView');showDriverPanel('active');$('profileInfo').textContent=`${profile.nomeMotorista} • ${profile.codigoMotorista} • ${profile.veiculoModelo||profile.modeloVeiculo||''}`;$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
+  show('homeView');showDriverPanel('active');$('homeDriverName').value=profile.nomeMotorista||'';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
   const q=query(collection(db,'reservas'),where('motoristaUid','==',user.uid));
   unsub=onSnapshot(q,snap=>renderTrips(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>message('Erro ao consultar reservas: '+errorText(err),true));
  }catch(err){message(errorText(err),true)}
