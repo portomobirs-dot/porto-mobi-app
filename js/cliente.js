@@ -168,18 +168,18 @@ async function respondBudget(event){
 $('activeReservations').addEventListener('click',respondBudget);
 $('budgetDetails').addEventListener('click',respondBudget);
 
-function reservationHtml(r){
+function reservationHtml(r, budgetOnly=false){
  const dt=r.dataViagem?.toDate?.();
  const money=Number.isInteger(r.numeroOrcamento)&&r.numeroOrcamento>0&&Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A definir';
  const response=r.statusReserva==='orcamento_pendente'?'<div class="actions"><button data-budget-response="aceito" data-id="'+esc(r.id)+'">Aceitar</button><button class="secondary" data-budget-response="recusado" data-id="'+esc(r.id)+'">Recusar</button></div>':'';
- return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(r.localDestino)+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+'<br><b>Valor da Reserva:</b> '+money+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+response+'</div>';
+ return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(r.localDestino)+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+(budgetOnly?'':'<br><b>Valor da Reserva:</b> '+money)+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+(budgetOnly?'<label for="budgetValue" class="budget-value-title">Valor da Reserva</label><input id="budgetValue" readonly value="'+esc(money)+'">':'')+response+'</div>';
 }
 function showBudget(r){
  $('budgetWelcome').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
  $('budgetProfile').textContent=(currentProfile?.nomeCliente||'')+' • '+(currentProfile?.codigoCliente||'');
  $('budgetClientCode').value=currentProfile?.codigoCliente||'';
  $('budgetCode').value=r.codigoReserva||'';
- $('budgetDetails').innerHTML=reservationHtml(r);
+ $('budgetDetails').innerHTML=reservationHtml(r,true);
  show('budgetView');
  if(!history.state?.bookingTracking)history.pushState({bookingTracking:true},'');
 }
