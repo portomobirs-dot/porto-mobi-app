@@ -167,7 +167,6 @@ async function respondBudget(event){
 }
 $('activeReservations').addEventListener('click',respondBudget);
 $('budgetDetails').addEventListener('click',respondBudget);
-$('budgetLogout').onclick=()=>$('logout').click();
 
 function reservationHtml(r){
  const dt=r.dataViagem?.toDate?.();
