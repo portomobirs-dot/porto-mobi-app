@@ -626,3 +626,10 @@ body[data-pm-area="admin"] main #dashboard#dashboard button[data-action="assign"
 html body[data-pm-area] header.porto-header.porto-header{display:flex!important;justify-content:center!important;align-items:center!important;background:#000!important}
 html body[data-pm-area] header.porto-header.porto-header .brand-lockup{display:flex!important;justify-content:center!important;align-items:center!important;width:100%!important;grid-template-columns:1fr!important}
 html body[data-pm-area] header.porto-header.porto-header .brand-logo{display:block!important;margin:0 auto!important}
+
+/* Identidade visual comum a todos os formulários. */
+html body[data-pm-area] #portoBrandHeader.porto-header{box-sizing:border-box!important;border:2px solid #D4AF37!important;outline:none!important;box-shadow:none!important;background:#000!important;border-radius:0!important;display:flex!important;justify-content:center!important;align-items:center!important}
+html body[data-pm-area] #portoBrandHeader.porto-header::before,html body[data-pm-area] #portoBrandHeader.porto-header::after,html body[data-pm-area] #portoBrandHeader .brand-lockup::before,html body[data-pm-area] #portoBrandHeader .brand-lockup::after{content:none!important;display:none!important}
+html body[data-pm-area] #portoBrandHeader .brand-lockup{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;border:0!important;box-shadow:none!important;width:100%!important}
+html body[data-pm-area] #portoBrandHeader .brand-logo{display:block!important;margin:0 auto!important;border:0!important;box-shadow:none!important}
+html body[data-pm-area] #portoBrandHeader .brand-slogan{display:block!important;color:#D4AF37!important;font:italic 13pt Tahoma,Arial,sans-serif!important;text-align:center!important;border:0!important;margin:0!important;padding:0!important}
