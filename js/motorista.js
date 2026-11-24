@@ -15,7 +15,7 @@ function stop(){if(unsub){unsub();unsub=null}}
 for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener('click',()=>{
  const el=$(btn.dataset.toggle);el.type=el.type==='password'?'text':'password';
  const hidden=el.type==='password';
- if(btn.classList.contains('login-eye-button')){
+ if(btn.matches('.login-eye-button,.register-eye-button')){
   btn.setAttribute('aria-label',hidden?'Mostrar senha':'Ocultar senha');
   btn.setAttribute('title',hidden?'Mostrar senha':'Ocultar senha');
   btn.setAttribute('aria-pressed',String(!hidden));
@@ -23,23 +23,31 @@ for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener
 });
 $('regPhone').oninput=e=>{e.target.value=formatPhone(e.target.value)};
 $('regPlate').oninput=e=>{let s=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);e.target.value=s.length>3?s.slice(0,3)+'-'+s.slice(3):s};
-$('showRegister').onclick=()=>{$('regDate').value=todayLocal();show('registerView')};$('backLogin').onclick=()=>show('loginView');$('editRegister').onclick=()=>show('registerView');
+$('showRegister').onclick=()=>{invalidateDriverReview();$('regDate').value=todayLocal();show('registerView')};$('editRegister').onclick=()=>show('registerView');
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}catch(err){message(errorText(err),true)}};
+let reviewedDriver=null;
+const driverSnapshot=()=>JSON.stringify([...$('registerForm').querySelectorAll('input')].map(el=>el.value));
+function invalidateDriverReview(){reviewedDriver=null;$('confirmRegister').disabled=true}
+$('registerForm').addEventListener('input',invalidateDriverReview);
+$('registerForm').addEventListener('change',invalidateDriverReview);
+$('registerForm').addEventListener('submit',e=>e.preventDefault());
 $('reviewRegister').onclick=()=>{
  if(!$('registerForm').reportValidity())return;
  if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Telefone inválido.',true);
  if(!/^[A-Z]{3}-[0-9][A-Z0-9][0-9]{2}$/.test(val('regPlate')))return message('Placa inválida. Formato ABC-1D23 ou ABC-1234.',true);
  $('registerSummary').textContent=`Código: PMM-000 (atribuído após aprovação)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}\nVeículo: ${val('regVehicle')}\nPlaca: ${val('regPlate')}\nCor: ${val('regColor')}`;
+ reviewedDriver=driverSnapshot();$('confirmRegister').disabled=false;
  show('reviewView');
 };
 $('confirmRegister').onclick=async()=>{
+ if(registering||!reviewedDriver||reviewedDriver!==driverSnapshot()||!$('registerForm').reportValidity())return message('Revise os dados antes de cadastrar.',true);
  const b=$('confirmRegister');b.disabled=true;registering=true;let cred=null;
  try{
   cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);user=cred.user;
   await setDoc(doc(db,'motoristas',user.uid),{uid:user.uid,nomeMotorista:val('regName'),telefoneMotorista:val('regPhone'),email:user.email,veiculoModelo:val('regVehicle'),veiculoPlaca:val('regPlate'),veiculoCor:val('regColor'),situacao:'pendente',numeroMotorista:0,codigoMotorista:'',dataCadastro:serverTimestamp()});
   await loadProfile();message('Cadastro enviado. Aguarde autorização do administrador.');
- }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=false}
+ }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
 $('logout').onclick=logout;$('logoutPending').onclick=logout;$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
