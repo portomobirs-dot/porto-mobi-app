@@ -534,3 +534,8 @@ body[data-pm-area="cliente"] #bookingView #requestBooking:disabled{opacity:.5!im
 
 body[data-pm-area="cliente"] #budgetView [data-budget-response="aceito"]{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
 body[data-pm-area="cliente"] #budgetView .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+body[data-pm-area="cliente"] #budgetView button[data-budget-response="aceito"]{background:#218638!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid #218638!important}
+body[data-pm-area="cliente"] #budgetView button[data-budget-response="recusado"]{background:#c52229!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid #c52229!important}
+body[data-pm-area="cliente"] #budgetView .budget-title,body[data-pm-area="cliente"] #budgetView .budget-value-title{text-align:center;color:#f5cc55;font-weight:bold;display:block}
+body[data-pm-area="cliente"] #budgetView #budgetValue{background:#fff!important;color:#000!important;-webkit-text-fill-color:#000!important;text-align:center;font-size:24px;font-weight:bold;margin-bottom:12px}
