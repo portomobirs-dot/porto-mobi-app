@@ -117,6 +117,11 @@ async function createProfile(user){
  });
 }
 $('logout').onclick=async()=>{await signOut(auth);currentProfile=null;currentUser=null;show('loginView')};
+/* Ações da tela de cadastro: dados pessoais só após autenticação. */
+$('registerViewTracking').onclick=()=>{if(!currentUser||!currentProfile)return;const r=clientReservations[0];if(r)showTracking(r);else message('Você ainda não possui uma solicitação.');};
+$('registerViewHistory').onclick=()=>{if(!currentUser||!currentProfile)return;$('viewHistory').click();};
+$('registerViewLogout').onclick=async()=>{if(currentUser)await $('logout').click();else show('loginView');};
+
 $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
