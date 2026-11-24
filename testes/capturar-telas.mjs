@@ -86,7 +86,7 @@ try{
  await capture(cliente,'03-cliente-reserva');
  await expose(cliente,'bookingReview',['loginView','registerView','registerReview','homeView','bookingView']);
  await cliente.evaluate(()=>{
-  document.querySelector('#bookingSummary').textContent='Cliente: Cliente Exemplo\nCódigo do Cliente: PMC-0001\nData da Reserva: 2026-11-23 (automática)\nCódigo da Reserva: PMR-000000 (automático)\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nPassageiros: 1\nObservações: Bagagem de mão';
+  document.querySelector('#bookingSummary').textContent='Cliente: Cliente Exemplo\nCódigo do Cliente: PMC-0001\nData da Reserva: 2026-11-23\nCódigo da Reserva: PMR-000000\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nPassageiros: 1\nObservações: Bagagem de mão';
  });
  await capture(cliente,'13-cliente-confirmacao-reserva');
  await expose(cliente,'bookingTracking',['loginView','registerView','registerReview','bookingView','bookingReview','homeView']);
