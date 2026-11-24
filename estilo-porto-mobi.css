@@ -539,3 +539,7 @@ body[data-pm-area="cliente"] #budgetView button[data-budget-response="aceito"]{b
 body[data-pm-area="cliente"] #budgetView button[data-budget-response="recusado"]{background:#c52229!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid #c52229!important}
 body[data-pm-area="cliente"] #budgetView .budget-title,body[data-pm-area="cliente"] #budgetView .budget-value-title{text-align:center;color:#f5cc55;font-weight:bold;display:block}
 body[data-pm-area="cliente"] #budgetView #budgetValue{background:#fff!important;color:#000!important;-webkit-text-fill-color:#000!important;text-align:center;font-size:24px;font-weight:bold;margin-bottom:12px}
+
+/* Prioridade exclusiva dos botões do orçamento sobre a regra global dourada. */
+body[data-pm-area="cliente"] main #budgetView#budgetView button[data-budget-response="aceito"]{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+body[data-pm-area="cliente"] main #budgetView#budgetView button[data-budget-response="recusado"]{background:#c52229!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#c52229!important}
