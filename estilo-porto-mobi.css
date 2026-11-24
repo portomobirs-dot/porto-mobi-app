@@ -633,3 +633,18 @@ html body[data-pm-area] #portoBrandHeader.porto-header::before,html body[data-pm
 html body[data-pm-area] #portoBrandHeader .brand-lockup{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;border:0!important;box-shadow:none!important;width:100%!important}
 html body[data-pm-area] #portoBrandHeader .brand-logo{display:block!important;margin:0 auto!important;border:0!important;box-shadow:none!important}
 html body[data-pm-area] #portoBrandHeader .brand-slogan{display:block!important;color:#D4AF37!important;font:italic 13pt Tahoma,Arial,sans-serif!important;text-align:center!important;border:0!important;margin:0!important;padding:0!important}
+
+/* Padrão global aprovado: molduras alinhadas, arredondadas, preto e dourado. */
+body[data-pm-area="cliente"]{--pm-form-width:560px;--pm-form-gutter:18px}
+body[data-pm-area="motorista"]{--pm-form-width:675px;--pm-form-gutter:18px}
+body[data-pm-area="admin"]{--pm-form-width:1140px;--pm-form-gutter:16px}
+html body[data-pm-area] #portoBrandHeader.porto-header{width:calc(100% - 2 * var(--pm-form-gutter))!important;max-width:calc(var(--pm-form-width) - 2 * var(--pm-form-gutter))!important;margin:12px auto 0!important;border-radius:16px!important}
+html body[data-pm-area] main{width:100%!important;max-width:var(--pm-form-width)!important;padding-inline:var(--pm-form-gutter)!important;margin:12px auto 36px!important}
+html body[data-pm-area] main :is(section,#dashboard section){background:#000!important;background-image:none!important;border:2px solid #D4AF37!important;border-radius:16px!important;box-shadow:none!important;color:#fff!important}
+html body[data-pm-area] main :is(section,#dashboard section) :is(h1,h2,h3,h4){color:#D4AF37!important;-webkit-text-fill-color:#D4AF37!important;text-shadow:none!important}
+html body[data-pm-area] main :is(section,#dashboard section) :is(p,label,.muted,.hint){color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body[data-pm-area] main :is(section,#dashboard section) :is(.item,.codebox,.quote,.history-panel){background:#000!important;background-image:none!important;color:#fff!important;border-color:#D4AF37!important}
+html body[data-pm-area] main :is(section,#dashboard section) :is(.item,.codebox,.quote,.history-panel) :is(p,label,b,strong,span,small,output,.muted,.quote-note,.quote-total){color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body[data-pm-area] main :is(section,#dashboard section) :is(input,textarea,select){background:#fff!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;color-scheme:light}
+html body[data-pm-area] main #budgetView#budgetView label.budget-value-title[for="budgetValue"],html body[data-pm-area] main #homeView#homeView label:is([for="driverCode"],[for="homeDriverName"]){color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body[data-pm-area] main .login-help a{color:#D4AF37!important}
