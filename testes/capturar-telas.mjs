@@ -199,8 +199,8 @@ try{
   document.querySelector('#budgetDetails').innerHTML=
    '<div class="item"><strong>PMR-000001 — Orçamento aguardando resposta</strong>'+
    '<p>Embarque: Avenida Exemplo, 100 → Aeroporto<br>10/12/2026 14:30'+
-   '<br><b>Valor da Reserva:</b> R$ 108,40'+
    '<br><b>Motorista Designado:</b> A definir</p>'+
+   '<label for="budgetValue" class="budget-value-title">Valor da Reserva</label><input id="budgetValue" readonly value="R$ 108,40">'+
    '<div class="actions"><button data-budget-response="aceito">Aceitar</button><button class="secondary" data-budget-response="recusado">Recusar</button></div></div>';
  });
  await capture(clienteOrcamento,'18-cliente-visualizacao-orcamento');
