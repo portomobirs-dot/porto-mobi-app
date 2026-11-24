@@ -557,3 +557,6 @@ body[data-pm-area="motorista"] #registerView #confirmRegister:disabled{opacity:.
 
 /* Revisão do cadastro do motorista: botão de largura integral */
 body[data-pm-area="motorista"] main #reviewView #editRegister{display:block;width:100%;box-sizing:border-box;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important}
+
+/* Autorização do motorista */
+body[data-pm-area="motorista"] main #pendingView #backPendingRegister{display:block;width:100%;box-sizing:border-box;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important}
