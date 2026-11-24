@@ -49,8 +49,8 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
-$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
-$('backHomeRegister').onclick=$('backPendingRegister').onclick=()=>{
+$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
+$('reservationBackRegister').onclick=$('backHomeRegister').onclick=$('backPendingRegister').onclick=()=>{
  if(!user||!profile)return;
  invalidateDriverReview();
  const fields={regName:profile.nomeMotorista,regPhone:profile.telefoneMotorista,regEmail:profile.email||user.email,regVehicle:profile.veiculoModelo,regPlate:profile.veiculoPlaca,regColor:profile.veiculoCor};
@@ -132,13 +132,19 @@ function showDriverPanel(which){
  $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
 }
 
-$('reservationBack').onclick=()=>{show('homeView');showDriverPanel('active')};
+
 $('openService').onclick=()=>{
  const r=selectedService();
  if(!r||!['confirmada','em_andamento'].includes(r.statusReserva))
   return message('Aceite a reserva antes de iniciar atendimento.',true);
- renderService();show('serviceView');
+ if(r.statusReserva==='confirmada'){
+  $('reservationPickupGps').classList.remove('hidden');$('reservationAvailable').classList.remove('hidden');
+  $('serviceOnWay').click();
+ }else message('Atendimento já em andamento.');
 };
+$('reservationAvailable').onclick=()=>$('serviceAvailable').click();
+$('reservationDestination').onclick=()=>{const r=selectedService();if(!r)return;if(r.statusReserva==='em_andamento'){window.open(maps(r.localDestino),'_blank','noopener');return}if(r.statusReserva==='confirmada')$('serviceStart').click()};
+$('reservationComplete').onclick=()=>$('serviceComplete').click();
 $('serviceBack').onclick=()=>{renderReservation();show('reservationView')};
 
 function openReservationById(id){
@@ -146,7 +152,7 @@ function openReservationById(id){
  if(!reservation||!['confirmada','em_andamento'].includes(reservation.statusReserva)){
   showDriverPanel('active');return message('Esta reserva ainda não está pronta para atendimento.',true);
  }
- serviceId=id;renderReservation();show('reservationView');
+ serviceId=id;$('reservationPickupGps').classList.add('hidden');$('reservationAvailable').classList.add('hidden');renderReservation();show('reservationView');
 }
 function renderReservation(){
  const r=driverTrips.find(row=>row.id===serviceId);
@@ -164,6 +170,11 @@ function renderReservation(){
   'Passageiros: '+(r.passageiros||1)+'\n'+
   'Observações: '+(r.observacoes||'Nenhuma');
  $('reservationDetails').style.whiteSpace='pre-line';
+ $('reservationPickupGps').href=maps(r.localEmbarque);
+ $('openService').disabled=r.statusReserva!=='confirmada';
+ $('reservationDestination').disabled=!['confirmada','em_andamento'].includes(r.statusReserva);
+ $('reservationComplete').disabled=r.statusReserva!=='em_andamento';
+ if(r.statusReserva!=='confirmada'){ $('reservationPickupGps').classList.add('hidden');$('reservationAvailable').classList.add('hidden'); }
 }
 function renderService(){
  const r=driverTrips.find(row=>row.id===serviceId);
