@@ -188,7 +188,6 @@ function reservationHtml(r, budgetOnly=false){
 }
 function showBudget(r){
  $('budgetWelcome').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
- $('budgetProfile').textContent=(currentProfile?.nomeCliente||'')+' • '+(currentProfile?.codigoCliente||'');
  $('budgetClientCode').value=currentProfile?.codigoCliente||'';
  $('budgetCode').value=r.codigoReserva||'';
  $('budgetDetails').innerHTML=reservationHtml(r,true);
