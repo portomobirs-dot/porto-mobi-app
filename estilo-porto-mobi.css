@@ -554,3 +554,6 @@ body[data-pm-area="motorista"] #registerView .register-eye-button{width:52px;min
 body[data-pm-area="motorista"] #registerView .register-eye-button svg{display:block}
 body[data-pm-area="motorista"] #registerView #confirmRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
 body[data-pm-area="motorista"] #registerView #confirmRegister:disabled{opacity:.65!important;cursor:not-allowed}
+
+/* Revisão do cadastro do motorista: botão de largura integral */
+body[data-pm-area="motorista"] main #reviewView #editRegister{display:block;width:100%;box-sizing:border-box;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important}
