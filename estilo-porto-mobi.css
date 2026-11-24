@@ -648,3 +648,15 @@ html body[data-pm-area] main :is(section,#dashboard section) :is(.item,.codebox,
 html body[data-pm-area] main :is(section,#dashboard section) :is(input,textarea,select){background:#fff!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;color-scheme:light}
 html body[data-pm-area] main #budgetView#budgetView label.budget-value-title[for="budgetValue"],html body[data-pm-area] main #homeView#homeView label:is([for="driverCode"],[for="homeDriverName"]){color:#fff!important;-webkit-text-fill-color:#fff!important}
 html body[data-pm-area] main .login-help a{color:#D4AF37!important}
+
+/* Tela 02 — cadastro do cliente, conforme aprovação individual. */
+html body[data-pm-area="cliente"] main #registerView#registerView,
+html body[data-pm-area="cliente"] main #registerView#registerView :is(h2,p,label,input,button,textarea,select){font-family:Tahoma,Arial,sans-serif!important;font-size:14pt!important}
+html body[data-pm-area="cliente"] main #registerView#registerView .codebox{background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
+html body[data-pm-area="cliente"] main #registerView#registerView .register-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:18px!important;padding:12px!important;background:#000!important;border:2px solid #D4AF37!important;border-radius:16px!important}
+html body[data-pm-area="cliente"] main #registerView#registerView .register-actions button{width:100%!important;min-width:0!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:14pt!important}
+html body[data-pm-area="cliente"] main #registerView#registerView button#reviewRegister,
+html body[data-pm-area="cliente"] main #registerView#registerView button:is(#registerViewTracking,#registerViewHistory,#registerViewLogout){background:#E9BF45!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#D4AF37!important}
+html body[data-pm-area="cliente"] main #registerView#registerView button#confirmRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+html body[data-pm-area="cliente"] main #registerView#registerView button#registerViewLogout{grid-column:1/-1!important}
+html body[data-pm-area="cliente"] main #registerView#registerView .register-actions button:disabled{opacity:.55!important;cursor:not-allowed!important}
