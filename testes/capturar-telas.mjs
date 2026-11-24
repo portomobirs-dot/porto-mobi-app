@@ -120,7 +120,7 @@ try{
   document.querySelector('#profileInfo').textContent='Motorista Exemplo • PMM-001 • Veiculo demonstrativo';
   document.querySelector('#driverCode').value='PMM-001';
   document.querySelector('#driverActiveBlock').classList.remove('hidden');
-  document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-000001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button>Aceitar</button><button class="danger">Recusar</button></div></article>';
+  document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-000001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button data-action="accept">ACEITAR</button><button class="danger" data-action="reject">RECUSAR</button></div></article>';
   document.querySelector('#historyReservations').innerHTML='<p>Nenhuma corrida concluida.</p>';
  });
  await capture(motorista,'07-motorista-corridas');
