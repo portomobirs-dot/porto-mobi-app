@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview'];
+const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -59,7 +59,7 @@ function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
  $('historyBlock').classList.toggle('hidden',which!=='history');
 }
-$('viewActiveReservations').onclick=()=>openClientPanel('active');
+$('viewActiveReservations').onclick=()=>{const r=clientReservations[0];if(r)showTracking(r);else openClientPanel('active')};
 $('viewReservationHistory').onclick=()=>openClientPanel('history');
 $('showBooking').onclick=()=>{
  invalidateBookingReview();
@@ -137,7 +137,7 @@ async function submitBooking(){
     codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
-  invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();openClientPanel('active');message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
+  invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();showTracking(clientReservations.find(r=>r.codigoReserva===assignedCode));message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
  }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();$('requestBooking').disabled=!valid}
 }
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
@@ -172,6 +172,18 @@ function reservationHtml(r){
  const response=r.statusReserva==='orcamento_pendente'?'<div class="actions"><button data-budget-response="aceito" data-id="'+esc(r.id)+'">Aceitar Orçamento</button><button class="secondary" data-budget-response="recusado" data-id="'+esc(r.id)+'">Recusar Orçamento</button></div>':'';
  return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(r.localDestino)+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+'<br><b>Valor da Reserva:</b> '+money+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+response+'</div>';
 }
+function showTracking(r){
+ if(!r)return;
+ $('trackingClient').textContent=currentProfile?.nomeCliente||'';
+ $('trackingClientCode').value=currentProfile?.codigoCliente||'';
+ $('trackingCode').value=r.codigoReserva||'';
+ const status=r.statusReserva;
+ $('trackingStatus').value=status==='recusada'?'Recusada':['confirmada','em_andamento','concluida'].includes(status)?'Confirmada':['cancelada','cancelado'].includes(status)?'Cancelada':'Aguardando confirmação';
+ $('trackingDetails').textContent=[r.localEmbarque+' → '+r.localDestino,r.dataViagem?.toDate?.().toLocaleString('pt-BR')||'', 'Passageiros: '+(r.passageiros||1),'Valor: '+(r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir')].join('\n');
+ show('bookingTracking');
+ if(!history.state?.bookingTracking)history.pushState({bookingTracking:true},'');
+}
+window.addEventListener('popstate',()=>{if(currentUser&&currentProfile)show('homeView')});
 async function loadHome(){
  if(!currentUser||loadingHome)return;loadingHome=true;
  try{
