@@ -50,8 +50,8 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
-$('logout').onclick=logout;$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
-$('backPendingRegister').onclick=()=>{
+$('reservationLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
+$('backHomeRegister').onclick=$('backPendingRegister').onclick=()=>{
  if(!user||!profile)return;
  invalidateDriverReview();
  const fields={regName:profile.nomeMotorista,regPhone:profile.telefoneMotorista,regEmail:profile.email||user.email,regVehicle:profile.veiculoModelo,regPlate:profile.veiculoPlaca,regColor:profile.veiculoCor};
@@ -61,10 +61,10 @@ $('backPendingRegister').onclick=()=>{
  for(const el of $('registerForm').querySelectorAll('input'))el.readOnly=true;
  $('reviewRegister').disabled=true;
  show('registerView');
- message('Cadastro já enviado. Consulta dos dados; use o retorno do navegador para voltar à autorização.');
+ message('Cadastro já enviado. Consulta dos dados; use o retorno do navegador para voltar à tela anterior.');
  if(!history.state?.pendingRegister)history.pushState({pendingRegister:true},'');
 };
-window.addEventListener('popstate',()=>{if(user&&profile&&profile.situacao!=='ativo'&&profile.aprovado!==true)loadProfile()});
+window.addEventListener('popstate',()=>{if(user&&profile&&!$('registerView').classList.contains('hidden'))loadProfile()});
 async function loadProfile(){
  if(!user)return;stop();
  try{
@@ -72,7 +72,7 @@ async function loadProfile(){
   if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
   profile=snap.data();
   if(profile.situacao!=='ativo'&&profile.aprovado!==true){show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
-  show('homeView');$('profileInfo').textContent=`${profile.nomeMotorista} • ${profile.codigoMotorista} • ${profile.veiculoModelo||profile.modeloVeiculo||''}`;$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
+  show('homeView');showDriverPanel('active');$('profileInfo').textContent=`${profile.nomeMotorista} • ${profile.codigoMotorista} • ${profile.veiculoModelo||profile.modeloVeiculo||''}`;$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
   const q=query(collection(db,'reservas'),where('motoristaUid','==',user.uid));
   unsub=onSnapshot(q,snap=>renderTrips(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>message('Erro ao consultar reservas: '+errorText(err),true));
  }catch(err){message(errorText(err),true)}
@@ -83,7 +83,7 @@ function renderTrips(rows){
  driverTrips=rows;
  const active=rows.filter(r=>!done.has(r.statusReserva)),hist=rows.filter(r=>done.has(r.statusReserva));
  const html=(r,history=false)=>{
-  const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">Aceitar</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">Recusar</button></div>`:
+  const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">ACEITAR</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">RECUSAR</button></div>`:
    r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento da Reserva</button></div>`:
    r.statusReserva==='em_andamento'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento em Andamento</button></div>`:'';
   return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
@@ -132,8 +132,7 @@ function showDriverPanel(which){
  $('driverActiveBlock').classList.toggle('hidden',which!=='active');
  $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
 }
-$('viewAssignedReservations').onclick=()=>showDriverPanel('active');
-$('viewDriverHistory').onclick=()=>showDriverPanel('history');
+
 $('reservationBack').onclick=()=>{show('homeView');showDriverPanel('active')};
 $('openService').onclick=()=>{
  const r=selectedService();
@@ -232,7 +231,7 @@ $('serviceComplete').onclick=async()=>{
  const b=$('serviceComplete');b.disabled=true;
  try{
   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp(),dataConclusao:serverTimestamp()});
-  serviceId=null;show('homeView');showDriverPanel('history');
+  serviceId=null;show('homeView');showDriverPanel('active');
   message('Atendimento concluído. Reserva registrada no histórico.');
  }catch(err){message('Não foi possível concluir atendimento: '+errorText(err),true)}
  finally{b.disabled=false}
