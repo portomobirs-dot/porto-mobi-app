@@ -546,3 +546,11 @@ body[data-pm-area="cliente"] main #budgetView#budgetView button[data-budget-resp
 
 /* Valor da Reserva: padrão aprovado, somente na tela de orçamento. */
 body[data-pm-area="cliente"] main #budgetView#budgetView label.budget-value-title[for="budgetValue"]{font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;text-align:center!important}
+
+/* Cadastro do motorista: ações e olhos exclusivos */
+body[data-pm-area="motorista"] #registerView .register-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+body[data-pm-area="motorista"] #registerView .register-actions button{width:100%;min-width:0;margin:0;padding:10px 4px;font-size:13pt!important}
+body[data-pm-area="motorista"] #registerView .register-eye-button{width:52px;min-width:52px;height:46px;min-height:46px;display:flex;align-items:center;justify-content:center;padding:7px;margin:0;line-height:1}
+body[data-pm-area="motorista"] #registerView .register-eye-button svg{display:block}
+body[data-pm-area="motorista"] #registerView #confirmRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+body[data-pm-area="motorista"] #registerView #confirmRegister:disabled{opacity:.65!important;cursor:not-allowed}
