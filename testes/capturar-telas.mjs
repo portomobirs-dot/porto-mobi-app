@@ -70,7 +70,7 @@ try{
  await capture(cliente,'02-cliente-cadastro');
  await expose(cliente,'registerReview',['loginView','registerView','homeView','bookingView','bookingReview']);
  await cliente.evaluate(()=>{
-  document.querySelector('#registerSummary').textContent='Código: PMC-0000 (automático)\nData de cadastro: 2026-11-23\nNome: Cliente Exemplo\nTelefone: (51) 99999-1111\nE-mail: cliente@example.invalid';
+  document.querySelector('#registerSummary').textContent='Código do Cliente: PMC-0000\nData de cadastro: 2026-11-23\nNome: Cliente Exemplo\nTelefone: (51) 99999-1111\nE-mail: cliente@example.invalid';
   document.querySelector('#registerSummary').style.whiteSpace='pre-line';
  });
  await cliente.evaluate(()=>{document.querySelector('#reviewPassword').textContent='********';});
