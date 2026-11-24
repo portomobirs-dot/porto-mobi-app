@@ -89,16 +89,13 @@ try{
   document.querySelector('#bookingSummary').textContent='Cliente: Cliente Exemplo\nCódigo do Cliente: PMC-0001\nData da Reserva: 2026-11-23 (automática)\nCódigo da Reserva: PMR-000000 (automático)\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData: 2026-12-10\nHorário: 14:30\nPassageiros: 1\nObservações: Bagagem de mão';
  });
  await capture(cliente,'13-cliente-confirmacao-reserva');
- await expose(cliente,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview']);
+ await expose(cliente,'bookingTracking',['loginView','registerView','registerReview','bookingView','bookingReview','homeView']);
  await cliente.evaluate(()=>{
-  document.querySelector('#profileInfo').textContent='Cliente Exemplo • PMC-0001';
-  document.querySelector('#clientWelcome').textContent='Olá, Cliente Exemplo!';
-  document.querySelector('#activeBlock').classList.remove('hidden');
-  document.querySelector('#clientCode').value='PMC-0001';
-  document.querySelector('#lastBookingCode').value='PMR-000001';
-  document.querySelector('#copyBookingCode').disabled=false;
-  document.querySelector('#activeReservations').innerHTML='<div class="item"><strong>PMR-000001</strong> — pendente<p class="small">Avenida Exemplo, 100 → Aeroporto<br>10/12/2026 14:30<br>Valor: A definir</p></div>';
-  document.querySelector('#reservationHistory').innerHTML='<p>Nenhuma reserva concluida.</p>';
+  document.querySelector('#trackingClient').textContent='Cliente Exemplo';
+  document.querySelector('#trackingClientCode').value='PMC-0001';
+  document.querySelector('#trackingCode').value='PMR-000001';
+  document.querySelector('#trackingStatus').value='Aguardando confirmação';
+  document.querySelector('#trackingDetails').textContent='Avenida Exemplo, 100 → Aeroporto\n10/12/2026 14:30\nPassageiros: 1\nValor: A definir';
  });
  await capture(cliente,'04-cliente-acompanhamento');
  await cliente.close();
