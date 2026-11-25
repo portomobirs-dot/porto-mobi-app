@@ -707,3 +707,8 @@ html body[data-pm-area="motorista"] main #homeView h1{text-align:center;color:#D
 html body[data-pm-area="motorista"] main #driverPanelActions:not(.hidden){display:grid!important;gap:12px;border:2px solid #D4AF37;border-radius:16px;padding:12px}
 html body[data-pm-area="motorista"] main #driverPanelActions button{font:bold 13pt Tahoma,Arial,sans-serif!important;background:#D4AF37!important;color:#000!important;-webkit-text-fill-color:#000!important}
 html body[data-pm-area="motorista"] main #driverPanelActions #driverPanelLogout{background:#B42318!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#B42318!important}
+
+/* Tela 12: comandos de cadastro do motorista. */
+html body[data-pm-area="motorista"] main #registerView .register-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;border:2px solid #D4AF37!important;border-radius:16px!important;padding:12px!important;box-sizing:border-box!important}
+html body[data-pm-area="motorista"] main #registerView .register-actions button{font:bold 13pt Tahoma,Arial,sans-serif!important;white-space:normal!important;min-width:0!important}
+html body[data-pm-area="motorista"] main #registerView #registerDriverPanel{grid-column:1/-1!important;background:#D4AF37!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#D4AF37!important}
