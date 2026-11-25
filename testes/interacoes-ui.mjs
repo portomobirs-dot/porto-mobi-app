@@ -680,9 +680,23 @@ for(const [answer,status] of [['aceito','orcamento_aceito'],['recusado','orcamen
  test('Cliente '+answer+' orcamento e historico permanece registrado', {timeout:30000},async()=>{
   const {context,page,errors}=await pageFor('cliente.html','cliente-orcamento');
   try{
+   await page.locator('#budgetView').waitFor({state:'visible'});
+   assert.equal(await page.locator('#budgetClientCode').inputValue(),'PMC-0001');
+   assert.equal(await page.locator('#budgetCode').inputValue(),'PMR-000001');
+   assert.match(await page.locator('#budgetValue').inputValue(),/70,00/);
+   assert.match(await page.locator('#budgetDetails').innerText(),/Aeroporto/);
+   assert.deepEqual(await page.locator('#budgetDetails .actions button').allTextContents(),['ACEITAR','RECUSAR','PAINEL DO CLIENTE']);
+   await page.locator('#budgetBackToPanel').click();
    await page.locator('#homeView').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva),'orcamento_pendente');
    await page.locator('#viewActiveReservations').click();
-   await page.locator('[data-budget-response="'+answer+'"]').click();
+   await page.locator('#budgetView').waitFor({state:'visible'});
+   await page.evaluate(()=>{window.confirm=()=>false});
+   await page.locator('#budgetDetails [data-budget-response="'+answer+'"]').click();
+   assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva),'orcamento_pendente');
+   assert.equal(await page.evaluate(()=>Boolean(window.__pm.records.historicoOrcamentos?.['reserva001-1'])),false);
+   await page.evaluate(()=>{window.confirm=()=>true});
+   await page.locator('#budgetDetails [data-budget-response="'+answer+'"]').click();
    await page.waitForFunction(expected=>window.__pm.records.reservas.reserva001.statusReserva===expected,status);
    const event=await page.evaluate(()=>window.__pm.records.historicoOrcamentos?.['reserva001-1']);
    assert.equal(event.resposta,answer);
