@@ -216,7 +216,7 @@ try{
    '<p>Embarque: Avenida Exemplo, 100 → Aeroporto<br>10/12/2026 14:30'+
    '<br><b>Motorista Designado:</b> A definir</p>'+
    '<label for="budgetValue" class="budget-value-title">Valor da Reserva</label><input id="budgetValue" readonly value="R$ 108,40">'+
-   '<div class="actions"><button data-budget-response="aceito">ACEITAR</button><button class="secondary" data-budget-response="recusado">RECUSAR</button></div></div>';
+   '<div class="actions"><button data-budget-response="aceito">ACEITAR</button><button class="secondary" data-budget-response="recusado">RECUSAR</button><button type="button" id="budgetBackToPanel">PAINEL DO CLIENTE</button></div></div>';
  });
  await capture(clienteOrcamento,'18-cliente-visualizacao-orcamento');
  await clienteOrcamento.close();
