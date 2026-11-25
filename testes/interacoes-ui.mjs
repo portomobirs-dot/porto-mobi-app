@@ -302,6 +302,42 @@ test('Tela 04: campos, passageiros, revisao e cadastro da reserva', {timeout:300
  }finally{await context.close()}
 });
 
+test('Tela 05: resumo fiel, retorno e nova revisao da reserva', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#showBooking').click();
+  const fields={pickup:'Avenida Exemplo, 100',destination:'Aeroporto',travelDate:future(),travelTime:'14:30'};
+  for(const [id,value] of Object.entries(fields))await page.locator('#'+id).fill(value);
+  await page.locator('#increasePassengers').click();
+  const passengers=await page.locator('#passengers').inputValue();
+  const created=await page.locator('#bookingCreatedDate').inputValue();
+  await page.locator('#reviewBooking').click();
+  await page.locator('#bookingReview').waitFor({state:'visible'});
+  assert.equal(await page.locator('#bookingReview h2').innerText(),'REVISÃO DA SOLICITAÇÃO');
+  assert.equal(await page.locator('#editBooking').innerText(),'VOLTAR P/ SOLICITAÇÃO');
+  const summary=await page.locator('#bookingSummary').innerText();
+  for(const value of ['Cliente: ','Código do Cliente: PMC-','Data da Reserva: '+created,'Código da Reserva: PMR-000000','Embarque: '+fields.pickup,'Destino: '+fields.destination,'Data: '+fields.travelDate,'Horário: '+fields.travelTime,'Passageiros: '+passengers,'Observações: Nenhuma'])assert.ok(summary.includes(value),value);
+  await page.locator('#editBooking').click();
+  await page.locator('#bookingView').waitFor({state:'visible'});
+  for(const [id,value] of Object.entries(fields))assert.equal(await page.locator('#'+id).inputValue(),value);
+  assert.equal(await page.locator('#passengers').inputValue(),passengers);
+  assert.equal(await page.locator('#requestBooking').isEnabled(),true);
+  await page.locator('#notes').fill('Bagagem de mao');
+  assert.equal(await page.locator('#requestBooking').isDisabled(),true);
+  await page.locator('#reviewBooking').click();
+  await page.locator('#bookingReview').waitFor({state:'visible'});
+  assert.equal(await page.locator('#bookingSummary').innerText(),summary.replace('Observações: Nenhuma','Observações: Bagagem de mao'));
+  await page.locator('#editBooking').click();
+  assert.equal(await page.locator('#notes').inputValue(),'Bagagem de mao');
+  assert.equal(await page.locator('#requestBooking').isEnabled(),true);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
