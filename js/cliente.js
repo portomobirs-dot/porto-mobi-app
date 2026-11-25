@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView','historyView'];
+const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView','historyView','serviceTrackingView'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -59,6 +59,21 @@ for(const id of ['decreasePassengers','increasePassengers'])$(id).addEventListen
 $('requestBooking').onclick=()=>submitBooking();
 $('editBooking').onclick=()=>show('bookingView');
 $('backToBooking').onclick=()=>show('homeView');
+const serviceDate=d=>d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
+function eligibleService(){
+ if(!currentUser)return null;
+ return clientReservations.filter(r=>r.clienteUid===currentUser.uid&&['confirmada','em_andamento'].includes(r.statusReserva)&&r.dataViagem?.toDate?.()&&serviceDate(r.dataViagem.toDate())===serviceDate(new Date())).sort((a,b)=>a.dataViagem.toDate()-b.dataViagem.toDate())[0]||null;
+}
+$('viewServiceTracking').onclick=async()=>{
+ await loadHome();
+ const r=eligibleService();if(!r)return;
+ const d=r.dataViagem.toDate();
+ const fields={Welcome:'Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!',Client:currentProfile?.codigoCliente,Code:r.codigoReserva,Date:serviceDate(d),Time:d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}),Pickup:r.localEmbarque,Destination:r.localDestino,Driver:r.nomeMotoristaDesignado,Vehicle:r.veiculoModelo,Plate:r.veiculoPlaca,Color:r.veiculoCor,Status:r.statusReserva==='em_andamento'?'Atendimento em andamento.':'Aguardando início do atendimento.'};
+ for(const [key,value] of Object.entries(fields))$('serviceTracking'+key).textContent=value||'Não informado';
+ show('serviceTrackingView');
+ if(!history.state?.serviceTracking)history.pushState({serviceTracking:true},'');
+};
+$('serviceTrackingLogout').onclick=()=> $('logout').click();
 function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
 
@@ -229,7 +244,7 @@ function showTracking(r){
 }
 window.addEventListener('popstate',()=>{if(currentUser&&currentProfile)show('homeView')});
 async function loadHome(){
- if(!currentUser||loadingHome)return;loadingHome=true;
+ if(!currentUser||loadingHome)return;loadingHome=true;clientReservations=[];$('viewServiceTracking').disabled=true;
  try{
   const snap=await getDoc(doc(db,'clientes',currentUser.uid));
   if(!snap.exists()){currentProfile=null;show('loginView');message('Sua conta não possui perfil de cliente. Contate a administração.',true);return}
@@ -240,7 +255,7 @@ async function loadHome(){
   show('homeView');$('activeReservations').textContent='Carregando...';$('reservationHistory').textContent='Carregando...';
   const rs=await getDocs(query(collection(db,'reservas'),where('clienteUid','==',currentUser.uid)));
   const data=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));
-  clientReservations=data;
+  clientReservations=data;$('viewServiceTracking').disabled=!eligibleService();
   $('lastBookingCode').value=data[0]?.codigoReserva||'Nenhuma reserva';
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
   $('activeReservations').innerHTML=active.length?active.map(reservationHtml).join(''):'<p>Nenhuma reserva em andamento.</p>';
@@ -250,6 +265,6 @@ async function loadHome(){
 }
 onAuthStateChanged(auth,async user=>{
  if(registering)return;currentUser=user;
- if(!user){currentProfile=null;show('loginView');return}
+ if(!user){currentProfile=null;clientReservations=[];$('viewServiceTracking').disabled=true;show('loginView');return}
  await loadHome();
 });
