@@ -148,7 +148,7 @@ try{
  await capture(motorista,'22-motorista-painel');
  await motorista.evaluate(()=>{document.querySelector('#driverPanelActions').classList.add('hidden');document.querySelector('#driverActiveBlock').classList.remove('hidden');document.querySelector('#driverPanelReturn').classList.remove('hidden');});
  await capture(motorista,'07-motorista-corridas');
- await motorista.evaluate(()=>{document.querySelector('#driverActiveBlock').classList.add('hidden');document.querySelector('#driverHistoryBlock').classList.remove('hidden');document.querySelector('#historyReservations').innerHTML='<article class="item"><strong>PMR-000002 — concluída</strong><p>Cliente: Cliente Exemplo<br>Destino: Aeroporto</p></article>';});
+ await motorista.evaluate(()=>{document.querySelector('#driverActiveBlock').classList.add('hidden');document.querySelector('#driverHistoryBlock').classList.remove('hidden');document.querySelector('#driverPanelTitle').textContent='HISTÓRICO DE ATENDIMENTOS';document.querySelector('#driverGreeting').classList.add('hidden');document.querySelector('#historyDriverName').textContent='Nome do Motorista: Motorista Exemplo';document.querySelector('#historyReservations').innerHTML='<article class="item"><strong>Solicitação: PMR-000002</strong><p>Cliente: Cliente Exemplo<br>Data e horário: 10/12/2026, 14:30<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Passageiros: 1</p><p>Atendimento concluído</p></article>';});
  await capture(motorista,'23-motorista-historico');
  await expose(motorista,'reservationView',['loginView','registerView','reviewView','pendingView','homeView','serviceView']);
  await motorista.evaluate(()=>{
