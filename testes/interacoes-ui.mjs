@@ -389,6 +389,46 @@ test('Painel do cliente: seis comandos, codigos e navegacao', {timeout:30000},as
  }finally{await context.close()}
 });
 
+test('Tela 09: historico proprio, ordem, filtro, vazio e retorno ao painel', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#reservationHistory').waitFor({state:'attached'});
+  await page.waitForFunction(()=>document.querySelector('#reservationHistory').textContent.includes('Nenhuma reserva no histórico.'));
+  await page.locator('#viewReservationHistory').click();
+  await page.locator('#historyView').waitFor({state:'visible'});
+  assert.match(await page.locator('#reservationHistory').innerText(),/Nenhuma reserva no histórico/);
+  await page.locator('#historyBackToRegister').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#logout').click();
+  await page.locator('#loginView').waitFor({state:'visible'});
+  await page.evaluate(()=>{
+   const m=window.__pm;
+   for(const [id,uid,status,seconds] of [['PMR-OLD','cliente01','concluida',1],['PMR-NEW','cliente01','cancelada',3],['PMR-ACTIVE','cliente01','confirmada',4],['PMR-OTHER','outro','concluida',5]])m.records.reservas[id]={clienteUid:uid,codigoReserva:id,statusReserva:status,localEmbarque:'Origem',localDestino:'Destino',numeroOrcamento:1,valorViagem:70,dataSolicitacao:{seconds},dataViagem:{toDate:()=>new Date()}};
+  });
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.waitForFunction(()=>document.querySelector('#reservationHistory').textContent.includes('PMR-NEW'));
+  await page.locator('#viewReservationHistory').click();
+  await page.locator('#historyView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#historyClientCode').inputValue(),'PMC-0001');
+  assert.equal(await page.locator('#historyBookingCode').inputValue(),'PMR-ACTIVE');
+  const history=await page.locator('#reservationHistory').innerText();
+  assert.match(history,/PMR-NEW/);assert.match(history,/PMR-OLD/);
+  assert.ok(history.indexOf('PMR-NEW')<history.indexOf('PMR-OLD'));
+  assert.doesNotMatch(history,/PMR-ACTIVE|PMR-OTHER/);
+  assert.match(history,/70,00/);
+  assert.equal(await page.locator('.history-actions').evaluate(el=>getComputedStyle(el).borderTopWidth),'2px');
+  await page.locator('#historyBackToRegister').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Atendimento: acesso condicionado, resumo e saida', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html','cliente-login');
  try{
