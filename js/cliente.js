@@ -1,6 +1,6 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,runTransaction,writeBatch,collection,query,where,getDocs,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,runTransaction,writeBatch,collection,query,where,getDocs,onSnapshot,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,moneyBRL} from './common.js';
 
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
@@ -8,7 +8,8 @@ const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView','historyView','serviceTrackingView'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
-const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
+let stopServiceTracking=null;
+const show=id=>{if(id!=='serviceTrackingView'&&stopServiceTracking){stopServiceTracking();stopServiceTracking=null;}views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
 $('travelDate').min=todayLocal();
 $('regDate').value=todayLocal();
@@ -64,13 +65,16 @@ function eligibleService(){
  if(!currentUser)return null;
  return clientReservations.filter(r=>r.clienteUid===currentUser.uid&&['confirmada','em_andamento'].includes(r.statusReserva)&&r.dataViagem?.toDate?.()&&serviceDate(r.dataViagem.toDate())===serviceDate(new Date())).sort((a,b)=>a.dataViagem.toDate()-b.dataViagem.toDate())[0]||null;
 }
+function serviceStatus(r){return r.statusReserva==='concluida'?'Atendimento concluído.':r.statusReserva==='em_andamento'?'Atendimento em andamento.':r.statusReserva==='confirmada'&&r.dataChegadaMotorista?'Seu Motorista, '+(r.nomeMotoristaDesignado||'Motorista')+', está à sua disposição.':'Aguardando início do atendimento.';}
 $('viewServiceTracking').onclick=async()=>{
  await loadHome();
  const r=eligibleService();if(!r)return;
  const d=r.dataViagem.toDate();
- const fields={Welcome:'Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!',Client:currentProfile?.codigoCliente,Code:r.codigoReserva,Date:serviceDate(d),Time:d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}),Pickup:r.localEmbarque,Destination:r.localDestino,Driver:r.nomeMotoristaDesignado,Vehicle:r.veiculoModelo,Plate:r.veiculoPlaca,Color:r.veiculoCor,Status:r.statusReserva==='em_andamento'?'Atendimento em andamento.':'Aguardando início do atendimento.'};
+ const fields={Welcome:'Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!',Client:currentProfile?.codigoCliente,Code:r.codigoReserva,Date:serviceDate(d),Time:d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}),Pickup:r.localEmbarque,Destination:r.localDestino,Driver:r.nomeMotoristaDesignado,Vehicle:r.veiculoModelo,Plate:r.veiculoPlaca,Color:r.veiculoCor,Status:serviceStatus(r)};
  for(const [key,value] of Object.entries(fields))$('serviceTracking'+key).textContent=value||'Não informado';
  show('serviceTrackingView');
+ if(stopServiceTracking)stopServiceTracking();
+ stopServiceTracking=onSnapshot(doc(db,'reservas',r.id),snap=>{if(snap.exists()&&snap.data().clienteUid===currentUser?.uid)$('serviceTrackingStatus').textContent=serviceStatus(snap.data());},()=>message('Não foi possível atualizar o acompanhamento.',true));
  if(!history.state?.serviceTracking)history.pushState({serviceTracking:true},'');
 };
 $('serviceTrackingLogout').onclick=()=> $('logout').click();
