@@ -170,7 +170,6 @@ function renderReservation(){
   'Local do embarque: '+(r.localEmbarque||'')+'\n'+
   'Local do destino: '+(r.localDestino||'')+'\n'+
   'Data e horário: '+stamp(r.dataViagem)+'\n'+
-  'Telefone: '+(r.telefoneCliente||'')+'\n'+
   'Passageiros: '+(r.passageiros||1)+'\n'+
   'Observações: '+(r.observacoes||'Nenhuma');
  $('reservationDetails').style.whiteSpace='pre-line';
