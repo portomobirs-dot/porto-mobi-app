@@ -136,11 +136,15 @@ try{
   document.querySelector('#homeDriverName').value='Motorista Exemplo';
   document.querySelector('#driverGreeting').textContent='Olá, Motorista Exemplo!';
   document.querySelector('#driverCode').value='PMM-001';
-  document.querySelector('#driverActiveBlock').classList.remove('hidden');
+  document.querySelector('#driverActiveBlock').classList.add('hidden');
   document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-000001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button data-action="accept">ACEITAR</button><button class="danger" data-action="reject">RECUSAR</button></div></article>';
   document.querySelector('#historyReservations').innerHTML='<p>Nenhuma corrida concluida.</p>';
  });
+ await capture(motorista,'22-motorista-painel');
+ await motorista.evaluate(()=>{document.querySelector('#driverPanelActions').classList.add('hidden');document.querySelector('#driverActiveBlock').classList.remove('hidden');document.querySelector('#driverPanelReturn').classList.remove('hidden');});
  await capture(motorista,'07-motorista-corridas');
+ await motorista.evaluate(()=>{document.querySelector('#driverActiveBlock').classList.add('hidden');document.querySelector('#driverHistoryBlock').classList.remove('hidden');document.querySelector('#historyReservations').innerHTML='<article class="item"><strong>PMR-000002 — concluída</strong><p>Cliente: Cliente Exemplo<br>Destino: Aeroporto</p></article>';});
+ await capture(motorista,'23-motorista-historico');
  await expose(motorista,'reservationView',['loginView','registerView','reviewView','pendingView','homeView','serviceView']);
  await motorista.evaluate(()=>{
   document.querySelector('#reservationDriverGreeting').textContent='Olá, Motorista Exemplo!';
@@ -154,17 +158,16 @@ try{
   document.querySelector('#serviceClientName').textContent='Nome do Cliente: Cliente Exemplo';
   document.querySelector('#serviceReservationData').textContent='Reserva: PMR-000001\nSituação: confirmada\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData e horário: 10/12/2026, 14:30\nTelefone: (51) 99999-1111\nPassageiros: 1';
   document.querySelector('#serviceReservationData').style.whiteSpace='pre-line';
-  document.querySelector('#servicePickupGps').href='https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=Avenida%20Exemplo';
-  for(const id of ['serviceComplete','serviceDestinationGps'])document.getElementById(id).classList.add('hidden');
  });
- // Etapa independente retirada: ações incorporadas à tela reservationView.
- await motorista.evaluate(()=>{
-  for(const id of ['serviceOnWay','servicePickupGps','serviceAvailable','serviceStart'])document.getElementById(id).classList.add('hidden');
-  document.querySelector('#serviceComplete').classList.remove('hidden');
-  document.querySelector('#serviceDestinationGps').classList.remove('hidden');
-  document.querySelector('#serviceReservationData').textContent='Reserva: PMR-000001\nSituação: em andamento\nEmbarque: Avenida Exemplo, 100\nDestino: Aeroporto\nData e horário: 10/12/2026, 14:30\nPassageiros: 1';
- });
- // Conclusão incorporada à tela reservationView; sem etapa visual independente.
+ await capture(motorista,'14-motorista-inicio-atendimento');
+ await expose(motorista,'completedView',['serviceView']);
+ await motorista.evaluate(()=>{document.querySelector('#completedDetails').textContent='Solicitação: PMR-000001\nCliente: Cliente Exemplo\nData: 10/12/2026';});
+ await capture(motorista,'15-motorista-conclusao-atendimento');
+ await expose(motorista,'agendaView',['completedView']);
+ await motorista.evaluate(()=>{document.querySelector('#agendaList').innerHTML='<article class="item"><strong>10/12/2026, 14:30</strong><p>Solicitação: PMR-000001<br>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto</p></article>';});
+ await capture(motorista,'24-motorista-agenda');
+ await expose(motorista,'supportView',['agendaView']);
+ await capture(motorista,'25-motorista-suporte');
  await motorista.close();
 
  const admin=await pageFor('admin.html');
