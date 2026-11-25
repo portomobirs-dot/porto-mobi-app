@@ -211,6 +211,7 @@ async function respondBudget(event){
 }
 $('activeReservations').addEventListener('click',respondBudget);
 $('budgetDetails').addEventListener('click',respondBudget);
+$('budgetDetails').addEventListener('click',event=>{if(event.target.closest('#budgetBackToPanel')&&currentUser&&currentProfile)show('homeView')});
 
 function reservationHtml(r, budgetOnly=false){
  const dt=r.dataViagem?.toDate?.();
@@ -223,6 +224,8 @@ function showBudget(r){
  $('budgetClientCode').value=currentProfile?.codigoCliente||'';
  $('budgetCode').value=r.codigoReserva||'';
  $('budgetDetails').innerHTML=reservationHtml(r,true);
+ const actions=$('budgetDetails').querySelector('.actions');
+ if(actions){const b=document.createElement('button');b.type='button';b.id='budgetBackToPanel';b.textContent='PAINEL DO CLIENTE';actions.append(b)}
  show('budgetView');
  if(!history.state?.bookingTracking)history.pushState({bookingTracking:true},'');
 }
