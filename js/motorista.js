@@ -51,8 +51,8 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
-$('driverPanelLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
-$('reservationBackRegister').onclick=$('backHomeRegister').onclick=$('backPendingRegister').onclick=()=>{
+$('driverPanelLogout').onclick=logout;$('pendingPanel').onclick=()=>{show('homeView');showDriverPanel('panel')};$('driverPanelStatus').onclick=async()=>{await loadProfile();if(isApproved()){show('pendingView');$('pendingInfo').textContent='Cadastro autorizado';$('pendingDriverCode').value=profile.codigoMotorista||''}};
+$('backHomeRegister').onclick=()=>{
  if(!user||!profile)return;
  invalidateDriverReview();
  const fields={regName:profile.nomeMotorista,regPhone:profile.telefoneMotorista,regEmail:profile.email||user.email,regVehicle:profile.veiculoModelo,regPlate:profile.veiculoPlaca,regColor:profile.veiculoCor};
@@ -66,13 +66,14 @@ $('reservationBackRegister').onclick=$('backHomeRegister').onclick=$('backPendin
  if(!history.state?.pendingRegister)history.pushState({pendingRegister:true},'');
 };
 window.addEventListener('popstate',()=>{if(user&&profile&&!$('registerView').classList.contains('hidden'))loadProfile()});
+const isApproved=()=>profile&&(profile.situacao==='ativo'||profile.aprovado===true);
 async function loadProfile(){
  if(!user)return;stop();
  try{
   const snap=await getDoc(doc(db,'motoristas',user.uid));
   if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
   profile=snap.data();
-  if(profile.situacao!=='ativo'&&profile.aprovado!==true){show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
+  $('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';for(const id of ['driverPanelReservations','driverPanelService','driverPanelHistory'])$(id).disabled=!isApproved();if(!isApproved()){driverTrips=[];show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
   show('homeView');showDriverPanel('panel');$('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('homeDriverName').value=profile.nomeMotorista||'';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
   const q=query(collection(db,'reservas'),where('motoristaUid','==',user.uid));
   unsub=onSnapshot(q,snap=>renderTrips(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>message('Erro ao consultar reservas: '+errorText(err),true));
@@ -85,7 +86,7 @@ function renderTrips(rows){
  const active=rows.filter(r=>!done.has(r.statusReserva)),hist=rows.filter(r=>done.has(r.statusReserva));
  const html=(r,history=false)=>{
   const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">ACEITAR</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">RECUSAR</button></div>`:
-   r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento da Reserva</button></div>`:
+   r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento da Solicitação</button></div>`:
    r.statusReserva==='em_andamento'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento em Andamento</button></div>`:'';
   return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
  };
@@ -96,7 +97,7 @@ function renderTrips(rows){
 }
 function maps(place){return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(place||'')}
 $('activeReservations').addEventListener('click',async e=>{
- const b=e.target.closest('button[data-action]');if(!b||!user)return;
+ const b=e.target.closest('button[data-action]');if(!b||!user||!isApproved())return;
  if(b.dataset.action==='open'){openReservationById(b.dataset.id);return}
  const status={accept:'confirmada',reject:'pendente'}[b.dataset.action];if(!status)return;
  if(!confirm('Confirmar ação: '+b.textContent+'?'))return;
@@ -135,6 +136,7 @@ $('driverPanelHistory').onclick=()=>showDriverPanel('history');
 $('driverPanelReturn').onclick=()=>showDriverPanel('panel');
 $('driverPanelService').onclick=()=>{const r=driverTrips.find(r=>['confirmada','em_andamento'].includes(r.statusReserva));if(!r)return message('Nenhuma reserva confirmada para atendimento.',true);openReservationById(r.id)};
 function showDriverPanel(which){
+ if(!isApproved())which='panel';
  $('driverPanelActions').classList.toggle('hidden',which!=='panel');$('driverPanelReturn').classList.toggle('hidden',which==='panel');
  $('driverActiveBlock').classList.toggle('hidden',which!=='active');
  $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
@@ -145,22 +147,16 @@ $('openService').onclick=()=>{
  const r=selectedService();
  if(!r||!['confirmada','em_andamento'].includes(r.statusReserva))
   return message('Aceite a reserva antes de iniciar atendimento.',true);
- if(r.statusReserva==='confirmada'){
-  $('reservationPickupGps').classList.remove('hidden');$('reservationAvailable').classList.remove('hidden');
-  $('serviceOnWay').click();
- }else message('Atendimento já em andamento.');
+ if(r.statusReserva==='confirmada'){window.open(maps(r.localEmbarque),'_blank','noopener');whatsappClient(r,'Motorista à caminho');}
 };
-$('reservationAvailable').onclick=()=>$('serviceAvailable').click();
-$('reservationDestination').onclick=()=>{const r=selectedService();if(!r)return;if(r.statusReserva==='em_andamento'){window.open(maps(r.localDestino),'_blank','noopener');return}if(r.statusReserva==='confirmada')$('serviceStart').click()};
-$('reservationComplete').onclick=()=>$('serviceComplete').click();
-$('serviceBack').onclick=()=>{renderReservation();show('reservationView')};
-
+$('reservationAvailable').onclick=()=>{const r=selectedService();if(!isApproved()||!r||r.statusReserva!=='confirmada')return;renderService();show('serviceView');whatsappClient(r,'Motorista à disposição');};
+$('serviceBack').onclick=()=>{show('homeView');showDriverPanel('panel')};
 function openReservationById(id){
  const reservation=driverTrips.find(r=>r.id===id);
- if(!reservation||!['confirmada','em_andamento'].includes(reservation.statusReserva)){
+ if(!isApproved()||!reservation||!['confirmada','em_andamento'].includes(reservation.statusReserva)){
   showDriverPanel('active');return message('Esta reserva ainda não está pronta para atendimento.',true);
  }
- serviceId=id;$('reservationPickupGps').classList.add('hidden');$('reservationAvailable').classList.add('hidden');renderReservation();show('reservationView');
+ serviceId=id;if(reservation.statusReserva==='em_andamento'){renderService();show('serviceView')}else{renderReservation();show('reservationView')}
 }
 function renderReservation(){
  const r=driverTrips.find(row=>row.id===serviceId);
@@ -168,7 +164,7 @@ function renderReservation(){
  $('reservationDriverGreeting').textContent='Olá, '+(profile?.nomeMotorista||'Motorista')+'!';
  $('reservationClientName').textContent='Nome do Cliente: '+(r.nomeCliente||'Não informado');
  $('reservationDetails').textContent=
-  'Dados da Reserva\n'+
+  'Dados da Solicitação\n'+
   'Código: '+(r.codigoReserva||'')+'\n'+
   'Situação: '+(r.statusReserva||'')+'\n'+
   'Local do embarque: '+(r.localEmbarque||'')+'\n'+
@@ -178,11 +174,7 @@ function renderReservation(){
   'Passageiros: '+(r.passageiros||1)+'\n'+
   'Observações: '+(r.observacoes||'Nenhuma');
  $('reservationDetails').style.whiteSpace='pre-line';
- $('reservationPickupGps').href=maps(r.localEmbarque);
- $('openService').disabled=r.statusReserva!=='confirmada';
- $('reservationDestination').disabled=!['confirmada','em_andamento'].includes(r.statusReserva);
- $('reservationComplete').disabled=r.statusReserva!=='em_andamento';
- if(r.statusReserva!=='confirmada'){ $('reservationPickupGps').classList.add('hidden');$('reservationAvailable').classList.add('hidden'); }
+ $('openService').disabled=r.statusReserva!=='confirmada';$('reservationAvailable').disabled=r.statusReserva!=='confirmada';
 }
 function renderService(){
  const r=driverTrips.find(row=>row.id===serviceId);
@@ -198,13 +190,7 @@ function renderService(){
   'Passageiros: '+(r.passageiros||1)+'\n'+
   'Observações: '+(r.observacoes||'Nenhuma');
  $('serviceReservationData').style.whiteSpace='pre-line';
- const accepted=r.statusReserva==='confirmada',ongoing=r.statusReserva==='em_andamento';
- for(const id of ['serviceOnWay','servicePickupGps','serviceAvailable','serviceStart'])
-  $(id).classList.toggle('hidden',!accepted);
- $('serviceComplete').classList.toggle('hidden',!ongoing);
- $('serviceDestinationGps').classList.toggle('hidden',!ongoing);
- $('servicePickupGps').href=maps(r.localEmbarque);
- $('serviceDestinationGps').href=maps(r.localDestino);
+ $('serviceStart').disabled=!['confirmada','em_andamento'].includes(r.statusReserva);$('serviceComplete').disabled=r.statusReserva!=='em_andamento';
 }
 function selectedService(){return driverTrips.find(r=>r.id===serviceId)}
 function whatsappClient(r,text){
@@ -216,21 +202,9 @@ function whatsappClient(r,text){
  if(tab)tab.opener=null;else window.location.assign(link);
  message('Mensagem preparada. Confirme o envio no WhatsApp; o app não envia mensagens sozinho.');
 }
-$('serviceOnWay').onclick=()=>{
- const r=selectedService();if(!r||r.statusReserva!=='confirmada')return;
- // Tenta abrir a rota no mesmo gesto do usuario; navegadores podem bloquear multiplas abas.
- const gpsTab=window.open(maps(r.localEmbarque),'_blank');
- if(gpsTab)gpsTab.opener=null;
- whatsappClient(r,'Porto Mobi - Transporte Executivo\nOlá, '+r.nomeCliente+'! O motorista está a caminho do embarque da reserva '+r.codigoReserva+'.');
- message('Confirme o envio no WhatsApp. GPS até o embarque solicitado; se não abrir, use o botão GPS até o embarque.');
-};
-$('serviceAvailable').onclick=()=>{
- const r=selectedService();if(!r||r.statusReserva!=='confirmada')return;
- whatsappClient(r,'Porto Mobi - Transporte Executivo\nOlá, '+r.nomeCliente+'! O motorista está à sua disposição no ponto de embarque da reserva '+r.codigoReserva+'.');
-};
 $('serviceStart').onclick=async()=>{
  const r=selectedService();
- if(!r||r.statusReserva!=='confirmada')return message('Esta reserva não está confirmada para iniciar.',true);
+ if(!isApproved()||!r)return;if(r.statusReserva==='em_andamento'){window.open(maps(r.localDestino),'_blank','noopener');return}if(r.statusReserva!=='confirmada')return;
  if(!confirm('Iniciar atendimento da reserva '+r.codigoReserva+' e abrir GPS até o destino?'))return;
  const b=$('serviceStart');b.disabled=true;
  // A aba vazia é aberta no clique do usuário; só recebe a rota após gravar no Firestore.
@@ -244,12 +218,12 @@ $('serviceStart').onclick=async()=>{
  finally{b.disabled=false}
 };
 $('serviceComplete').onclick=async()=>{
- const r=selectedService();if(!r||r.statusReserva!=='em_andamento')return;
+ const r=selectedService();if(!isApproved()||!r||r.statusReserva!=='em_andamento')return;
  if(!confirm('Concluir atendimento da reserva '+r.codigoReserva+'?'))return;
  const b=$('serviceComplete');b.disabled=true;
  try{
   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp(),dataConclusao:serverTimestamp()});
-  serviceId=null;show('homeView');showDriverPanel('active');
+  serviceId=null;show('homeView');showDriverPanel('panel');whatsappClient(r,'OBRIGADO POR ESCOLHER A PORTO MOBI');
   message('Atendimento concluído. Reserva registrada no histórico.');
  }catch(err){message('Não foi possível concluir atendimento: '+errorText(err),true)}
  finally{b.disabled=false}
