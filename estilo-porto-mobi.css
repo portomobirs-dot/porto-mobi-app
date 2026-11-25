@@ -712,3 +712,9 @@ html body[data-pm-area="motorista"] main #driverPanelActions #driverPanelLogout{
 html body[data-pm-area="motorista"] main #registerView .register-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;border:2px solid #D4AF37!important;border-radius:16px!important;padding:12px!important;box-sizing:border-box!important}
 html body[data-pm-area="motorista"] main #registerView .register-actions button{font:bold 13pt Tahoma,Arial,sans-serif!important;white-space:normal!important;min-width:0!important}
 html body[data-pm-area="motorista"] main #registerView #registerDriverPanel{grid-column:1/-1!important;background:#D4AF37!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#D4AF37!important}
+
+/* Tela 04: moldura exclusiva do comando e status sem moldura. */
+html body[data-pm-area="motorista"] main #pendingView .authorization-actions{display:grid;grid-template-columns:minmax(0,1fr);width:100%;box-sizing:border-box;border:2px solid #D4AF37;border-radius:16px;padding:12px;gap:0}
+html body[data-pm-area="motorista"] main #pendingView #pendingPanel{display:block;width:100%;box-sizing:border-box}
+html body[data-pm-area="motorista"] main #pendingView#pendingView .codebox{background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
+html body[data-pm-area="motorista"] main #pendingView #pendingDriverCode{background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-align:center}
