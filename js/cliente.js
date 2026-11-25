@@ -49,6 +49,7 @@ $('showRegister').onclick=()=>{
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=false;
  $('registerForm').reset();$('clientCodePreview').value='PMC-0000';$('regDate').value=todayLocal();
  $('reviewRegister').disabled=false;
+ $('registerViewLogout').textContent='VOLTAR AO LOGIN';
  invalidateRegistrationReview();show('registerView');
 };
 let reviewedBooking=null,submittingBooking=false;
@@ -73,7 +74,8 @@ $('viewReservationHistory').onclick=()=>{
  show('historyView');
  if(!history.state?.clientHistory)history.pushState({clientHistory:true},'');
 };
-$('historyBackToRegister').onclick=()=>{
+$('historyBackToRegister').onclick=()=>show('homeView');
+$('viewMyProfile').onclick=()=>{
  if(!currentUser||!currentProfile)return;
  invalidateRegistrationReview();
  $('clientCodePreview').value=currentProfile.codigoCliente||'';
@@ -85,6 +87,7 @@ $('historyBackToRegister').onclick=()=>{
  $('regPassword').value='';$('regConfirm').value='';
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=true;
  $('reviewRegister').disabled=true;
+ $('registerViewLogout').textContent='VOLTAR AO PAINEL';
  show('registerView');
 };
 $('showBooking').onclick=()=>{
@@ -138,7 +141,7 @@ async function createProfile(user){
 }
 $('logout').onclick=async()=>{await signOut(auth);currentProfile=null;currentUser=null;show('loginView')};
 /* Ações da tela de cadastro: dados pessoais só após autenticação. */
-$('registerViewLogout').onclick=async()=>{if(currentUser)await $('logout').click();else show('loginView');};
+$('registerViewLogout').onclick=async()=>{if(currentUser)show('homeView');else show('loginView');};
 
 $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
