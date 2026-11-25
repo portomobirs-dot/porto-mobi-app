@@ -149,7 +149,7 @@ $('openService').onclick=()=>{
   return message('Aceite a reserva antes de iniciar atendimento.',true);
  if(r.statusReserva==='confirmada'){window.open(maps(r.localEmbarque),'_blank','noopener');whatsappClient(r,'Motorista à caminho');}
 };
-$('reservationAvailable').onclick=()=>{const r=selectedService();if(!isApproved()||!r||r.statusReserva!=='confirmada')return;renderService();show('serviceView');whatsappClient(r,'Seu Motorista, '+(profile?.nomeMotorista||'Motorista')+', está à sua disposição.');};
+$('reservationAvailable').onclick=async()=>{const r=selectedService();if(!isApproved()||!r||r.statusReserva!=='confirmada')return;const b=$('reservationAvailable');b.disabled=true;try{if(!r.dataChegadaMotorista)await updateDoc(doc(db,'reservas',r.id),{dataChegadaMotorista:serverTimestamp(),dataAtualizacao:serverTimestamp()});renderService();show('serviceView');}catch(e){message('Não foi possível registrar a chegada: '+errorText(e),true);}finally{b.disabled=false;}};
 $('reservationDestination').onclick=()=>{const r=selectedService();if(!isApproved()||!r||!['confirmada','em_andamento'].includes(r.statusReserva))return;renderService();show('serviceView');};
 $('serviceBack').onclick=()=>{show('homeView');showDriverPanel('panel')};
 function openReservationById(id){
