@@ -94,6 +94,7 @@ try{
   document.querySelector('#trackingClient').textContent='Cliente Exemplo';
   document.querySelector('#trackingClientCode').value='PMC-0001';
   document.querySelector('#trackingCode').value='PMR-000001';
+  document.querySelector('#trackingRequestDate').value='23/11/2026';
   document.querySelector('#trackingStatus').value='Aguardando confirmação';
   document.querySelector('#trackingDetails').textContent='Avenida Exemplo, 100 → Aeroporto\n10/12/2026 14:30\nPassageiros: 1\nValor: A definir';
  });
