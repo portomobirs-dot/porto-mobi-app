@@ -114,6 +114,11 @@ try{
   for(const id of ['trackingDriverName','trackingVehicle','trackingPlate','trackingColor'])document.getElementById(id).value='';
  });
  await capture(cliente,'04-cliente-reserva-recusada');
+ await expose(cliente,'clientCompletedView',['bookingTracking','homeView','loginView']);
+ await cliente.evaluate(()=>{document.getElementById('clientCompletedCode').textContent='Reserva: PMR-000001';});
+ await capture(cliente,'26-cliente-atendimento-concluido');
+ await expose(cliente,'clientSupportView',['clientCompletedView']);
+ await capture(cliente,'27-cliente-suporte');
  await cliente.close();
 
  const motorista=await pageFor('motorista.html');
