@@ -122,9 +122,9 @@ test('Login do Cliente aprovado: olho, cadastro verde, acesso amarelo e link de 
  const {context,page,errors}=await pageFor('cliente.html','cliente-login');
  try{
   const login=page.locator('#loginView');
-  assert.match(await login.innerText(),/Seja Bem Vindo!/);
-  assert.equal(await page.locator('#accessClientAccount').innerText(),'Acessar Cadastro');
-  assert.equal(await page.locator('#showRegister').innerText(),'Fazer Cadastro');
+  assert.match(await login.innerText(),/SEJA BEM VINDO!/);
+  assert.equal(await page.locator('#accessClientAccount').innerText(),'ACESSAR CADASTRO');
+  assert.equal(await page.locator('#showRegister').innerText(),'FAZER CADASTRO');
   assert.equal(await page.locator('#accessClientAccount').getAttribute('type'),'submit');
   assert.equal(await page.locator('#showRegister').getAttribute('type'),'button');
   assert.equal(await page.locator('#forgotPassword').innerText(),'Esqueceu a senha?');
@@ -169,7 +169,7 @@ test('Login do Cliente aprovado: olho, cadastro verde, acesso amarelo e link de 
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
-  assert.match(await page.locator('#loginView').innerText(),/Seja Bem Vindo!/);
+  assert.match(await page.locator('#loginView').innerText(),/SEJA BEM VINDO!/);
   await page.locator('#showRegister').click();
   await page.locator('#registerView').waitFor({state:'visible'});
   assert.equal(await page.locator('#clientCodePreview').inputValue(),'PMC-0000');
@@ -186,6 +186,8 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#editRegister').click();
   await page.locator('#registerView').waitFor({state:'visible'});
   await page.locator('#reviewRegister').click();
+  await page.locator('#registerReview').waitFor({state:'visible'});
+  await page.locator('#editRegister').click();
   await page.locator('#confirmRegister').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
@@ -204,14 +206,22 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#editBooking').click();
   await page.locator('#bookingView').waitFor({state:'visible'});
   await page.locator('#reviewBooking').click();
-  await page.locator('#confirmBooking').click();
+  await page.locator('#bookingReview').waitFor({state:'visible'});
+  await page.locator('#editBooking').click();
+  await page.locator('#requestBooking').click();
+  await page.locator('#bookingTracking').waitFor({state:'visible'});
+  assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+  await page.goBack();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
   assert.equal(await page.locator('#lastBookingCode').inputValue(),'PMR-000001');
   await page.locator('#viewActiveReservations').click();
-  assert.match(await page.locator('#activeBlock').innerText(),/PMR-000001/);
+  await page.locator('#bookingTracking').waitFor({state:'visible'});
+  assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+  await page.goBack();
+  await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewReservationHistory').click();
-  await page.locator('#historyBlock').waitFor({state:'visible'});
+  await page.locator('#historyView').waitFor({state:'visible'});
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
@@ -220,23 +230,27 @@ test('Login do Motorista replica Cliente e marca usa tipografia uniforme', {time
  const {context,page,errors}=await pageFor('motorista.html','motorista-login');
  try{
   const login=page.locator('#loginView');
-  assert.match(await login.innerText(),/Seja Bem Vindo!/);
+  assert.match(await login.innerText(),/SEJA BEM VINDO!/);
   assert.match(await login.innerText(),/Login do Motorista/);
-  assert.equal(await page.locator('#accessDriverAccount').innerText(),'Acessar Cadastro');
-  assert.equal(await page.locator('#showRegister').innerText(),'Fazer Cadastro');
+  assert.equal(await page.locator('#accessDriverAccount').innerText(),'ACESSAR CADASTRO');
+  assert.equal(await page.locator('#showRegister').innerText(),'FAZER CADASTRO');
   assert.equal(await page.locator('#forgotPassword').innerText(),'Esqueceu a senha?');
   const style=await page.evaluate(()=>{
-   const font1=getComputedStyle(document.querySelector('header .brand-lockup strong'));
-   const font2=getComputedStyle(document.querySelector('header .brand-lockup strong small'));
+   const slogan=document.querySelector('header .brand-slogan');
+   const font1=getComputedStyle(slogan);
+   const logo=document.querySelector('header .brand-logo');
    const head=getComputedStyle(document.querySelector('header'));
    const input=getComputedStyle(document.querySelector('#loginEmail'));
    const actions=getComputedStyle(document.querySelector('.login-actions'));
-   return {font1:font1.fontSize,font2:font2.fontSize,header:head.backgroundColor,
+   return {slogan:slogan.textContent,logo:logo.getAttribute('src'),brandFont:font1.fontFamily,brandWeight:font1.fontWeight,header:head.backgroundColor,
     inputBg:input.backgroundColor,inputText:input.color,family:input.fontFamily,
     columns:actions.gridTemplateColumns.split(' ').length,
     noHorizontalOverflow:document.documentElement.scrollWidth<=window.innerWidth+1};
   });
-  assert.equal(style.font1,style.font2);
+  assert.equal(style.slogan,'Excelência em cada trajeto.');
+  assert.match(style.logo,/logo-porto-mobi\.png$/);
+  assert.match(style.brandFont,/Tahoma/);
+  assert.equal(style.brandWeight,'700');
   assert.equal(style.header,'rgb(0, 0, 0)');
   assert.equal(style.inputBg,'rgb(255, 255, 255)');
   assert.equal(style.inputText,'rgb(0, 0, 0)');
