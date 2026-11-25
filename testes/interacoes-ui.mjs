@@ -171,7 +171,7 @@ test('Tela 02: comandos, campos obrigatorios e revisao de cadastro', {timeout:30
  try{
   await page.locator('#showRegister').click();
   await page.locator('#registerView').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('#registerView .register-actions button').allTextContents(),['REVISAR','CADASTRAR','VOLTAR AO LOGIN']);
+  assert.deepEqual(await page.locator('#registerView .register-actions button').allTextContents(),['REVISAR','CADASTRAR','PAINEL DO CLIENTE']);
   assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
   assert.equal(await page.locator('#clientCodePreview').getAttribute('readonly'),'');
   assert.equal(await page.locator('#regDate').getAttribute('readonly'),'');
@@ -379,7 +379,7 @@ test('Painel do cliente: cinco comandos, codigos e navegacao', {timeout:30000},a
   assert.equal(await page.locator('#regName').getAttribute('readonly'),'');
   assert.equal(await page.locator('#regPassword').inputValue(),'');
   assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
-  assert.equal(await page.locator('#registerViewLogout').innerText(),'VOLTAR AO PAINEL');
+  assert.equal(await page.locator('#registerViewLogout').innerText(),'PAINEL DO CLIENTE');
   await page.locator('#registerViewLogout').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#logout').click();
