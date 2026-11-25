@@ -123,8 +123,8 @@ test('Login do Cliente aprovado: olho, cadastro verde, acesso amarelo e link de 
  try{
   const login=page.locator('#loginView');
   assert.match(await login.innerText(),/SEJA BEM VINDO!/);
-  assert.equal(await page.locator('#accessClientAccount').innerText(),'ACESSAR CADASTRO');
-  assert.equal(await page.locator('#showRegister').innerText(),'FAZER CADASTRO');
+  assert.equal(await page.locator('#accessClientAccount').innerText(),'ENTRAR');
+  assert.equal(await page.locator('#showRegister').innerText(),'CADASTRAR');
   assert.equal(await page.locator('#accessClientAccount').getAttribute('type'),'submit');
   assert.equal(await page.locator('#showRegister').getAttribute('type'),'button');
   assert.equal(await page.locator('#forgotPassword').innerText(),'Esqueceu a senha?');
