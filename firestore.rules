@@ -241,6 +241,11 @@ service cloud.firestore {
            getAfter(refusalHistoryPath(id,after.numeroRecusa)).data.motoristaUid == me() &&
            getAfter(refusalHistoryPath(id,after.numeroRecusa)).data.dataRecusa == request.time) ||
           (before.statusReserva == 'confirmada' &&
+           after.statusReserva == 'confirmada' &&
+           before.get('dataChegadaMotorista',null) == null &&
+           after.dataChegadaMotorista == request.time &&
+           changed.hasOnly(['dataChegadaMotorista','dataAtualizacao'])) ||
+          (before.statusReserva == 'confirmada' &&
            after.statusReserva == 'em_andamento' &&
            changed.hasOnly(['statusReserva','dataAtualizacao'])) ||
           (before.statusReserva == 'em_andamento' &&
