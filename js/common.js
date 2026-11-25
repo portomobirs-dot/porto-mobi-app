@@ -1,11 +1,11 @@
 // Configuracao publica do Firebase Web App; a seguranca depende das regras do Firestore.
 export const firebaseConfig = {
-  apiKey: 'AIzaSyCddZqsk-25Fj_kkKzSU2kmfOYlSz3GmBk',
-  authDomain: 'porto-mobi-executivo-2026.firebaseapp.com',
-  projectId: 'porto-mobi-executivo-2026',
-  storageBucket: 'porto-mobi-executivo-2026.firebasestorage.app',
-  messagingSenderId: '500470573196',
-  appId: '1:500470573196:web:e3fc2c00e3e8b7f7a933a9'
+  apiKey: "AIzaSyAGCmm6FmyPHrjsWEb4jqPXH32N7y7HLDU",
+  authDomain: "porto-mobi---executivo.firebaseapp.com",
+  projectId: "porto-mobi---executivo",
+  storageBucket: "porto-mobi---executivo.firebasestorage.app",
+  messagingSenderId: "1017797508653",
+  appId: "1:1017797508653:web:3181a474379d19a58302a4"
 };
 export const padCode=(p,n)=>p+'-'+String(n).padStart(p==='PMM'?3:p==='PMR'?6:4,'0');
 // Valores monetarios em reais, arredondados a centavos somente no total.
