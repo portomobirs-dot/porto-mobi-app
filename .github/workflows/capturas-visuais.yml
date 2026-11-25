@@ -1,7 +1,7 @@
 name: Capturas visuais - Porto Mobi
 on:
   push:
-    branches: [preparacao-correcoes-02]
+    branches: [homologacao-motorista]
     paths:
       - 'testes/capturar-telas.mjs'
       - '.github/workflows/capturas-visuais.yml'
@@ -14,7 +14,7 @@ on:
       - 'js/**'
   workflow_dispatch:
 concurrency:
-  group: porto-mobi-capturas-preparacao
+  group: porto-mobi-capturas-homologacao-motorista
   cancel-in-progress: false
 permissions:
   contents: write
@@ -51,7 +51,7 @@ jobs:
           pasta=$(mktemp -d)
           cp testes/capturas-mobile/*.png "$pasta/"
           for tentativa in 1 2 3; do
-            git fetch origin preparacao-correcoes-02
+            git fetch origin homologacao-motorista
             if ! git diff --quiet "$GITHUB_SHA" FETCH_HEAD -- cliente.html motorista.html admin.html js/ testes/capturar-telas.mjs; then
               echo "Uma versao mais nova alterou as telas; nao publicar imagens antigas."
               exit 0
@@ -65,7 +65,7 @@ jobs:
               exit 0
             fi
             git commit -m "Atualizar capturas de interface com dados ficticios"
-            if git push origin HEAD:preparacao-correcoes-02; then
+            if git push origin HEAD:homologacao-motorista; then
               echo "Capturas publicadas na ramificacao de preparacao."
               exit 0
             fi
