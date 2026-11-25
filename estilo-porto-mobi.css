@@ -723,3 +723,9 @@ html body[data-pm-area="motorista"] main #pendingView #pendingDriverCode{backgro
 body[data-pm-area="motorista"] main #reservationView .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 body[data-pm-area="motorista"] main #reservationView #reservationDestination{grid-column:1/-1!important}
 body[data-pm-area="motorista"] main #reservationView button{min-width:0;white-space:normal}
+
+/* Padrao global: somente moldura externa; preservar controles e foco. */
+html body[data-pm-area] main main,html body[data-pm-area] main :is(div,article,fieldset,aside,pre,form):not(#dashboard){border:0!important;box-shadow:none!important;outline:none!important}
+html body[data-pm-area] main section section{border:0!important;box-shadow:none!important}
+html body[data-pm-area] main #registerView#registerView .register-actions,html body[data-pm-area] main #bookingView#bookingView .booking-actions,html body[data-pm-area] main #bookingTracking#bookingTracking .tracking-actions{border:0!important;box-shadow:none!important}
+html body[data-pm-area] main #registerReviewDetails{border:0!important;box-shadow:none!important}
