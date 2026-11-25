@@ -755,3 +755,7 @@ html body[data-pm-area="motorista"] main #driverHistoryBlock:not(.hidden){paddin
 
 /* Tela 11 — botão de retorno em largura integral */
 html body[data-pm-area="motorista"] main #agendaView#agendaView button#agendaPanel{display:block!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;text-align:center!important;margin-inline:0!important}
+
+/* Tela 12 — quatro botões em duas linhas de duas colunas */
+html body[data-pm-area="motorista"] main #supportView#supportView .actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+html body[data-pm-area="motorista"] main #supportView#supportView .actions>button{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:10px 6px!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:13px!important;line-height:1.25!important;min-height:58px!important;grid-column:auto!important}
