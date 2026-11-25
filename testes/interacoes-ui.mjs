@@ -166,6 +166,53 @@ test('Login do Cliente aprovado: olho, cadastro verde, acesso amarelo e link de 
  }finally{await context.close()}
 });
 
+test('Tela 02: comandos, campos obrigatorios e revisao de cadastro', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html');
+ try{
+  await page.locator('#showRegister').click();
+  await page.locator('#registerView').waitFor({state:'visible'});
+  assert.deepEqual(await page.locator('#registerView .register-actions button').allTextContents(),['REVISAR','CADASTRAR','VOLTAR AO LOGIN']);
+  assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
+  assert.equal(await page.locator('#clientCodePreview').getAttribute('readonly'),'');
+  assert.equal(await page.locator('#regDate').getAttribute('readonly'),'');
+  assert.match(await page.locator('#regDate').inputValue(),/^\d{4}-\d{2}-\d{2}$/);
+  await page.locator('#reviewRegister').click();
+  assert.equal(await page.locator('#registerReview').isVisible(),false);
+  await page.locator('#registerViewLogout').click();
+  await page.locator('#loginView').waitFor({state:'visible'});
+  await page.locator('#showRegister').click();
+  await page.locator('#regName').fill('Cliente Teste');
+  await page.locator('#regPhone').fill('51999991111');
+  await page.locator('#regEmail').fill('invalido');
+  await page.locator('#regPassword').fill('senha123');
+  await page.locator('#regConfirm').fill('senha456');
+  await page.locator('#reviewRegister').click();
+  assert.equal(await page.locator('#registerReview').isVisible(),false);
+  await page.locator('#regEmail').fill('cliente@example.invalid');
+  await page.locator('#reviewRegister').click();
+  assert.equal(await page.locator('#registerReview').isVisible(),false);
+  assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
+  await page.locator('#regConfirm').fill('senha123');
+  await page.locator('[data-toggle="regConfirm"]').click();
+  assert.equal(await page.locator('#regConfirm').getAttribute('type'),'text');
+  await page.locator('[data-toggle="regConfirm"]').click();
+  assert.equal(await page.locator('#regConfirm').getAttribute('type'),'password');
+  await page.locator('#reviewRegister').click();
+  await page.locator('#registerReview').waitFor({state:'visible'});
+  await page.locator('#editRegister').click();
+  assert.equal(await page.locator('#confirmRegister').isEnabled(),true);
+  await page.locator('#regName').fill('Cliente Alterado');
+  assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
+  await page.locator('#reviewRegister').click();
+  await page.locator('#registerReview').waitFor({state:'visible'});
+  await page.locator('#editRegister').click();
+  await page.locator('#confirmRegister').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
