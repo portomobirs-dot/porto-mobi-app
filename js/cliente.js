@@ -16,9 +16,6 @@ $('bookingCreatedDate').value=todayLocal();
 const setBookingCount=n=>{$('passengers').value=String(Math.min(8,Math.max(1,Number(n)||1)))};
 $('decreasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)-1);
 $('increasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)+1);
-async function copyCode(id){const code=$(id).value;if(!/^(PMC-\d{4}|PMR-\d{6})$/.test(code)||/^PM[CR]-0+$/.test(code))return message('Código ainda não disponível.',true);try{await navigator.clipboard.writeText(code);message('Código '+code+' copiado.')}catch{$(id).focus();$(id).select();message('Copie o código selecionado: '+code)}}
-$('copyClientCode').onclick=()=>copyCode('clientCode');
-$('copyBookingCode').onclick=()=>copyCode('lastBookingCode');
 $('forgotPassword').onclick=async event=>{
  event.preventDefault();
  const input=$('loginEmail');
@@ -245,7 +242,6 @@ async function loadHome(){
   const data=rs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));
   clientReservations=data;
   $('lastBookingCode').value=data[0]?.codigoReserva||'Nenhuma reserva';
-  $('copyBookingCode').disabled=!data[0]?.codigoReserva;
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
   $('activeReservations').innerHTML=active.length?active.map(reservationHtml).join(''):'<p>Nenhuma reserva em andamento.</p>';
   $('reservationHistory').innerHTML=history.length?history.map(r=>reservationHtml(r)).join(''):'<p>Nenhuma reserva no histórico.</p>';
