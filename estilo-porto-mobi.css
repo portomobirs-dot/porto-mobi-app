@@ -718,3 +718,8 @@ html body[data-pm-area="motorista"] main #pendingView .authorization-actions{dis
 html body[data-pm-area="motorista"] main #pendingView #pendingPanel{display:block;width:100%;box-sizing:border-box}
 html body[data-pm-area="motorista"] main #pendingView#pendingView .codebox{background:transparent!important;background-image:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
 html body[data-pm-area="motorista"] main #pendingView #pendingDriverCode{background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;text-align:center}
+
+/* Tela 07: comandos de embarque lado a lado e destino em largura total. */
+body[data-pm-area="motorista"] main #reservationView .actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+body[data-pm-area="motorista"] main #reservationView #reservationDestination{grid-column:1/-1!important}
+body[data-pm-area="motorista"] main #reservationView button{min-width:0;white-space:normal}
