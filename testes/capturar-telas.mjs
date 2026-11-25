@@ -75,6 +75,9 @@ try{
  });
  await cliente.evaluate(()=>{document.querySelector('#reviewPassword').textContent='********';});
  await capture(cliente,'10-cliente-confirmacao-cadastro');
+ await expose(cliente,'homeView',['loginView','registerView','registerReview','bookingView','bookingReview','bookingTracking','budgetView','historyView']);
+ await cliente.evaluate(()=>{document.querySelector('#clientWelcome').textContent='Olá, Cliente Exemplo!';document.querySelector('#clientCode').value='PMC-0001';document.querySelector('#lastBookingCode').value='PMR-000001';});
+ await capture(cliente,'20-cliente-painel');
  await expose(cliente,'bookingView',['loginView','registerView','registerReview','homeView','bookingReview']);
  await cliente.evaluate(()=>{
   document.querySelector('#bookingGreeting').textContent='Olá, Cliente Exemplo!';
