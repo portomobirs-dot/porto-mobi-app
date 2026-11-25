@@ -729,3 +729,10 @@ html body[data-pm-area] main main,html body[data-pm-area] main :is(div,article,f
 html body[data-pm-area] main section section{border:0!important;box-shadow:none!important}
 html body[data-pm-area] main #registerView#registerView .register-actions,html body[data-pm-area] main #bookingView#bookingView .booking-actions,html body[data-pm-area] main #bookingTracking#bookingTracking .tracking-actions{border:0!important;box-shadow:none!important}
 html body[data-pm-area] main #registerReviewDetails{border:0!important;box-shadow:none!important}
+
+/* Tela 08 — início do atendimento */
+html body[data-pm-area="motorista"] main #serviceView#serviceView .actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:9px!important}
+html body[data-pm-area="motorista"] main #serviceView#serviceView .actions>button{width:100%!important;min-width:0!important;margin:0!important;white-space:normal!important;padding-inline:8px!important}
+html body[data-pm-area="motorista"] main #serviceView#serviceView button#serviceStart{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+html body[data-pm-area="motorista"] main #serviceView#serviceView button#serviceComplete{background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#f4c542!important}
+html body[data-pm-area="motorista"] main #serviceView#serviceView button#serviceBack{grid-column:1 / -1!important}
