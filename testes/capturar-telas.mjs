@@ -149,7 +149,7 @@ try{
  await motorista.evaluate(()=>{
   document.querySelector('#reservationDriverGreeting').textContent='Olá, Motorista Exemplo!';
   document.querySelector('#reservationClientName').textContent='Nome do Cliente: Cliente Exemplo';
-  document.querySelector('#reservationDetails').textContent='Dados da Reserva\nCódigo: PMR-000001\nSituação: confirmada\nLocal do embarque: Avenida Exemplo, 100\nLocal do destino: Aeroporto\nData e horário: 10/12/2026, 14:30\nTelefone: (51) 99999-1111\nPassageiros: 1\nObservações: Nenhuma';
+  document.querySelector('#reservationDetails').textContent='Dados da Reserva\nCódigo: PMR-000001\nSituação: confirmada\nLocal do embarque: Avenida Exemplo, 100\nLocal do destino: Aeroporto\nData e horário: 10/12/2026, 14:30\nPassageiros: 1\nObservações: Nenhuma';
   document.querySelector('#reservationDetails').style.whiteSpace='pre-line';
  });
  await capture(motorista,'16-motorista-atendimento-da-reserva');
