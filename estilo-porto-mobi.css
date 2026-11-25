@@ -673,3 +673,11 @@ html body[data-pm-area="motorista"] main #registerView#registerView button#confi
 /* Tela 06 — contorno do comando de retorno */
 html body[data-pm-area="cliente"] main #bookingTracking#bookingTracking .tracking-actions{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin-top:18px!important;padding:12px!important;background:#000!important;border:2px solid #D4AF37!important;border-radius:16px!important}
 html body[data-pm-area="cliente"] main #bookingTracking#bookingTracking .tracking-actions button{width:100%!important;margin:0!important;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;font-weight:bold!important}
+
+/* Painel do cliente */
+html body[data-pm-area="cliente"] main #homeView#homeView{border:2px solid #D4AF37!important;border-radius:16px;padding:16px;background:#000!important;box-sizing:border-box}
+html body[data-pm-area="cliente"] main #homeView#homeView h2.panel-title{text-align:center!important;text-transform:uppercase!important;color:#D4AF37!important}
+html body[data-pm-area="cliente"] main #homeView .panel-actions{display:grid;grid-template-columns:1fr;gap:12px;border:2px solid #D4AF37;border-radius:16px;padding:12px;margin-top:16px;background:#000}
+html body[data-pm-area="cliente"] main #homeView#homeView .panel-actions button{width:100%;margin:0;font:bold 13pt Tahoma,Arial,sans-serif!important;background:#D4AF37!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#D4AF37!important}
+html body[data-pm-area="cliente"] main #homeView#homeView .panel-actions #logout{background:#B42318!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#B42318!important}
+html body[data-pm-area="cliente"]:has(#homeView:not(.hidden)) #portoBrandHeader .brand-slogan{font-style:normal!important}
