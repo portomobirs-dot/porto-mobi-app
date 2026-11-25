@@ -23,6 +23,7 @@ for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener
 $('regPhone').oninput=e=>{e.target.value=formatPhone(e.target.value)};
 $('regPlate').oninput=e=>{let s=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);e.target.value=s.length>3?s.slice(0,3)+'-'+s.slice(3):s};
 $('showRegister').onclick=()=>{for(const el of $('registerForm').querySelectorAll('input:not(#driverCodePreview):not(#regDate)'))el.readOnly=false;$('reviewRegister').disabled=false;invalidateDriverReview();$('regDate').value=todayLocal();show('registerView')};$('editRegister').onclick=()=>show('registerView');
+$('driverPanelLogin').onclick=()=>{if(user)return loadProfile();$('loginForm').requestSubmit()};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}catch(err){message(errorText(err),true)}};
 let reviewedDriver=null;
 const driverSnapshot=()=>JSON.stringify([...$('registerForm').querySelectorAll('input')].map(el=>el.value));
