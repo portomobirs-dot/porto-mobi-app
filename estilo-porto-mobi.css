@@ -685,3 +685,11 @@ html body[data-pm-area="cliente"]:has(#homeView:not(.hidden)) #portoBrandHeader 
 /* Acompanhamento do atendimento — cliente */
 html body[data-pm-area="cliente"] main #serviceTrackingView#serviceTrackingView{border:2px solid #D4AF37!important;border-radius:16px;padding:16px;background:#000!important}
 #serviceTrackingView h2,#serviceTrackingView h3{color:#D4AF37!important}#serviceTrackingView h2{text-align:center}#serviceTrackingView .service-summary{border:1px solid #D4AF37;border-radius:12px;padding:12px;margin:14px 0}#serviceTrackingView .service-summary h3{margin:0 0 8px;font-size:13pt}#serviceTrackingView .service-summary p{margin:0;line-height:1.7;color:#fff;overflow-wrap:anywhere}#serviceTrackingView .service-status{text-align:center;border-width:2px;color:#D4AF37}#serviceTrackingView #serviceTrackingStatus{color:#D4AF37;font-weight:bold;font-size:14pt}html body[data-pm-area="cliente"] main #serviceTrackingView#serviceTrackingView #serviceTrackingLogout{background:#B42318!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#B42318!important;font:bold 13pt Tahoma,Arial,sans-serif!important}
+
+/* Tela 07: moldura exclusiva dos comandos de orçamento. */
+html body[data-pm-area="cliente"] main #budgetView #budgetDetails .actions {
+  border: 2px solid #D4AF37 !important;
+  border-radius: 16px !important;
+  padding: 12px !important;
+  box-sizing: border-box !important;
+}
