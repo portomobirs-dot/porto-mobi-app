@@ -3,7 +3,7 @@ import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,sig
 import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,todayLocal,errorText} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-motoristas'),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','reviewView','pendingView','homeView','reservationView','serviceView'];
+const views=['loginView','registerView','reviewView','pendingView','homeView','reservationView','serviceView','completedView','agendaView','supportView'];
 const message=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
 const show=id=>{views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
 const val=id=>$(id).value.trim();
@@ -73,7 +73,7 @@ async function loadProfile(){
   const snap=await getDoc(doc(db,'motoristas',user.uid));
   if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
   profile=snap.data();
-  $('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';for(const id of ['driverPanelReservations','driverPanelService','driverPanelHistory'])$(id).disabled=!isApproved();if(!isApproved()){driverTrips=[];show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
+  $('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';for(const id of ['driverPanelReservations','driverPanelService','driverPanelHistory','driverPanelAgenda'])$(id).disabled=!isApproved();if(!isApproved()){driverTrips=[];show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
   show('homeView');showDriverPanel('panel');$('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('homeDriverName').value=profile.nomeMotorista||'';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
   const q=query(collection(db,'reservas'),where('motoristaUid','==',user.uid));
   unsub=onSnapshot(q,snap=>renderTrips(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>message('Erro ao consultar reservas: '+errorText(err),true));
@@ -223,10 +223,21 @@ $('serviceComplete').onclick=async()=>{
  const b=$('serviceComplete');b.disabled=true;
  try{
   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp(),dataConclusao:serverTimestamp()});
-  serviceId=null;show('homeView');showDriverPanel('panel');whatsappClient(r,'OBRIGADO POR ESCOLHER A PORTO MOBI');
+  $('completedDetails').textContent='Solicitação: '+(r.codigoReserva||'')+'\nCliente: '+(r.nomeCliente||'')+'\nData: '+todayLocal();serviceId=null;show('completedView');whatsappClient(r,'OBRIGADO POR ESCOLHER A PORTO MOBI');
   message('Atendimento concluído. Reserva registrada no histórico.');
  }catch(err){message('Não foi possível concluir atendimento: '+errorText(err),true)}
  finally{b.disabled=false}
 };
 
 onAuthStateChanged(auth,async next=>{if(registering)return;user=next;if(!user){stop();profile=null;show('loginView');return}await loadProfile()});
+
+const returnPanel=()=>{show('homeView');showDriverPanel('panel')};
+for(const id of ['completedPanel','agendaPanel','supportPanel'])$(id).onclick=returnPanel;
+$('driverPanelAgenda').onclick=()=>{
+ if(!isApproved())return;
+ const rows=driverTrips.filter(r=>r.statusReserva==='confirmada'&&(r.dataViagem?.seconds||0)*1000>=Date.now()).sort((a,b)=>a.dataViagem.seconds-b.dataViagem.seconds);
+ $('agendaList').innerHTML=rows.length?rows.map(r=>'<article class="item"><strong>'+esc(stamp(r.dataViagem))+'</strong><p>Solicitação: '+esc(r.codigoReserva)+'<br>Cliente: '+esc(r.nomeCliente)+'<br>Embarque: '+esc(r.localEmbarque)+'<br>Destino: '+esc(r.localDestino)+'</p></article>').join(''):'<p>Nenhum próximo atendimento confirmado.</p>';
+ show('agendaView');
+};
+$('driverPanelSupport').onclick=()=>{$('supportInfo').textContent='';show('supportView')};
+for(const id of ['supportContact','supportDelay','supportIssue'])$(id).onclick=()=>{$('supportInfo').textContent='Canal de suporte ainda não configurado. Contate a administração pelo canal habitual.'};
