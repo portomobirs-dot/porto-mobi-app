@@ -50,7 +50,7 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
-$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
+$('driverPanelLogout').onclick=logout;$('serviceLogout').onclick=logout;$('checkApproval').onclick=loadProfile;
 $('reservationBackRegister').onclick=$('backHomeRegister').onclick=$('backPendingRegister').onclick=()=>{
  if(!user||!profile)return;
  invalidateDriverReview();
@@ -72,7 +72,7 @@ async function loadProfile(){
   if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
   profile=snap.data();
   if(profile.situacao!=='ativo'&&profile.aprovado!==true){show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
-  show('homeView');showDriverPanel('active');$('homeDriverName').value=profile.nomeMotorista||'';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
+  show('homeView');showDriverPanel('panel');$('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('homeDriverName').value=profile.nomeMotorista||'';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
   const q=query(collection(db,'reservas'),where('motoristaUid','==',user.uid));
   unsub=onSnapshot(q,snap=>renderTrips(snap.docs.map(d=>({id:d.id,...d.data()}))),err=>message('Erro ao consultar reservas: '+errorText(err),true));
  }catch(err){message(errorText(err),true)}
@@ -129,7 +129,12 @@ $('activeReservations').addEventListener('click',async e=>{
  }catch(err){message('Não foi possível atualizar a corrida: '+errorText(err),true)}finally{b.disabled=false}
 });
 
+$('driverPanelReservations').onclick=()=>showDriverPanel('active');
+$('driverPanelHistory').onclick=()=>showDriverPanel('history');
+$('driverPanelReturn').onclick=()=>showDriverPanel('panel');
+$('driverPanelService').onclick=()=>{const r=driverTrips.find(r=>['confirmada','em_andamento'].includes(r.statusReserva));if(!r)return message('Nenhuma reserva confirmada para atendimento.',true);openReservationById(r.id)};
 function showDriverPanel(which){
+ $('driverPanelActions').classList.toggle('hidden',which!=='panel');$('driverPanelReturn').classList.toggle('hidden',which==='panel');
  $('driverActiveBlock').classList.toggle('hidden',which!=='active');
  $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
 }
