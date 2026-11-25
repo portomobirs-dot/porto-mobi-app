@@ -225,7 +225,11 @@ service cloud.firestore {
         (
           (before.statusReserva == 'oferecida' &&
            after.statusReserva == 'confirmada' &&
-           changed.hasOnly(['statusReserva','dataAtualizacao'])) ||
+           changed.hasOnly(['statusReserva','dataAtualizacao','nomeMotoristaDesignado','veiculoModelo','veiculoPlaca','veiculoCor']) &&
+           after.nomeMotoristaDesignado == get(driverPath(me())).data.nomeMotorista &&
+           after.veiculoModelo == get(driverPath(me())).data.veiculoModelo &&
+           after.veiculoPlaca == get(driverPath(me())).data.veiculoPlaca &&
+           after.veiculoCor == get(driverPath(me())).data.veiculoCor) ||
           (before.statusReserva == 'oferecida' &&
            (after.statusReserva == 'pendente' || after.statusReserva == 'orcamento_aceito') &&
            after.statusReserva == (before.get('numeroOrcamento',0) > 0 ? 'orcamento_aceito' : 'pendente') &&
