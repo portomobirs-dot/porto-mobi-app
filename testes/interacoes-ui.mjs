@@ -597,6 +597,59 @@ test('Login do Motorista replica Cliente e marca usa tipografia uniforme', {time
  }finally{await context.close()}
 });
 
+test('Tela 11: tres comandos, moldura e acesso autorizado', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('motorista.html','motorista-login');
+ try{
+  assert.deepEqual(await page.locator('#loginView .login-actions button').allTextContents(),['ACESSAR CADASTRO','FAZER CADASTRO','PAINEL DO MOTORISTA']);
+  assert.equal(await page.locator('#loginView .login-actions').evaluate(el=>getComputedStyle(el).borderTopWidth),'2px');
+  await page.locator('#driverPanelLogin').click();
+  assert.equal(await page.evaluate(()=>window.__pm.loginAttempts.length),0);
+  await page.locator('#showRegister').click();
+  await page.locator('#registerView').waitFor({state:'visible'});
+  await page.reload();
+  await page.locator('#loginEmail').fill('motorista@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#driverPanelLogin').click();
+  await page.locator('#driverPanelActions').waitFor({state:'visible'});
+  await page.locator('#driverPanelLogout').click();
+  await page.locator('#loginView').waitFor({state:'visible'});
+  await page.evaluate(()=>{window.__pm.records.motoristas.motorista01.situacao='pendente'});
+  await page.locator('#loginEmail').fill('motorista@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#driverPanelLogin').click();
+  await page.locator('#pendingView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#homeView').isVisible(),false);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+test('Painel do motorista: cinco comandos e navegacao', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('motorista.html','motorista-aprovado');
+ try{
+  await page.locator('#driverPanelActions').waitFor({state:'visible'});
+  assert.deepEqual(await page.locator('#driverPanelActions button').allTextContents(),['RESERVAS ATRIBUÍDAS','ATENDIMENTO','HISTÓRICO','MEU CADASTRO','SAIR DO APP']);
+  assert.equal(await page.locator('#driverCode').inputValue(),'PMM-001');
+  await page.locator('#driverPanelService').click();
+  assert.match(await page.locator('#message').innerText(),/Nenhuma reserva confirmada/);
+  await page.locator('#driverPanelReservations').click();
+  await page.locator('#activeReservations').waitFor({state:'visible'});
+  assert.match(await page.locator('#activeReservations').innerText(),/PMR-000001/);
+  await page.locator('#driverPanelReturn').click();
+  await page.locator('#driverPanelHistory').click();
+  await page.locator('#historyReservations').waitFor({state:'visible'});
+  await page.locator('#driverPanelReturn').click();
+  await page.locator('#backHomeRegister').click();
+  await page.locator('#registerView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#regName').inputValue(),'Motorista Exemplo');
+  assert.equal(await page.locator('#regName').getAttribute('readonly'),'');
+  await page.goBack();
+  await page.locator('#driverPanelActions').waitFor({state:'visible'});
+  await page.locator('#driverPanelLogout').click();
+  await page.locator('#loginView').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>window.__pm.user),null);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Motorista: cadastro, revisao e autorizacao pendente', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('motorista.html');
  try{
