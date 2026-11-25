@@ -99,6 +99,7 @@ $('activeReservations').addEventListener('click',async e=>{
  const status={accept:'confirmada',reject:'pendente'}[b.dataset.action];if(!status)return;
  if(!confirm('Confirmar ação: '+b.textContent+'?'))return;
  const changes={statusReserva:status,dataAtualizacao:serverTimestamp()};
+ if(status==='confirmada')Object.assign(changes,{nomeMotoristaDesignado:profile?.nomeMotorista||'',veiculoModelo:profile?.veiculoModelo||'',veiculoPlaca:profile?.veiculoPlaca||'',veiculoCor:profile?.veiculoCor||''});
  b.disabled=true;
  try{
   if(b.dataset.action==='reject'){
