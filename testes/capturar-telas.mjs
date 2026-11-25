@@ -99,6 +99,18 @@ try{
   document.querySelector('#trackingDetails').textContent='Avenida Exemplo, 100 → Aeroporto\n10/12/2026 14:30\nPassageiros: 1\nValor: A definir';
  });
  await capture(cliente,'04-cliente-acompanhamento');
+ await cliente.evaluate(()=>{
+  document.querySelector('#trackingStatus').value='Confirmada';
+  document.querySelector('#trackingDriverDetails').classList.remove('hidden');
+  for(const [id,value] of Object.entries({trackingDriverName:'Motorista Exemplo',trackingVehicle:'Toyota Corolla',trackingPlate:'ABC1D23',trackingColor:'Preto'}))document.getElementById(id).value=value;
+ });
+ await capture(cliente,'04-cliente-reserva-confirmada');
+ await cliente.evaluate(()=>{
+  document.querySelector('#trackingStatus').value='Recusada';
+  document.querySelector('#trackingDriverDetails').classList.add('hidden');
+  for(const id of ['trackingDriverName','trackingVehicle','trackingPlate','trackingColor'])document.getElementById(id).value='';
+ });
+ await capture(cliente,'04-cliente-reserva-recusada');
  await cliente.close();
 
  const motorista=await pageFor('motorista.html');
