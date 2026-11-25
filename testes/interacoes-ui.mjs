@@ -338,6 +338,57 @@ test('Tela 05: resumo fiel, retorno e nova revisao da reserva', {timeout:30000},
  }finally{await context.close()}
 });
 
+test('Painel do cliente: cinco comandos, codigos e navegacao', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  await page.evaluate(()=>{
+   const m=window.__pm;
+   Object.assign(m.records.clientes.cliente01,{telefoneCliente:'(51) 99999-1111',email:'cliente@example.invalid'});
+   m.records.reservas.reserva001={clienteUid:'cliente01',codigoReserva:'PMR-000001',statusReserva:'pendente',localEmbarque:'Origem',localDestino:'Destino',passageiros:1,dataSolicitacao:{seconds:2000,toDate:()=>new Date(2026,10,23,12)}};
+  });
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
+  assert.equal(await page.locator('#homeView .panel-title').innerText(),'PAINEL DO CLIENTE');
+  assert.deepEqual(await page.locator('#homeView .panel-actions button').allTextContents(),['SOLICITAR RESERVA','VER SOLICITAÇÃO','HISTÓRICO','MEU CADASTRO','SAIR DO APP']);
+  assert.equal(await page.locator('#homeView button').count(),5);
+  assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
+  assert.equal(await page.locator('#clientCode').getAttribute('readonly'),'');
+  assert.equal(await page.locator('#lastBookingCode').getAttribute('readonly'),'');
+  await page.locator('#showBooking').click();
+  await page.locator('#bookingView').waitFor({state:'visible'});
+  await page.evaluate(()=>history.pushState({testPanel:true},''));
+  await page.goBack();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#viewActiveReservations').click();
+  await page.locator('#bookingTracking').waitFor({state:'visible'});
+  assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+  await page.locator('#backToBooking').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#viewReservationHistory').click();
+  await page.locator('#historyView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#historyClientCode').inputValue(),'PMC-0001');
+  await page.locator('#historyBackToRegister').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#viewMyProfile').click();
+  await page.locator('#registerView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#regName').inputValue(),'Cliente Teste Login');
+  assert.equal(await page.locator('#regEmail').inputValue(),'cliente@example.invalid');
+  assert.equal(await page.locator('#regName').getAttribute('readonly'),'');
+  assert.equal(await page.locator('#regPassword').inputValue(),'');
+  assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
+  assert.equal(await page.locator('#registerViewLogout').innerText(),'VOLTAR AO PAINEL');
+  await page.locator('#registerViewLogout').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#logout').click();
+  await page.locator('#loginView').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>window.__pm.user),null);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Tela 06: status, data, dados condicionais e retorno ao painel', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html','cliente-login');
  try{
