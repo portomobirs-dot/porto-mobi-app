@@ -91,7 +91,7 @@ function renderTrips(rows){
   return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
  };
  $('activeReservations').innerHTML=active.length?active.map(r=>html(r)).join(''):'<p>Nenhuma corrida atribuída.</p>';
- $('historyReservations').innerHTML=hist.length?hist.map(r=>html(r,true)).join(''):'<p>Histórico vazio.</p>';
+ $('historyReservations').innerHTML=hist.length?hist.map(r=>`<article class="item"><strong>Solicitação: ${esc(r.codigoReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Data e horário: ${esc(stamp(r.dataViagem))}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Passageiros: ${esc(r.passageiros||1)}</p><p>${esc(({concluida:"Atendimento concluído",recusada:"Solicitação recusada",cancelada:"Solicitação cancelada"})[r.statusReserva]||r.statusReserva)}</p></article>`).join(''):'<p>Histórico vazio.</p>';
  if(serviceId && !$('reservationView').classList.contains('hidden'))renderReservation();
  if(serviceId && !$('serviceView').classList.contains('hidden'))renderService();
 }
@@ -140,6 +140,9 @@ function showDriverPanel(which){
  $('driverPanelActions').classList.toggle('hidden',which!=='panel');$('driverPanelReturn').classList.toggle('hidden',which==='panel');
  $('driverActiveBlock').classList.toggle('hidden',which!=='active');
  $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
+ $('driverPanelTitle').textContent=which==='history'?'HISTÓRICO DE ATENDIMENTOS':'PAINEL DO MOTORISTA';
+ $('driverGreeting').classList.toggle('hidden',which==='history');
+ $('historyDriverName').textContent='Nome do Motorista: '+(profile?.nomeMotorista||'');
 }
 
 
