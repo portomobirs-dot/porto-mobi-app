@@ -743,3 +743,12 @@ html body[data-pm-area="motorista"] main #completedView#completedView button#com
 /* Tela 10 — histórico resumido */
 html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) #driverPanelReturn{display:block!important;width:100%!important;max-width:none!important;margin-inline:0!important}
 html body[data-pm-area="motorista"] main #driverHistoryBlock h3{color:#d4af37;font-size:16px}
+
+/* Tela 10 — compactação exclusiva do histórico */
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)){padding:16px!important}
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) :is(h1,h3,p,.codebox,.item){margin:4px 0!important;padding:0!important;line-height:1.3!important}
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) .codebox{display:flex!important;align-items:baseline!important;gap:6px!important;background:transparent!important}
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) .codebox label{margin:0!important;font-size:14px!important;color:#fff!important}
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) #driverCode{width:90px!important;min-width:0!important;padding:0!important;margin:0!important;height:auto!important;min-height:0!important;background:transparent!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:0!important;box-shadow:none!important;font-size:14px!important}
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) #driverPanelReturn{margin-top:8px!important}
+html body[data-pm-area="motorista"] main #driverHistoryBlock:not(.hidden){padding:0!important;margin:0!important;font-size:14px!important}
