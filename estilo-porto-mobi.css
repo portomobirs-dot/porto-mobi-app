@@ -669,3 +669,7 @@ html body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) #portoBrandH
 html body[data-pm-area="motorista"]:has(#registerView:not(.hidden)) #portoBrandHeader .brand-slogan{width:100%!important;text-align:center!important}
 html body[data-pm-area="motorista"] main #registerView#registerView button#reviewRegister{background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#c7993e!important}
 html body[data-pm-area="motorista"] main #registerView#registerView button#confirmRegister{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
+
+/* Tela 06 — contorno do comando de retorno */
+html body[data-pm-area="cliente"] main #bookingTracking#bookingTracking .tracking-actions{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin-top:18px!important;padding:12px!important;background:#000!important;border:2px solid #D4AF37!important;border-radius:16px!important}
+html body[data-pm-area="cliente"] main #bookingTracking#bookingTracking .tracking-actions button{width:100%!important;margin:0!important;font-family:Tahoma,Arial,sans-serif!important;font-size:13pt!important;font-weight:bold!important}
