@@ -251,6 +251,57 @@ test('Tela 03: resumo fiel, senha protegida e retorno ao cadastro', {timeout:300
  }finally{await context.close()}
 });
 
+test('Tela 04: campos, passageiros, revisao e cadastro da reserva', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#showBooking').click();
+  await page.locator('#bookingView').waitFor({state:'visible'});
+  assert.deepEqual(await page.locator('#bookingView .booking-actions button').allTextContents(),['REVISAR','CADASTRAR']);
+  assert.equal(await page.locator('#bookingCodePreview').inputValue(),'PMR-000000');
+  assert.equal(await page.locator('#bookingCodePreview').getAttribute('readonly'),'');
+  assert.equal(await page.locator('#bookingCreatedDate').getAttribute('readonly'),'');
+  assert.match(await page.locator('#bookingCreatedDate').inputValue(),/^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(await page.locator('#requestBooking').isDisabled(),true);
+  await page.locator('#reviewBooking').click();
+  assert.equal(await page.locator('#bookingReview').isVisible(),false);
+  await page.locator('#pickup').fill('Avenida Exemplo, 100');
+  await page.locator('#destination').fill('Aeroporto');
+  await page.locator('#travelDate').fill('2000-01-01');
+  await page.locator('#travelTime').fill('14:30');
+  await page.locator('#reviewBooking').click();
+  assert.equal(await page.locator('#bookingReview').isVisible(),false);
+  await page.locator('#travelDate').fill(future());
+  await page.locator('#decreasePassengers').click();
+  assert.equal(await page.locator('#passengers').inputValue(),'1');
+  for(let i=0;i<9;i++)await page.locator('#increasePassengers').click();
+  assert.equal(await page.locator('#passengers').inputValue(),'8');
+  for(let i=0;i<9;i++)await page.locator('#decreasePassengers').click();
+  assert.equal(await page.locator('#passengers').inputValue(),'1');
+  await page.locator('#increasePassengers').click();
+  await page.locator('#notes').fill('Bagagem de mao');
+  await page.locator('#reviewBooking').click();
+  await page.locator('#bookingReview').waitFor({state:'visible'});
+  const summary=await page.locator('#bookingSummary').innerText();
+  for(const value of ['Avenida Exemplo, 100','Aeroporto','14:30','Passageiros: 2','Bagagem de mao'])assert.ok(summary.includes(value),value);
+  await page.locator('#editBooking').click();
+  assert.equal(await page.locator('#requestBooking').isEnabled(),true);
+  await page.locator('#notes').fill('Bagagem alterada');
+  assert.equal(await page.locator('#requestBooking').isDisabled(),true);
+  await page.locator('#reviewBooking').click();
+  await page.locator('#bookingReview').waitFor({state:'visible'});
+  await page.locator('#editBooking').click();
+  await page.locator('#requestBooking').click();
+  await page.locator('#bookingTracking').waitFor({state:'visible'});
+  assert.match(await page.locator('#trackingCode').inputValue(),/^PMR-\d{6}$/);
+  assert.notEqual(await page.locator('#trackingCode').inputValue(),'PMR-000000');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
