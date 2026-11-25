@@ -6,7 +6,7 @@ import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
 const app=initializeApp(firebaseConfig,'porto-mobi-clientes');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
-const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView','historyView','serviceTrackingView'];
+const views=['loginView','registerView','registerReview','homeView','bookingView','bookingReview','bookingTracking','budgetView','historyView','serviceTrackingView','clientSupportView','clientCompletedView'];
 const message=(s,bad=false)=>{const el=$('message');el.textContent=s;el.className='status '+(bad?'error':'success')};
 let stopServiceTracking=null;
 const show=id=>{if(id!=='serviceTrackingView'&&stopServiceTracking){stopServiceTracking();stopServiceTracking=null;}views.forEach(v=>$(v).classList.toggle('hidden',v!==id));message('')};
@@ -74,9 +74,12 @@ $('viewServiceTracking').onclick=async()=>{
  for(const [key,value] of Object.entries(fields))$('serviceTracking'+key).textContent=value||'Não informado';
  show('serviceTrackingView');
  if(stopServiceTracking)stopServiceTracking();
- stopServiceTracking=onSnapshot(doc(db,'reservas',r.id),snap=>{if(snap.exists()&&snap.data().clienteUid===currentUser?.uid)$('serviceTrackingStatus').textContent=serviceStatus(snap.data());},()=>message('Não foi possível atualizar o acompanhamento.',true));
+ stopServiceTracking=onSnapshot(doc(db,'reservas',r.id),snap=>{if(snap.exists()&&snap.data().clienteUid===currentUser?.uid){const latest=snap.data();if(latest.statusReserva==='concluida'){$('clientCompletedCode').textContent='Reserva: '+(latest.codigoReserva||'');show('clientCompletedView');}else $('serviceTrackingStatus').textContent=serviceStatus(latest);}},()=>message('Não foi possível atualizar o acompanhamento.',true));
  if(!history.state?.serviceTracking)history.pushState({serviceTracking:true},'');
 };
+$('viewClientSupport').onclick=()=>show('clientSupportView');
+$('clientSupportBack').onclick=()=>show('homeView');
+$('clientCompletedBack').onclick=()=>show('homeView');
 $('serviceTrackingLogout').onclick=()=> $('logout').click();
 function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
