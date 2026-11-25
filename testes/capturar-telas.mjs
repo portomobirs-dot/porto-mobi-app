@@ -230,6 +230,11 @@ try{
  });
  await capture(clienteHistorico,'19-cliente-historico-atendimentos');
  await clienteHistorico.close();
+ const acompanhamento=await pageFor('cliente.html');
+ await expose(acompanhamento,'serviceTrackingView',['loginView','registerView','registerReview','bookingView','bookingReview','bookingTracking','budgetView','homeView','historyView']);
+ await acompanhamento.evaluate(()=>{for(const [id,value] of Object.entries({serviceTrackingWelcome:'Olá, Cliente Exemplo!',serviceTrackingClient:'PMC-0001',serviceTrackingCode:'PMR-000001',serviceTrackingDate:'25/11/2026',serviceTrackingTime:'09:00',serviceTrackingPickup:'Porto Alegre',serviceTrackingDestination:'Gramado',serviceTrackingDriver:'Motorista Exemplo',serviceTrackingVehicle:'Toyota Corolla',serviceTrackingPlate:'ABC1D23',serviceTrackingColor:'Preta',serviceTrackingStatus:'O motorista iniciou o trajeto até o embarque.'}))document.getElementById(id).textContent=value;});
+ await capture(acompanhamento,'21-cliente-acompanhamento-atendimento');
+ await acompanhamento.close();
  await context.close();
 }finally{
  await browser?.close();
