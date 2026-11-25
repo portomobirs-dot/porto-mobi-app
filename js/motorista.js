@@ -142,6 +142,8 @@ function showDriverPanel(which){
  $('driverHistoryBlock').classList.toggle('hidden',which!=='history');
  $('driverPanelTitle').textContent=which==='history'?'HISTÓRICO DE ATENDIMENTOS':'PAINEL DO MOTORISTA';
  $('driverGreeting').classList.toggle('hidden',which==='history');
+ $('driverPanelCodeBox').classList.toggle('hidden',which==='history');
+ $('historyDriverCode').textContent='Código do Motorista: '+(profile?.codigoMotorista||'');
  $('historyDriverName').textContent='Nome do Motorista: '+(profile?.nomeMotorista||'');
 }
 
