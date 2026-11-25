@@ -338,7 +338,7 @@ test('Tela 05: resumo fiel, retorno e nova revisao da reserva', {timeout:30000},
  }finally{await context.close()}
 });
 
-test('Painel do cliente: cinco comandos, codigos e navegacao', {timeout:30000},async()=>{
+test('Painel do cliente: seis comandos, codigos e navegacao', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html','cliente-login');
  try{
   await page.evaluate(()=>{
@@ -352,8 +352,8 @@ test('Painel do cliente: cinco comandos, codigos e navegacao', {timeout:30000},a
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
   assert.equal(await page.locator('#homeView .panel-title').innerText(),'PAINEL DO CLIENTE');
-  assert.deepEqual(await page.locator('#homeView .panel-actions button').allTextContents(),['SOLICITAR RESERVA','VER SOLICITAÇÃO','HISTÓRICO','MEU CADASTRO','SAIR DO APP']);
-  assert.equal(await page.locator('#homeView button').count(),5);
+  assert.deepEqual(await page.locator('#homeView .panel-actions button').allTextContents(),['SOLICITAR RESERVA','VER SOLICITAÇÃO','ATENDIMENTO','HISTÓRICO','MEU CADASTRO','SAIR DO APP']);
+  assert.equal(await page.locator('#homeView button').count(),6);
   assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
   assert.equal(await page.locator('#clientCode').getAttribute('readonly'),'');
   assert.equal(await page.locator('#lastBookingCode').getAttribute('readonly'),'');
@@ -385,6 +385,34 @@ test('Painel do cliente: cinco comandos, codigos e navegacao', {timeout:30000},a
   await page.locator('#logout').click();
   await page.locator('#loginView').waitFor({state:'visible'});
   assert.equal(await page.evaluate(()=>window.__pm.user),null);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
+test('Atendimento: acesso condicionado, resumo e saida', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  await page.evaluate(()=>{window.__pm.records.reservas.r1={clienteUid:'cliente01',codigoReserva:'PMR-000001',statusReserva:'confirmada',localEmbarque:'Origem',localDestino:'Destino',nomeMotoristaDesignado:'Motorista Teste',veiculoModelo:'Corolla',veiculoPlaca:'ABC1D23',veiculoCor:'Preto',dataViagem:{toDate:()=>new Date()},dataSolicitacao:{seconds:1}}});
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  await page.locator('#viewServiceTracking').click();
+  await page.locator('#serviceTrackingView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#homeView').isVisible(),false);
+  for(const [key,value] of Object.entries({Client:'PMC-0001',Code:'PMR-000001',Pickup:'Origem',Destination:'Destino',Driver:'Motorista Teste',Vehicle:'Corolla',Plate:'ABC1D23',Color:'Preto'}))assert.equal(await page.locator('#serviceTracking'+key).innerText(),value);
+  await page.locator('#serviceTrackingLogout').click();
+  await page.locator('#loginView').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>window.__pm.user),null);
+  for(const status of ['pendente','cancelada','concluida','confirmada']){
+   await page.evaluate(status=>{const r=window.__pm.records.reservas.r1;r.statusReserva=status;r.dataViagem={toDate:()=>new Date(Date.now()+86400000)}},status);
+   await page.locator('#accessClientAccount').click();
+   await page.locator('#homeView').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
+   assert.equal(await page.locator('#viewServiceTracking').isDisabled(),true);
+   await page.locator('#logout').click();
+   await page.locator('#loginView').waitFor({state:'visible'});
+  }
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
