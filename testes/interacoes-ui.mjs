@@ -338,6 +338,34 @@ test('Tela 05: resumo fiel, retorno e nova revisao da reserva', {timeout:30000},
  }finally{await context.close()}
 });
 
+test('Tela 06: status, data, dados condicionais e retorno ao painel', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html','cliente-login');
+ try{
+  await page.evaluate(()=>{
+   window.__pm.records.reservas.reserva001={clienteUid:'cliente01',codigoReserva:'PMR-000001',statusReserva:'pendente',localEmbarque:'Origem',localDestino:'Destino',passageiros:2,dataSolicitacao:{seconds:2000,toDate:()=>new Date(2026,10,23,12)},nomeMotoristaDesignado:'Motorista Exemplo',veiculoModelo:'Toyota Corolla',veiculoPlaca:'ABC1D23',veiculoCor:'Preto'};
+  });
+  await page.locator('#loginEmail').fill('cliente@example.invalid');
+  await page.locator('#loginPassword').fill('senha123');
+  await page.locator('#accessClientAccount').click();
+  await page.locator('#homeView').waitFor({state:'visible'});
+  const fields={trackingDriverName:'Motorista Exemplo',trackingVehicle:'Toyota Corolla',trackingPlate:'ABC1D23',trackingColor:'Preto'};
+  for(const [status,label,visible] of [['pendente','Aguardando confirmação',false],['confirmada','Confirmada',true],['recusada','Recusada',false],['cancelada','Cancelada',false]]){
+   await page.evaluate(status=>window.__pm.records.reservas.reserva001.statusReserva=status,status);
+   await page.locator('#viewActiveReservations').click();
+   await page.locator('#bookingTracking').waitFor({state:'visible'});
+   assert.equal(await page.locator('#trackingStatus').inputValue(),label);
+   assert.equal(await page.locator('#trackingRequestDate').inputValue(),'23/11/2026');
+   assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+   assert.equal(await page.locator('#trackingDriverDetails').isVisible(),visible);
+   for(const [id,value] of Object.entries(fields))assert.equal(await page.locator('#'+id).inputValue(),visible?value:'');
+   assert.equal(await page.locator('#backToBooking').innerText(),'VOLTAR AO PAINEL');
+   await page.locator('#backToBooking').click();
+   await page.locator('#homeView').waitFor({state:'visible'});
+  }
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
