@@ -60,7 +60,7 @@ $('bookingForm').addEventListener('change',invalidateBookingReview);
 for(const id of ['decreasePassengers','increasePassengers'])$(id).addEventListener('click',invalidateBookingReview);
 $('requestBooking').onclick=()=>submitBooking();
 $('editBooking').onclick=()=>show('bookingView');
-$('backToBooking').onclick=()=>show('bookingView');
+$('backToBooking').onclick=()=>show('homeView');
 function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
 
@@ -217,6 +217,7 @@ function showTracking(r){
  $('trackingClient').textContent=currentProfile?.nomeCliente||'';
  $('trackingClientCode').value=currentProfile?.codigoCliente||'';
  $('trackingCode').value=r.codigoReserva||'';
+ $('trackingRequestDate').value=r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Aguardando registro';
  const status=r.statusReserva;
  $('trackingStatus').value=status==='recusada'?'Recusada':['confirmada','em_andamento','concluida'].includes(status)?'Confirmada':['cancelada','cancelado'].includes(status)?'Cancelada':'Aguardando confirmação';
  $('trackingDetails').textContent=[r.localEmbarque+' → '+r.localDestino,r.dataViagem?.toDate?.().toLocaleString('pt-BR')||'', 'Passageiros: '+(r.passageiros||1),'Valor: '+(r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir')].join('\n');
