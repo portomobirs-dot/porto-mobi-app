@@ -134,6 +134,7 @@ try{
  await expose(motorista,'homeView',['loginView','registerView','reviewView','pendingView','serviceView']);
  await motorista.evaluate(()=>{
   document.querySelector('#homeDriverName').value='Motorista Exemplo';
+  document.querySelector('#driverGreeting').textContent='Olá, Motorista Exemplo!';
   document.querySelector('#driverCode').value='PMM-001';
   document.querySelector('#driverActiveBlock').classList.remove('hidden');
   document.querySelector('#activeReservations').innerHTML='<article class="item"><strong>PMR-000001 — oferecida</strong><p>Cliente: Cliente Exemplo<br>Embarque: Avenida Exemplo, 100<br>Destino: Aeroporto<br>Viagem: 10/12/2026, 14:30</p><div class="actions"><button data-action="accept">ACEITAR</button><button class="danger" data-action="reject">RECUSAR</button></div></article>';
