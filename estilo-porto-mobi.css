@@ -736,3 +736,6 @@ html body[data-pm-area="motorista"] main #serviceView#serviceView .actions>butto
 html body[data-pm-area="motorista"] main #serviceView#serviceView button#serviceStart{background:#218638!important;background-image:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#218638!important}
 html body[data-pm-area="motorista"] main #serviceView#serviceView button#serviceComplete{background:#f4c542!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border-color:#f4c542!important}
 html body[data-pm-area="motorista"] main #serviceView#serviceView button#serviceBack{grid-column:1 / -1!important}
+
+/* Tela 09 — botão de retorno em largura integral */
+html body[data-pm-area="motorista"] main #completedView#completedView button#completedPanel{display:block!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;text-align:center!important;margin-inline:0!important}
