@@ -213,6 +213,12 @@ try{
    '<button data-action="assign">CONFIRMAR</button></div></article>';
  });
  await capture(admin,'17-administrador-motorista-designado');
+ await admin.evaluate(()=>window.adminVisualShow(2));
+ await capture(admin,'admin-02-painel');
+ for(let n=3;n<=19;n++){
+  await admin.evaluate(n=>window.adminVisualShow(n),n);
+  await capture(admin,'admin-'+String(n).padStart(2,'0'));
+ }
  await admin.close();
  const clienteOrcamento=await pageFor('cliente.html');
  await expose(clienteOrcamento,'budgetView',['loginView','registerView','registerReview','bookingView','bookingReview','homeView','bookingTracking']);
