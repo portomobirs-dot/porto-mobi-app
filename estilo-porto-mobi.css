@@ -693,3 +693,6 @@ html body[data-pm-area="cliente"] main #budgetView #budgetDetails .actions {
   padding: 12px !important;
   box-sizing: border-box !important;
 }
+
+/* Tela 07: retorno ao painel dentro da moldura. */
+html body[data-pm-area="cliente"] main #budgetView#budgetView #budgetBackToPanel{grid-column:1/-1!important;background:#D4AF37!important;background-image:none!important;color:#000!important;-webkit-text-fill-color:#000!important;border:1px solid #D4AF37!important;font:bold 13pt Tahoma,Arial,sans-serif!important}
