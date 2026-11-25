@@ -739,3 +739,7 @@ html body[data-pm-area="motorista"] main #serviceView#serviceView button#service
 
 /* Tela 09 — botão de retorno em largura integral */
 html body[data-pm-area="motorista"] main #completedView#completedView button#completedPanel{display:block!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;text-align:center!important;margin-inline:0!important}
+
+/* Tela 10 — histórico resumido */
+html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverHistoryBlock:not(.hidden)) #driverPanelReturn{display:block!important;width:100%!important;max-width:none!important;margin-inline:0!important}
+html body[data-pm-area="motorista"] main #driverHistoryBlock h3{color:#d4af37;font-size:16px}
