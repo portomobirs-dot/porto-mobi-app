@@ -48,7 +48,7 @@ for(const field of $('registerForm').querySelectorAll('input:not([readonly])'))f
 $('showRegister').onclick=()=>{
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=false;
  $('registerForm').reset();$('clientCodePreview').value='PMC-0000';$('regDate').value=todayLocal();
- $('reviewRegister').disabled=false;$('registerViewTracking').disabled=true;$('registerViewHistory').disabled=true;
+ $('reviewRegister').disabled=false;
  invalidateRegistrationReview();show('registerView');
 };
 let reviewedBooking=null,submittingBooking=false;
@@ -84,7 +84,7 @@ $('historyBackToRegister').onclick=()=>{
  $('regEmail').value=currentProfile.email||currentUser.email||'';
  $('regPassword').value='';$('regConfirm').value='';
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=true;
- $('reviewRegister').disabled=true;$('registerViewTracking').disabled=false;$('registerViewHistory').disabled=false;
+ $('reviewRegister').disabled=true;
  show('registerView');
 };
 $('showBooking').onclick=()=>{
@@ -138,8 +138,6 @@ async function createProfile(user){
 }
 $('logout').onclick=async()=>{await signOut(auth);currentProfile=null;currentUser=null;show('loginView')};
 /* Ações da tela de cadastro: dados pessoais só após autenticação. */
-$('registerViewTracking').onclick=()=>{if(!currentUser||!currentProfile)return;const r=clientReservations[0];if(r)showTracking(r);else message('Você ainda não possui uma solicitação.');};
-$('registerViewHistory').onclick=()=>{if(!currentUser||!currentProfile)return;$('viewReservationHistory').click();};
 $('registerViewLogout').onclick=async()=>{if(currentUser)await $('logout').click();else show('loginView');};
 
 $('reviewBooking').onclick=()=>{
