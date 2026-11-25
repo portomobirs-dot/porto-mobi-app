@@ -213,6 +213,44 @@ test('Tela 02: comandos, campos obrigatorios e revisao de cadastro', {timeout:30
  }finally{await context.close()}
 });
 
+test('Tela 03: resumo fiel, senha protegida e retorno ao cadastro', {timeout:30000},async()=>{
+ const {context,page,errors}=await pageFor('cliente.html');
+ try{
+  await page.locator('#showRegister').click();
+  const fields={regName:'Cliente Teste',regPhone:'51999991111',regEmail:'cliente@example.invalid',regPassword:'senha123',regConfirm:'senha123'};
+  for(const [id,value] of Object.entries(fields))await page.locator('#'+id).fill(value);
+  const date=await page.locator('#regDate').inputValue();
+  const phone=await page.locator('#regPhone').inputValue();
+  await page.locator('#reviewRegister').click();
+  await page.locator('#registerReview').waitFor({state:'visible'});
+  assert.equal(await page.locator('#registerReview h2').innerText(),'CONFIRME SEUS DADOS');
+  const summary=await page.locator('#registerSummary').innerText();
+  for(const value of ['PMC-0000',date,fields.regName,phone,fields.regEmail])assert.ok(summary.includes(value),value);
+  assert.ok(!summary.includes(fields.regPassword));
+  assert.equal(await page.locator('#reviewPassword').innerText(),'********');
+  const eye=page.locator('#reviewPasswordEye');
+  await eye.click();
+  assert.equal(await page.locator('#reviewPassword').innerText(),fields.regPassword);
+  assert.equal(await eye.getAttribute('aria-pressed'),'true');
+  await eye.click();
+  assert.equal(await page.locator('#reviewPassword').innerText(),'********');
+  assert.equal(await eye.getAttribute('aria-pressed'),'false');
+  await eye.click();
+  assert.equal(await page.locator('#editRegister').innerText(),'VOLTAR P/CADASTRO');
+  await page.locator('#editRegister').click();
+  await page.locator('#registerView').waitFor({state:'visible'});
+  assert.equal(await page.locator('#reviewPassword').textContent(),'********');
+  for(const [id,value] of Object.entries(fields))assert.equal(await page.locator('#'+id).inputValue(),id==='regPhone'?phone:value);
+  await page.locator('#regName').fill('Cliente Alterado');
+  assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
+  await page.locator('#reviewRegister').click();
+  await page.locator('#registerReview').waitFor({state:'visible'});
+  assert.match(await page.locator('#registerSummary').innerText(),/Cliente Alterado/);
+  assert.equal(await page.locator('#reviewPassword').innerText(),'********');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close()}
+});
+
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
  try{
