@@ -58,7 +58,7 @@ function render(){
  }).join(''):'<p>Nenhuma reserva encontrada.</p>';
  renderHistory();
  $('driverApplicants').innerHTML=drivers.filter(d=>d.situacao==='pendente').length?
-  drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><button data-approve="${esc(d.id)}">APROVAR</button></article>`).join(''):
+  drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><div class="actions"><button data-approve="${esc(d.id)}">APROVAR</button><button class="danger" data-reject="${esc(d.id)}">RECUSAR</button></div></article>`).join(''):
   '<p>Nenhum motorista aguardando autorização.</p>';
 }
 function readQuoteInputs(card){
@@ -124,6 +124,18 @@ $('reservations').addEventListener('click',async e=>{
  }
 });
 $('driverApplicants').addEventListener('click',async e=>{
+ const reject=e.target.closest('button[data-reject]');
+ if(reject){
+  const d=drivers.find(x=>x.id===reject.dataset.reject&&x.situacao==='pendente');
+  if(!d)return msg('Cadastro não está pendente.',true);
+  if(!confirm('Recusar o cadastro de '+d.nomeMotorista+'? Esta ação não pode ser desfeita pelo aplicativo.'))return;
+  reject.disabled=true;
+  try{await updateDoc(doc(db,'motoristas',d.id),{situacao:'recusado',dataRecusa:serverTimestamp()});msg('Cadastro de '+d.nomeMotorista+' recusado.')}
+  catch(err){msg('Não foi possível recusar: '+errorText(err),true)}
+  finally{reject.disabled=false}
+  return;
+ }
+
  const b=e.target.closest('button[data-approve]');if(!b)return;
  const d=drivers.find(x=>x.id===b.dataset.approve&&x.situacao==='pendente');if(!d)return;
  if(!confirm('Autorizar '+d.nomeMotorista+' como motorista?'))return;
