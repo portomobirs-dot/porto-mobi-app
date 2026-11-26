@@ -338,7 +338,7 @@ test('Tela 05: resumo fiel, retorno e nova revisao da reserva', {timeout:30000},
  }finally{await context.close()}
 });
 
-test('Painel do cliente: seis comandos, codigos e navegacao', {timeout:30000},async()=>{
+test('Painel do cliente: sete comandos, codigos e navegacao', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html','cliente-login');
  try{
   await page.evaluate(()=>{
@@ -352,8 +352,8 @@ test('Painel do cliente: seis comandos, codigos e navegacao', {timeout:30000},as
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
   assert.equal(await page.locator('#homeView .panel-title').innerText(),'PAINEL DO CLIENTE');
-  assert.deepEqual(await page.locator('#homeView .panel-actions button').allTextContents(),['SOLICITAR RESERVA','VER SOLICITAÇÃO','ATENDIMENTO','HISTÓRICO','MEU CADASTRO','SAIR DO APP']);
-  assert.equal(await page.locator('#homeView button').count(),6);
+  assert.deepEqual(await page.locator('#homeView .panel-actions button').allTextContents(),['SOLICITAR RESERVA','VER SOLICITAÇÃO','ACOMPANHAR ATENDIMENTO','HISTÓRICO DE ATENDIMENTOS','MEU CADASTRO','SUPORTE AO CLIENTE','SAIR DO APP']);
+  assert.equal(await page.locator('#homeView .panel-actions button').count(),7);
   assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
   assert.equal(await page.locator('#clientCode').getAttribute('readonly'),'');
   assert.equal(await page.locator('#lastBookingCode').getAttribute('readonly'),'');
@@ -422,7 +422,7 @@ test('Tela 09: historico proprio, ordem, filtro, vazio e retorno ao painel', {ti
   assert.ok(history.indexOf('PMR-NEW')<history.indexOf('PMR-OLD'));
   assert.doesNotMatch(history,/PMR-ACTIVE|PMR-OTHER/);
   assert.match(history,/70,00/);
-  assert.equal(await page.locator('.history-actions').evaluate(el=>getComputedStyle(el).borderTopWidth),'2px');
+  assert.equal(await page.locator('.history-actions').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px');
   await page.locator('#historyBackToRegister').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   assert.deepEqual(errors,[]);
@@ -622,11 +622,11 @@ test('Tela 11: tres comandos, moldura e acesso autorizado', {timeout:30000},asyn
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
-test('Painel do motorista: cinco comandos e navegacao', {timeout:30000},async()=>{
+test('Painel do motorista: oito comandos e navegacao', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('motorista.html','motorista-aprovado');
  try{
   await page.locator('#driverPanelActions').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('#driverPanelActions button').allTextContents(),['RESERVAS ATRIBUÍDAS','ATENDIMENTO','HISTÓRICO','MEU CADASTRO','SAIR DO APP']);
+  assert.deepEqual(await page.locator('#driverPanelActions button').allTextContents(),['SOLICITAÇÕES DE ATENDIMENTO','ATENDIMENTO','HISTÓRICO DE ATENDIMENTOS','AGENDA DO MOTORISTA','MEU CADASTRO','STATUS DO CADASTRO','SUPORTE AO MOTORISTA','SAIR DO APP']);
   assert.equal(await page.locator('#driverCode').inputValue(),'PMM-001');
   await page.locator('#driverPanelService').click();
   assert.match(await page.locator('#message').innerText(),/Nenhuma reserva confirmada/);
