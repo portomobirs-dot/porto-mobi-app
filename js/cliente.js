@@ -41,7 +41,7 @@ $('reviewPasswordEye').onclick=()=>{const b=$('reviewPasswordEye');if(b.getAttri
 $('editRegister').onclick=()=>{hideReviewPassword();show('registerView')};
 $('registerForm').onsubmit=e=>e.preventDefault();
 const registrationSnapshot=()=>['regDate','regName','regPhone','regEmail','regPassword','regConfirm'].map(id=>$(id).value).join('\u0000');
-const invalidateRegistrationReview=()=>{reviewedRegistration=null;$('confirmRegister').disabled=true;hideReviewPassword()};
+const invalidateRegistrationReview=()=>{reviewedRegistration=null;$('confirmRegister').setAttribute('aria-disabled','true');hideReviewPassword()};
 for(const field of $('registerForm').querySelectorAll('input:not([readonly])'))field.addEventListener('input',invalidateRegistrationReview);
 $('showRegister').onclick=()=>{
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=false;
@@ -128,11 +128,12 @@ $('reviewRegister').onclick=()=>{
  $('registerSummary').style.whiteSpace='pre-line';
  reviewedRegistration=registrationSnapshot();
  hideReviewPassword();
- $('confirmRegister').disabled=false;
+ $('confirmRegister').setAttribute('aria-disabled','false');
  show('registerReview');
 };
 $('confirmRegister').onclick=async()=>{
- if(registering||!reviewedRegistration||reviewedRegistration!==registrationSnapshot())return message('Revise os dados antes de cadastrar.',true);
+ if(registering)return;
+  if(!reviewedRegistration||reviewedRegistration!==registrationSnapshot())return message('Revise seu cadastro antes de continuar.',true);
  if(!$('registerForm').reportValidity()||$('regPassword').value!==$('regConfirm').value||![10,11].includes(phoneDigits(val('regPhone')).length))return message('Confira os dados e revise novamente.',true);
  const b=$('confirmRegister');b.disabled=true;registering=true;let cred=null;
  try{
@@ -145,7 +146,7 @@ $('confirmRegister').onclick=async()=>{
   // Evita deixar uma conta Authentication sem perfil quando a transacao falha.
   if(cred){try{await deleteUser(cred.user);currentUser=null}catch(_){/* pode requerer suporte da administracao */}}
   invalidateRegistrationReview();show('registerView');message(err?.code==='permission-denied'?'Cadastro bloqueado pelas regras do Firestore da homologação. Seus dados não foram gravados. Aguarde a atualização segura das regras antes de tentar novamente.':'Cadastro não concluído. '+errorText(err),true);
- }finally{registering=false;b.disabled=reviewedRegistration===null}
+ }finally{registering=false;b.disabled=false;b.setAttribute('aria-disabled',reviewedRegistration===null?'true':'false')}
 };
 async function createProfile(user){
  const ref=doc(db,'clientes',user.uid),counter=doc(db,'contadores','clientes');
