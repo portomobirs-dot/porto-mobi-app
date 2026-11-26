@@ -29,7 +29,7 @@ async function reset({clients=false,driver=false,trips=false,status='pendente',a
           telefoneCliente:'(51) 99999-1111',email:uid+'@example.invalid',dataCadastro:Timestamp.now()});
     }
     if(driver){
-      await setDoc(doc(db,'motoristas','motoristaA'),{nomeMotorista:'Motorista Ficticio',codigoMotorista:'PMM-001',aprovado:true});
+      await setDoc(doc(db,'motoristas','motoristaA'),{nomeMotorista:'Motorista Ficticio',codigoMotorista:'PMM-001',aprovado:true,veiculoModelo:'Sedan Executivo',veiculoPlaca:'ABC-1D23',veiculoCor:'Preto'});
       await setDoc(doc(db,'motoristas','motoristaB'),{nomeMotorista:'Motorista Pendente',codigoMotorista:'',situacao:'pendente',numeroMotorista:0});
     }
     if(trips){
@@ -66,7 +66,7 @@ test('Administrador oferece e motorista antigo aprovado aceita e conclui',async(
   await assertSucceeds(getDoc(doc(driver,'reservas','reservaA')));
   await assertFails(getDoc(doc(other,'reservas','reservaA')));
   for(const status of ['confirmada','em_andamento','concluida']){
-    await assertSucceeds(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:status,dataAtualizacao:serverTimestamp(),...(status==='concluida'?{dataConclusao:serverTimestamp()}:{})}));
+    await assertSucceeds(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:status,dataAtualizacao:serverTimestamp(),...(status==='confirmada'?{nomeMotoristaDesignado:'Motorista Ficticio',veiculoModelo:'Sedan Executivo',veiculoPlaca:'ABC-1D23',veiculoCor:'Preto'}:{}),...(status==='concluida'?{dataConclusao:serverTimestamp()}:{})}));
   }
   await assertFails(updateDoc(doc(admin,'reservas','reservaA'),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
   await assertFails(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
@@ -165,7 +165,7 @@ test('Fluxo integrado: cliente cria PMR, administrador oferece, motorista aceita
   await assertSucceeds(getDoc(doc(motorista,'reservas',reservaRef.id)));
   for (const proximoStatus of ['confirmada','em_andamento','concluida']) {
     await assertSucceeds(updateDoc(doc(motorista,'reservas',reservaRef.id),{
-      statusReserva:proximoStatus,dataAtualizacao:serverTimestamp(),...(proximoStatus==='concluida'?{dataConclusao:serverTimestamp()}:{})
+      statusReserva:proximoStatus,dataAtualizacao:serverTimestamp(),...(proximoStatus==='confirmada'?{nomeMotoristaDesignado:'Motorista Ficticio',veiculoModelo:'Sedan Executivo',veiculoPlaca:'ABC-1D23',veiculoCor:'Preto'}:{}),...(proximoStatus==='concluida'?{dataConclusao:serverTimestamp()}:{})
     }));
   }
   const historico=await assertSucceeds(getDocs(query(collection(cliente,'reservas'),where('clienteUid','==','clienteA'))));
@@ -295,7 +295,7 @@ test('Historicos permanentes: Cliente recusa e aceita orcamento, Motorista recus
  for(const status of ['confirmada','em_andamento','concluida']){
   await assertSucceeds(updateDoc(doc(motorista,'reservas','reservaA'),{
    statusReserva:status,dataAtualizacao:serverTimestamp(),
-   ...(status==='concluida'?{dataConclusao:serverTimestamp()}:{})
+   ...(status==='confirmada'?{nomeMotoristaDesignado:'Motorista Ficticio',veiculoModelo:'Sedan Executivo',veiculoPlaca:'ABC-1D23',veiculoCor:'Preto'}:{}),...(status==='concluida'?{dataConclusao:serverTimestamp()}:{})
   }));
  }
  const completed=await assertSucceeds(getDoc(reservation));
