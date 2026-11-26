@@ -144,7 +144,7 @@ $('confirmRegister').onclick=async()=>{
  }catch(err){
   // Evita deixar uma conta Authentication sem perfil quando a transacao falha.
   if(cred){try{await deleteUser(cred.user);currentUser=null}catch(_){/* pode requerer suporte da administracao */}}
-  invalidateRegistrationReview();show('registerView');message('Cadastro não concluído. '+errorText(err),true);
+  invalidateRegistrationReview();show('registerView');message(err?.code==='permission-denied'?'Cadastro bloqueado pelas regras do Firestore da homologação. Seus dados não foram gravados. Aguarde a atualização segura das regras antes de tentar novamente.':'Cadastro não concluído. '+errorText(err),true);
  }finally{registering=false;b.disabled=reviewedRegistration===null}
 };
 async function createProfile(user){
