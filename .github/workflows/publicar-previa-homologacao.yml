@@ -1,0 +1,36 @@
+name: Publicar previa de homologacao - Porto Mobi
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: firebase-preview-homologacao
+  cancel-in-progress: false
+jobs:
+  previa:
+    if: github.ref == 'refs/heads/homologacao-motorista'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar apenas arquivos publicos do App
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p hosting-homologacao/js
+          cp index.html cliente.html motorista.html admin.html estilo-porto-mobi.css logo-porto-mobi.png icon-192.png hosting-homologacao/
+          cp manifest-cliente.webmanifest manifest-motorista.webmanifest manifest-admin.webmanifest hosting-homologacao/
+          cp js/common.js js/cliente.js js/motorista.js js/admin.js hosting-homologacao/js/
+          test ! -e hosting-homologacao/firestore.rules
+      - name: Implantar somente Hosting em canal temporario
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PORTO_MOBI_HOMOLOGACAO }}
+          projectId: porto-mobi---executivo
+          channelId: homologacao-cliente
+          expires: 7d
+          entryPoint: .
+          firebaseToolsVersion: '15.32.0'
+        env:
+          FIREBASE_CLI_PREVIEWS: hostingchannels
