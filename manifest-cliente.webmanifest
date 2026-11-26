@@ -1,6 +1,6 @@
 {
-  "name": "Porto Mobi - Clientes",
-  "short_name": "Porto Mobi Cliente",
+  "name": "Porto Mobi - Cliente",
+  "short_name": "Porto Mobi - Cliente",
   "id": "./cliente.html",
   "start_url": "./cliente.html",
   "scope": "./",
