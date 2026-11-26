@@ -22,7 +22,7 @@ const trip=(uid='clienteA',status='pendente',driver='')=>({
 async function reset({clients=false,driver=false,trips=false,status='pendente',assigned=false}={}){
   await env.clearFirestore();
   await seed(async db=>{
-    await setDoc(doc(db,'administradores','admin01'),{ativo:true,funcao:'administrador'});
+    await setDoc(doc(db,'administradores','Lfa50o8buQM36XwmB0b0gSglEiF2'),{ativo:true,papel:'administrador',codigo:'PMA-001'});
     if(clients){
       for(const uid of ['clienteA','clienteB'])
         await setDoc(doc(db,'clientes',uid),{uid,nomeCliente:'Cliente Ficticio',codigoCliente:'PMC-0001',numeroCliente:1,
@@ -58,7 +58,7 @@ test('Cliente ve somente a propria reserva e nao lista reservas de terceiros',as
 
 test('Administrador oferece e motorista antigo aprovado aceita e conclui',async()=>{
   await reset({driver:true,trips:true});
-  const admin=as('admin01'),driver=as('motoristaA'),other=as('motoristaB');
+  const admin=as('Lfa50o8buQM36XwmB0b0gSglEiF2'),driver=as('motoristaA'),other=as('motoristaB');
   await assertSucceeds(getDocs(collection(admin,'reservas')));
   await assertSucceeds(updateDoc(doc(admin,'reservas','reservaA'),{
     statusReserva:'oferecida',motoristaUid:'motoristaA',codigoMotorista:'PMM-001',dataAtualizacao:serverTimestamp()
@@ -82,7 +82,7 @@ test('Motorista pendente nao se autoaprova',async()=>{
 test('Administrador aprova PMM-002 depois do contador legado PMM-001',async()=>{
   await reset({driver:true});
   await seed(db=>setDoc(doc(db,'contadores','motoristas'),{ultimo:1,ultimoUid:'motoristaA'}));
-  const db=as('admin01');
+  const db=as('Lfa50o8buQM36XwmB0b0gSglEiF2');
   await assertSucceeds(runTransaction(db,async t=>{
     const ref=doc(db,'motoristas','motoristaB'),counter=doc(db,'contadores','motoristas');
     const profile=await t.get(ref),count=await t.get(counter);
@@ -132,7 +132,7 @@ test('Cliente 1 e cliente 40 podem cadastrar; cliente 41 nao pode',async()=>{
 
 test('Fluxo integrado: cliente cria PMR, administrador oferece, motorista aceita, inicia e conclui',async()=>{
   await reset({clients:true,driver:true});
-  const cliente=as('clienteA'),admin=as('admin01'),motorista=as('motoristaA'),terceiro=as('clienteB');
+  const cliente=as('clienteA'),admin=as('Lfa50o8buQM36XwmB0b0gSglEiF2'),motorista=as('motoristaA'),terceiro=as('clienteB');
   const reservaRef=doc(collection(cliente,'reservas'),'reservaC001');
   await assertSucceeds(runTransaction(cliente,async t=>{
     const count=doc(cliente,'contadores','reservas');
@@ -177,7 +177,7 @@ test('Fluxo integrado: cliente cria PMR, administrador oferece, motorista aceita
 
 test('Motorista pode recusar oferta; administrador reatribui somente motorista autorizado',async()=>{
   await reset({driver:true,trips:true,status:'oferecida',assigned:true});
-  const admin=as('admin01'),motorista=as('motoristaA'),pending=as('motoristaB');
+  const admin=as('Lfa50o8buQM36XwmB0b0gSglEiF2'),motorista=as('motoristaA'),pending=as('motoristaB');
   await assertFails(updateDoc(doc(pending,'reservas','reservaA'),{statusReserva:'confirmada',dataAtualizacao:serverTimestamp()}));
   const batch=writeBatch(motorista);
   batch.update(doc(motorista,'reservas','reservaA'),{
@@ -233,7 +233,7 @@ test('Codigo de reserva usa seis digitos em transacao com numero 10000',async()=
 
 test('Historicos permanentes: Cliente recusa e aceita orcamento, Motorista recusa e atendimento conclui',async()=>{
  await reset({clients:true,driver:true,trips:true});
- const admin=as('admin01'),cliente=as('clienteA'),motorista=as('motoristaA');
+ const admin=as('Lfa50o8buQM36XwmB0b0gSglEiF2'),cliente=as('clienteA'),motorista=as('motoristaA');
  const reservation=doc(admin,'reservas','reservaA');
  const quote={
   kmPercurso:4,tempoPercursoMin:10,tarifaBase:5,valorPorKm:2,
