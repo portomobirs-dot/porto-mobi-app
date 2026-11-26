@@ -1,7 +1,7 @@
 name: Testes funcionais de botoes - Porto Mobi
 on:
   push:
-    branches: [preparacao-correcoes-02]
+    branches: [preparacao-correcoes-02, homologacao-motorista]
     paths:
       - 'testes/interacoes-ui.mjs'
       - '.github/workflows/testar-interacoes.yml'
