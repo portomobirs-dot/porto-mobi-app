@@ -146,9 +146,9 @@ onAuthStateChanged(auth,async user=>{
  if(!user)return;
  try{
   const token=await getIdTokenResult(user,true);
-  const byClaim=token.claims.admin===true;
+  const byClaim=false; // A autorização exige cadastro administrativo vinculado ao UID e e-mail.
   const adminDoc=byClaim?null:await getDoc(doc(db,'administradores',user.uid));
-  const byDocument=byClaim||(adminDoc.exists()&&adminDoc.data().ativo===true);
+  const byDocument=user.email?.toLowerCase()==='portomobirs@gmail.com' && adminDoc.exists() && adminDoc.data().ativo===true && adminDoc.data().papel==='administrador' && adminDoc.data().codigo==='PMA-001';
   if(!byDocument){msg('Esta conta não possui autorização administrativa.',true);await signOut(auth);return}
   $('who').textContent=user.email||'';$('login').classList.add('hidden');$('dashboard').classList.remove('hidden');msg('');
   unsubs.push(onSnapshot(collection(db,'reservas'),snap=>{rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));render()},err=>msg('Erro ao carregar reservas: '+errorText(err),true)));
