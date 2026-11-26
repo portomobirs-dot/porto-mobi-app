@@ -11,7 +11,7 @@ service cloud.firestore {
     function quoteHistoryPath(id, n) { return /databases/$(database)/documents/historicoOrcamentos/$(id + '-' + string(n)); }
     function refusalHistoryPath(id, n) { return /databases/$(database)/documents/historicoRecusasMotoristas/$(id + '-' + string(n)); }
     function isAdmin() {
-      return signedIn() && request.auth.token.email == 'portomobirs@gmail.com' &&
+      return signedIn() && me() == 'fZ20p0WqT7QecSd2Oh2WWJatGFg1' && request.auth.token.email == 'portomobirs@gmail.com' &&
         exists(adminPath(me())) &&
         get(adminPath(me())).data.ativo == true &&
         get(adminPath(me())).data.papel == 'administrador' &&
