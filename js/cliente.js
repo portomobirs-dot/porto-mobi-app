@@ -254,16 +254,15 @@ function showBudget(r){
 function showTracking(r){
  if(r?.statusReserva==='orcamento_pendente')return showBudget(r);
  if(!r)return;
- $('trackingClient').textContent=currentProfile?.nomeCliente||'';
- $('trackingClientCode').textContent=currentProfile?.codigoCliente||'';
- $('trackingCode').textContent=r.codigoReserva||'';
- $('trackingRequestDate').textContent=r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Aguardando registro';
+ const travelDate=r.dataViagem?.toDate?.();
+ const summary={trackingClient:currentProfile?.nomeCliente||'Não informado',trackingClientCode:currentProfile?.codigoCliente||'Não informado',trackingCode:r.codigoReserva||'Não informado',trackingRequestDate:r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Aguardando registro',trackingPickup:r.localEmbarque||'Não informado',trackingDestination:r.localDestino||'Não informado',trackingTravelDate:travelDate?.toLocaleString('pt-BR')||'Não informado',trackingPassengers:String(r.passageiros||1),trackingNotes:r.observacoes||'Nenhuma',trackingPrice:r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir'};
+ for(const [id,value] of Object.entries(summary))$(id).textContent=value;
  const status=r.statusReserva;
  const confirmed=['confirmada','em_andamento','concluida'].includes(status);
  $('trackingDriverDetails').classList.toggle('hidden',!confirmed);
  for(const [id,value] of Object.entries({trackingDriverName:r.nomeMotoristaDesignado,trackingVehicle:r.veiculoModelo,trackingPlate:r.veiculoPlaca,trackingColor:r.veiculoCor}))$(id).value=confirmed?(value||'Não informado'):'';
  $('trackingStatus').textContent=status==='recusada'?'Recusada':['confirmada','em_andamento','concluida'].includes(status)?'Confirmada':['cancelada','cancelado'].includes(status)?'Cancelada':'Aguardando confirmação';
- $('trackingDetails').textContent=[r.localEmbarque+' → '+r.localDestino,r.dataViagem?.toDate?.().toLocaleString('pt-BR')||'', 'Passageiros: '+(r.passageiros||1),'Valor: '+(r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir')].join('\n');
+
  show('bookingTracking');
  if(!history.state?.bookingTracking)history.pushState({bookingTracking:true},'');
 }
