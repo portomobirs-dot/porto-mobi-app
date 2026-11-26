@@ -120,9 +120,21 @@ $('loginForm').onsubmit=async e=>{
  e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}
  catch(err){message(errorText(err),true)}
 };
+const checkRegisterPasswords=()=>{
+ const senha=$('regPassword').value,confirmacao=$('regConfirm').value;
+ if(confirmacao && senha!==confirmacao){
+  $('regConfirm').setCustomValidity('As senhas não coincidem. Confira e tente novamente.');
+  message('As senhas não coincidem. Confira e tente novamente.',true);
+  return false;
+ }
+ $('regConfirm').setCustomValidity('');
+ return true;
+};
+$('regConfirm').addEventListener('blur',checkRegisterPasswords);
+for(const id of ['regPassword','regConfirm'])$(id).addEventListener('input',()=>{$('regConfirm').setCustomValidity('')});
 $('reviewRegister').onclick=()=>{
+ if(!checkRegisterPasswords())return;
  if(!$('registerForm').reportValidity())return;
- if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Informe telefone com DDD.',true);
  $('registerSummary').textContent=`Código do Cliente: PMC-0000\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}`;
  $('registerSummary').style.whiteSpace='pre-line';
