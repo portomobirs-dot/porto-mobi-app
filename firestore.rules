@@ -11,7 +11,11 @@ service cloud.firestore {
     function quoteHistoryPath(id, n) { return /databases/$(database)/documents/historicoOrcamentos/$(id + '-' + string(n)); }
     function refusalHistoryPath(id, n) { return /databases/$(database)/documents/historicoRecusasMotoristas/$(id + '-' + string(n)); }
     function isAdmin() {
-      return signedIn() && (request.auth.token.get('admin', false) == true || (exists(adminPath(me())) && get(adminPath(me())).data.ativo == true));
+      return signedIn() && me() == 'Lfa50o8buQM36XwmB0b0gSglEiF2' &&
+        exists(adminPath(me())) &&
+        get(adminPath(me())).data.ativo == true &&
+        get(adminPath(me())).data.papel == 'administrador' &&
+        get(adminPath(me())).data.codigo == 'PMA-001';
     }
     function activeDriver() {
       return signedIn() && exists(driverPath(me())) && (get(driverPath(me())).data.get('situacao', '') == 'ativo' || get(driverPath(me())).data.get('aprovado', false) == true);
