@@ -52,7 +52,7 @@ $('showRegister').onclick=()=>{
 };
 let reviewedBooking=null,submittingBooking=false;
 const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value));
-function invalidateBookingReview(){reviewedBooking=null;$('requestBooking').disabled=true;}
+function invalidateBookingReview(){reviewedBooking=null;$('requestBooking').setAttribute('aria-disabled','true');}
 $('bookingForm').onsubmit=e=>e.preventDefault();
 $('bookingForm').addEventListener('input',invalidateBookingReview);
 $('bookingForm').addEventListener('change',invalidateBookingReview);
@@ -181,10 +181,11 @@ $('reviewBooking').onclick=()=>{
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
  $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')}\nCódigo da Reserva: PMR-000000\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
- $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('requestBooking').disabled=false;show('bookingReview');
+ $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('requestBooking').setAttribute('aria-disabled','false');show('bookingReview');
 };
 async function submitBooking(){
- if(submittingBooking||!reviewedBooking||reviewedBooking!==bookingSnapshot())return message('Revise a solicitação antes de enviar.',true);
+ if(submittingBooking)return;
+ if(!reviewedBooking||reviewedBooking!==bookingSnapshot())return message('Revise sua solicitação antes de cadastrar.',true);
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
@@ -203,7 +204,7 @@ async function submitBooking(){
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
   invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();showTracking(clientReservations.find(r=>r.codigoReserva===assignedCode));message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
- }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();$('requestBooking').disabled=!valid}
+ }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();$('requestBooking').disabled=false;$('requestBooking').setAttribute('aria-disabled',String(!valid))}
 }
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
 
