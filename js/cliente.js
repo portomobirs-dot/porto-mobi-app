@@ -14,7 +14,7 @@ const val=id=>$(id).value.trim();
 $('travelDate').min=todayLocal();
 $('regDate').value=todayLocal();
 $('bookingCreatedDate').value=todayLocal();
-const setBookingCount=n=>{$('passengers').value=String(Math.min(8,Math.max(1,Number(n)||1)))};
+const setBookingCount=n=>{$('passengers').value=String(Math.min(4,Math.max(1,Number(n)||1)))};
 $('decreasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)-1);
 $('increasePassengers').onclick=()=>setBookingCount(Number($('passengers').value)+1);
 $('forgotPassword').onclick=async event=>{
