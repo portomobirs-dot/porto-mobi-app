@@ -527,10 +527,10 @@ body[data-pm-area="cliente"] #registerReview .review-password{display:flex;align
 body[data-pm-area="cliente"] #registerReview #reviewPasswordEye{width:58px;min-width:58px;min-height:40px;margin:0;padding:6px;display:flex;align-items:center;justify-content:center}
 body[data-pm-area="cliente"] #registerReview #editRegister{width:100%}
 
-body[data-pm-area="cliente"] #bookingView .booking-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+body[data-pm-area="cliente"] #bookingView .booking-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
 body[data-pm-area="cliente"] #bookingView .booking-actions button{margin:0;min-height:50px;min-width:0}
-body[data-pm-area="cliente"] #bookingView #requestBooking{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
-body[data-pm-area="cliente"] #bookingView #requestBooking:disabled{opacity:.5!important;cursor:not-allowed}
+body[data-pm-area="cliente"] #bookingReview #confirmBooking{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
+body[data-pm-area="cliente"] #bookingReview #confirmBooking:disabled{opacity:.5!important;cursor:not-allowed}
 
 body[data-pm-area="cliente"] #budgetView [data-budget-response="aceito"]{background:linear-gradient(180deg,#9eee8b,#40c74d 40%,#10812c)!important;color:#081e0b!important;border:1px solid #117526!important}
 body[data-pm-area="cliente"] #budgetView .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -765,3 +765,6 @@ html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverActiveBlo
 html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverActiveBlock:not(.hidden)) .codebox label{margin:0!important;font-size:14px!important}
 html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverActiveBlock:not(.hidden)) #driverCode{width:90px!important;min-width:0!important;padding:0!important;margin:0!important;height:auto!important;min-height:0!important;background:transparent!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:0!important;box-shadow:none!important;font-size:14px!important}
 html body[data-pm-area="motorista"] main #homeView#homeView:has(#driverActiveBlock:not(.hidden)) #driverPanelReturn{display:block!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;margin-inline:0!important}
+
+body[data-pm-area="cliente"] #bookingReview .booking-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+body[data-pm-area="cliente"] #bookingReview .booking-actions button{width:100%;margin:0;min-height:50px}
