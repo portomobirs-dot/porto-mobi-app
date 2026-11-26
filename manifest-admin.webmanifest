@@ -1,6 +1,6 @@
 {
   "name": "Porto Mobi - Administrador",
-  "short_name": "Porto Mobi Administrador",
+  "short_name": "Porto Mobi - Administrador",
   "id": "./admin.html",
   "start_url": "./admin.html",
   "scope": "./",
