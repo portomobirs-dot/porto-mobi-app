@@ -11,9 +11,9 @@
   "icons": [
     {
       "src": "./icon-admin.svg",
-      "sizes": "any",
+      "sizes": "192x192 512x512 any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
