@@ -235,6 +235,26 @@ $('activeReservations').addEventListener('click',respondBudget);
 $('budgetDetails').addEventListener('click',respondBudget);
 $('budgetDetails').addEventListener('click',event=>{if(event.target.closest('#budgetBackToPanel')&&currentUser&&currentProfile)show('homeView')});
 
+function historyLatestHtml(r){
+ if(!r)return '<p>Nenhuma reserva cadastrada.</p>';
+ const status=String(r.statusReserva||'pendente');
+ const labels={pendente:'Aguardando confirmação',orcamento_pendente:'Orçamento aguardando resposta',orcamento_aceito:'Orçamento aceito',orcamento_recusado:'Orçamento recusado',oferecida:'Aguardando motorista',confirmada:'Confirmada',em_andamento:'Em andamento',concluida:'Concluída',recusada:'Recusada',cancelada:'Cancelada'};
+ const rows=[
+ ['Cliente',currentProfile?.nomeCliente||'Não informado'],
+ ['Código do cliente',currentProfile?.codigoCliente||'Não informado'],
+ ['Código da reserva',r.codigoReserva||'Não informado'],
+ ['Data da solicitação',r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Não informada'],
+ ['Local de embarque',r.localEmbarque||'Não informado'],
+ ['Destino',r.localDestino||'Não informado'],
+ ['Data e horário da viagem',r.dataViagem?.toDate?.().toLocaleString('pt-BR')||'Não informado'],
+ ['Passageiros',String(r.passageiros||1)],
+ ['Observações',r.observacoes||'Nenhuma'],
+ ['Valor',r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir'],
+ ['Status da reserva',labels[status]||status],
+ ['Motorista',r.nomeMotoristaDesignado||'A definir']
+ ];
+ return rows.map(([label,value])=>'<div class="history-data-line"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('');
+}
 function reservationHtml(r, budgetOnly=false){
  const dt=r.dataViagem?.toDate?.();
  const money=Number.isInteger(r.numeroOrcamento)&&r.numeroOrcamento>0&&Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A definir';
@@ -283,6 +303,7 @@ async function loadHome(){
   $('lastBookingCode').value=data[0]?.codigoReserva||'Nenhuma reserva';
   const active=data.filter(r=>!completed.has(String(r.statusReserva).toLowerCase()));const history=data.filter(r=>completed.has(String(r.statusReserva).toLowerCase()));
   $('activeReservations').innerHTML=active.length?active.map(reservationHtml).join(''):'<p>Nenhuma reserva em andamento.</p>';
+  $('historyLatestReservation').innerHTML=historyLatestHtml(data[0]);
   $('reservationHistory').innerHTML=history.length?history.map(r=>reservationHtml(r)).join(''):'<p>Nenhuma reserva no histórico.</p>';
   const pendingBudget=active.find(r=>r.statusReserva==='orcamento_pendente');if(pendingBudget)showBudget(pendingBudget);
  }catch(err){message('Não foi possível carregar suas reservas. '+errorText(err),true)}finally{loadingHome=false}
