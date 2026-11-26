@@ -681,7 +681,7 @@ test('Motorista: cadastro, revisao e autorizacao pendente', {timeout:30000},asyn
  }finally{await context.close()}
 });
 
-test('Motorista aprovado: reserva, WhatsApp, GPS, inicio e conclusao', {timeout:30000},async()=>{
+test('Motorista aprovado: GPS embarque, chegada interna, GPS destino e conclusao', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('motorista.html','motorista-aprovado');
  try{
   await page.locator('#homeView').waitFor({state:'visible'});
@@ -696,12 +696,14 @@ test('Motorista aprovado: reserva, WhatsApp, GPS, inicio e conclusao', {timeout:
   assert.match(await page.locator('#reservationDetails').innerText(),/Observações: Bagagem/);
   assert.equal(await page.locator('#serviceComplete').isVisible(),false);
 
+  await page.locator('#openService').click();
+  const urls=await page.evaluate(()=>window.__pm.opened);
   await page.locator('#reservationAvailable').click();
   await page.locator('#serviceView').waitFor({state:'visible'});
-  const urls=await page.evaluate(()=>window.__pm.opened);
   assert.ok(urls.some(x=>x.includes('google.com/maps/dir/')),'GPS nao abriu');
   assert.ok(await page.evaluate(()=>Boolean(window.__pm.records.reservas.reserva001.dataChegadaMotorista)),'Chegada nao registrada no app');
   assert.ok(urls.some(x=>x.includes('destination=Avenida%20Exemplo')));
+  assert.ok(urls.some(x=>x.includes('dir_action=navigate')),'Navegação guiada não solicitada');
   await page.locator('#serviceStart').click();
   await page.waitForFunction(()=>window.__pm.records.reservas.reserva001.statusReserva==='em_andamento');
   await page.waitForFunction(()=>window.__pm.opened.some(x=>x.includes('destination=Aeroporto')));
