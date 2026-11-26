@@ -58,6 +58,7 @@ $('bookingForm').addEventListener('input',invalidateBookingReview);
 $('bookingForm').addEventListener('change',invalidateBookingReview);
 for(const id of ['decreasePassengers','increasePassengers'])$(id).addEventListener('click',invalidateBookingReview);
 $('requestBooking').onclick=()=>submitBooking();
+$('confirmBooking').onclick=()=>submitBooking();
 $('editBooking').onclick=()=>show('bookingView');
 $('backToBooking').onclick=()=>show('homeView');
 const serviceDate=d=>d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
