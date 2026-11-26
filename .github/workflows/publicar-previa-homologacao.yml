@@ -17,11 +17,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p hosting-homologacao/js
-          cp index.html cliente.html motorista.html admin.html estilo-porto-mobi.css logo-porto-mobi.png icon-192.png hosting-homologacao/
-          cp manifest-cliente.webmanifest manifest-motorista.webmanifest manifest-admin.webmanifest hosting-homologacao/
-          cp js/common.js js/cliente.js js/motorista.js js/admin.js hosting-homologacao/js/
-          test ! -e hosting-homologacao/firestore.rules
+          mkdir -p  .hosting-preview/public/js
+          cp index.html cliente.html motorista.html admin.html estilo-porto-mobi.css logo-porto-mobi.png icon-192.png  .hosting-preview/public/
+          cp manifest-cliente.webmanifest manifest-motorista.webmanifest manifest-admin.webmanifest  .hosting-preview/public/
+          cp js/common.js js/cliente.js js/motorista.js js/admin.js  .hosting-preview/public/js/
+          test ! -e .hosting-preview/public/firestore.rules
       - name: Implantar somente Hosting em canal temporario
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -30,7 +30,7 @@ jobs:
           projectId: porto-mobi---executivo
           channelId: homologacao-cliente
           expires: 7d
-          entryPoint: .
+          entryPoint: .hosting-preview
           firebaseToolsVersion: '15.32.0'
         env:
           FIREBASE_CLI_PREVIEWS: hostingchannels
