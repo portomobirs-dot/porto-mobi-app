@@ -10,7 +10,7 @@
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "./icon-admin.svg",
+      "src": "./icon-admin-v2.svg",
       "sizes": "192x192 512x512 any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
