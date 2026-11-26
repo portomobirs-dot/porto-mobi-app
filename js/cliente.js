@@ -228,6 +228,7 @@ async function respondBudget(event){
  try{
   await batch.commit();
   await loadHome();
+  show('homeView');
   message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');
  }catch(err){message('Não foi possível registrar sua resposta: '+errorText(err),true)}
  finally{button.disabled=false}
