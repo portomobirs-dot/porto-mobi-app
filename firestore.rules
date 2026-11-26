@@ -129,6 +129,12 @@ service cloud.firestore {
         nextCount('motoristas',request.resource.data.numeroMotorista) &&
         getAfter(counterPath('motoristas')).data.ultimo == request.resource.data.numeroMotorista &&
         getAfter(counterPath('motoristas')).data.ultimoUid == uid;
+      // Recusa exclusiva do administrador, sem atribuir codigo ou consumir contador.
+      allow update: if isAdmin() &&
+        resource.data.situacao == 'pendente' &&
+        request.resource.data.situacao == 'recusado' &&
+        request.resource.data.dataRecusa == request.time &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['situacao','dataRecusa']);
       allow delete: if false;
     }
     function clientTripCreate(id) {
