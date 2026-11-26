@@ -22,7 +22,7 @@ for(const btn of document.querySelectorAll('[data-toggle]'))btn.addEventListener
 });
 $('regPhone').oninput=e=>{e.target.value=formatPhone(e.target.value)};
 $('regPlate').oninput=e=>{let s=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);e.target.value=s.length>3?s.slice(0,3)+'-'+s.slice(3):s};
-$('showRegister').onclick=()=>{for(const el of $('registerForm').querySelectorAll('input:not(#driverCodePreview):not(#regDate)'))el.readOnly=false;$('reviewRegister').disabled=false;invalidateDriverReview();$('regDate').value=todayLocal();show('registerView')};$('editRegister').onclick=()=>show('registerView');
+$('showRegister').onclick=()=>{if(user)return loadProfile();$('regPassword').required=true;$('regConfirm').required=true;for(const el of $('registerForm').querySelectorAll('input:not(#driverCodePreview):not(#regDate)'))el.readOnly=false;$('reviewRegister').disabled=false;invalidateDriverReview();$('regDate').value=todayLocal();show('registerView')};$('editRegister').onclick=()=>show('registerView');
 $('registerDriverPanel').onclick=()=>{if(user)return loadProfile();show('loginView')};
 $('driverPanelLogin').onclick=()=>{if(user)return loadProfile();$('loginForm').requestSubmit()};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{message('Entrando...');await signInWithEmailAndPassword(auth,val('loginEmail'),$('loginPassword').value)}catch(err){message(errorText(err),true)}};
@@ -34,7 +34,7 @@ $('registerForm').addEventListener('change',invalidateDriverReview);
 $('registerForm').addEventListener('submit',e=>e.preventDefault());
 $('reviewRegister').onclick=()=>{
  if(!$('registerForm').reportValidity())return;
- if($('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
+ if(!user&&$('regPassword').value!==$('regConfirm').value)return message('As senhas não coincidem.',true);
  if(![10,11].includes(phoneDigits(val('regPhone')).length))return message('Telefone inválido.',true);
  if(!/^[A-Z]{3}-[0-9][A-Z0-9][0-9]{2}$/.test(val('regPlate')))return message('Placa inválida. Formato ABC-1D23 ou ABC-1234.',true);
  $('registerSummary').textContent=`Código: PMM-000 (atribuído após aprovação)\nData de cadastro: ${val('regDate')}\nNome: ${val('regName')}\nTelefone: ${val('regPhone')}\nE-mail: ${val('regEmail')}\nVeículo: ${val('regVehicle')}\nPlaca: ${val('regPlate')}\nCor: ${val('regColor')}`;
@@ -42,10 +42,14 @@ $('reviewRegister').onclick=()=>{
  show('reviewView');
 };
 $('confirmRegister').onclick=async()=>{
- if(user||registering||!reviewedDriver||reviewedDriver!==driverSnapshot()||!$('registerForm').reportValidity())return message('Revise os dados antes de cadastrar.',true);
+ if(registering||!reviewedDriver||reviewedDriver!==driverSnapshot()||!$('registerForm').reportValidity())return message('Revise os dados antes de cadastrar.',true);
  const b=$('confirmRegister');b.disabled=true;registering=true;let cred=null;
  try{
-  cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);user=cred.user;
+  if(user){
+   if(user.email?.toLowerCase()!==val('regEmail').toLowerCase())throw Error('O e-mail informado deve ser o mesmo da conta autenticada.');
+  }else{
+   cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);user=cred.user;
+  }
   await setDoc(doc(db,'motoristas',user.uid),{uid:user.uid,nomeMotorista:val('regName'),telefoneMotorista:val('regPhone'),email:user.email,veiculoModelo:val('regVehicle'),veiculoPlaca:val('regPlate'),veiculoCor:val('regColor'),situacao:'pendente',numeroMotorista:0,codigoMotorista:'',dataCadastro:serverTimestamp()});
   await loadProfile();message('Cadastro enviado. Aguarde autorização do administrador.');
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
@@ -71,7 +75,17 @@ async function loadProfile(){
  if(!user)return;stop();
  try{
   const snap=await getDoc(doc(db,'motoristas',user.uid));
-  if(!snap.exists()){show('loginView');return message('Cadastro de motorista inexistente. Contate a administração.',true)}
+  if(!snap.exists()){
+   profile=null;
+   $('regEmail').value=user.email||'';
+   $('regEmail').readOnly=true;
+   $('regDate').value=todayLocal();
+   $('regPassword').value='';$('regConfirm').value='';
+   $('regPassword').required=false;$('regConfirm').required=false;
+   invalidateDriverReview();
+   show('registerView');
+   return message('Sua conta existe, mas o cadastro de motorista está incompleto. Preencha os dados, toque em REVISAR CADASTRO e depois em CADASTRAR. A aprovação será feita pela administração.');
+  }
   profile=snap.data();
   $('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';for(const id of ['driverPanelReservations','driverPanelService','driverPanelHistory','driverPanelAgenda'])$(id).disabled=!isApproved();if(!isApproved()){driverTrips=[];show('pendingView');$('pendingInfo').textContent=profile.nomeMotorista+' • Cadastro em '+stamp(profile.dataCadastro)+' • Status: '+profile.situacao;$('pendingDriverCode').value='PMM-000 (pendente)';return}
   show('homeView');showDriverPanel('panel');$('driverGreeting').textContent='Olá, '+(profile.nomeMotorista||'Motorista')+'!';$('homeDriverName').value=profile.nomeMotorista||'';$('driverCode').value=profile.codigoMotorista||'Aguardando aprovação';
