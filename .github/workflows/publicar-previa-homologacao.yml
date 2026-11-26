@@ -17,10 +17,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p  .hosting-preview/public/js
-          cp index.html cliente.html motorista.html admin.html estilo-porto-mobi.css logo-porto-mobi.png icon-192.png  .hosting-preview/public/
-          cp manifest-cliente.webmanifest manifest-motorista.webmanifest manifest-admin.webmanifest  .hosting-preview/public/
-          cp js/common.js js/cliente.js js/motorista.js js/admin.js  .hosting-preview/public/js/
+          mkdir -p .hosting-preview/public/js
+          cp firebase.hosting.homologacao.json .hosting-preview/firebase.json
+          cp index.html cliente.html motorista.html admin.html estilo-porto-mobi.css logo-porto-mobi.png icon-192.png .hosting-preview/public/
+          cp manifest-cliente.webmanifest manifest-motorista.webmanifest manifest-admin.webmanifest .hosting-preview/public/
+          cp js/common.js js/cliente.js js/motorista.js js/admin.js .hosting-preview/public/js/
           test ! -e .hosting-preview/public/firestore.rules
       - name: Implantar somente Hosting em canal temporario
         uses: FirebaseExtended/action-hosting-deploy@v0
