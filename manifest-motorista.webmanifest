@@ -1,6 +1,6 @@
 {
-  "name": "Porto Mobi - Motoristas",
-  "short_name": "Porto Mobi Motorista",
+  "name": "Porto Mobi - Motorista",
+  "short_name": "Porto Mobi - Motorista",
   "id": "./motorista.html",
   "start_url": "./motorista.html",
   "scope": "./",
@@ -10,7 +10,7 @@
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "./icon-motorista.svg",
+      "src": "./icon-motorista-v2.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
