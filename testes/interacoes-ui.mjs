@@ -671,6 +671,9 @@ test('Motorista: cadastro, revisao e autorizacao pendente', {timeout:30000},asyn
   await page.locator('#editRegister').click();
   await page.locator('#registerView').waitFor({state:'visible'});
   await page.locator('#reviewRegister').click();
+  await page.locator('#reviewView').waitFor({state:'visible'});
+  await page.locator('#editRegister').click();
+  await page.locator('#registerView').waitFor({state:'visible'});
   await page.locator('#confirmRegister').click();
   await page.locator('#pendingView').waitFor({state:'visible'});
   assert.match(await page.locator('#pendingDriverCode').inputValue(),/PMM-000/);
@@ -683,6 +686,7 @@ test('Motorista aprovado: reserva, WhatsApp, GPS, inicio e conclusao', {timeout:
  try{
   await page.locator('#homeView').waitFor({state:'visible'});
   assert.equal(await page.locator('#driverCode').inputValue(),'PMM-001');
+  await page.locator('#driverPanelReservations').click();
   await page.locator('#activeReservations [data-action="accept"]').click();
   await page.locator('#activeReservations [data-action="open"]').waitFor({state:'visible'});
   await page.locator('#activeReservations [data-action="open"]').click();
@@ -690,25 +694,20 @@ test('Motorista aprovado: reserva, WhatsApp, GPS, inicio e conclusao', {timeout:
   assert.match(await page.locator('#reservationDriverGreeting').innerText(),/Olá, Motorista Exemplo!/);
   assert.match(await page.locator('#reservationDetails').innerText(),/PMR-000001/);
   assert.match(await page.locator('#reservationDetails').innerText(),/Observações: Bagagem/);
-  assert.equal(await page.locator('#reservationComplete').isDisabled(),true);
-  await page.locator('#reservationBackRegister').click();
-  await page.locator('#registerView').waitFor({state:'visible'});
-  assert.equal(await page.locator('#regName').inputValue(),'Motorista Exemplo');
-  assert.equal(await page.locator('#regName').getAttribute('readonly'),'');
-  await page.goBack();
-  await page.locator('#homeView').waitFor({state:'visible'});
-  await page.locator('#activeReservations [data-action="open"]').click();
-  await page.locator('#openService').click();
+  assert.equal(await page.locator('#serviceComplete').isVisible(),false);
+
   await page.locator('#reservationAvailable').click();
+  await page.locator('#serviceView').waitFor({state:'visible'});
   const urls=await page.evaluate(()=>window.__pm.opened);
   assert.ok(urls.some(x=>x.includes('google.com/maps/dir/')),'GPS nao abriu');
-  assert.ok(urls.some(x=>x.includes('wa.me/')&&x.includes('caminho')),'Aviso a caminho nao preparado');
-  assert.ok(urls.some(x=>x.includes('wa.me/')&&x.includes('disposi')),'Aviso a disposicao nao preparado');
+  assert.ok(await page.evaluate(()=>Boolean(window.__pm.records.reservas.reserva001.dataChegadaMotorista)),'Chegada nao registrada no app');
   assert.ok(urls.some(x=>x.includes('destination=Avenida%20Exemplo')));
-  await page.locator('#reservationDestination').click();
+  await page.locator('#serviceStart').click();
   await page.waitForFunction(()=>window.__pm.records.reservas.reserva001.statusReserva==='em_andamento');
   await page.waitForFunction(()=>window.__pm.opened.some(x=>x.includes('destination=Aeroporto')));
-  await page.locator('#reservationComplete').click();
+  await page.locator('#serviceComplete').click();
+  await page.locator('#completedView').waitFor({state:'visible'});
+  await page.locator('#completedPanel').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelector('#historyReservations').textContent.includes('PMR-000001'));
   assert.ok(await page.evaluate(()=>Boolean(window.__pm.records.reservas.reserva001.dataConclusao)));
@@ -804,7 +803,7 @@ test('Motorista recusa oferta e evento historico registra a recusa', {timeout:30
  const {context,page,errors}=await pageFor('motorista.html','motorista-aprovado');
  try{
   await page.locator('#homeView').waitFor({state:'visible'});
-  await page.locator('#viewAssignedReservations').click();
+  await page.locator('#driverPanelReservations').click();
   await page.locator('[data-action="reject"]').click();
   await page.waitForFunction(()=>window.__pm.records.historicoRecusasMotoristas?.['reserva001-1']);
   const data=await page.evaluate(()=>({
