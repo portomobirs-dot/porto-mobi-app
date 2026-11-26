@@ -54,6 +54,11 @@ html body[data-pm-area="cliente"] main #bookingTracking#bookingTracking .summary
 <style>
 #bookingView .booking-header-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;margin-bottom:12px}
 #bookingView .booking-header-fields>div{min-width:0}
+#bookingView .booking-header-fields>.codebox{margin:0;padding:0;border:0;border-radius:0;background:transparent}
+#bookingView .booking-header-fields>.codebox label{margin:0 0 6px;color:inherit}
+#bookingView .booking-header-fields>.codebox input[readonly]{background:#fff;color:#111;font-weight:700}
+#bookingView .booking-header-fields>div:not(.codebox) label{margin:0 0 6px}
+#bookingView .booking-header-fields input{height:54px;box-sizing:border-box}
 #bookingView .booking-header-fields label{display:block;margin-bottom:6px}
 #bookingView .booking-header-fields input{width:100%;min-width:0}
 @media(max-width:360px){#bookingView .booking-header-fields{gap:8px}}
