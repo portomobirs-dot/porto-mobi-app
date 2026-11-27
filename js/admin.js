@@ -63,7 +63,7 @@ function renderOperationalScreens(){
  const mount=(n,html)=>{const screen=$('adminScreen'+n);if(!screen)return;let node=screen.querySelector('[data-live-operational]');if(!node){node=document.createElement('div');node.dataset.liveOperational='';const back=screen.querySelector('[data-admin-screen="2"]');for(const child of [...screen.children])if(child.tagName!=='H2'&&child!==back)child.remove();screen.insertBefore(node,back);}node.innerHTML=html;};
  const list=(items,fn,empty)=>items.length?items.map(fn).join(''):'<p class="muted">'+empty+'</p>';
  const trip=r=>'<article class="item"><strong>'+esc(r.codigoReserva||r.id)+'</strong><p>Cliente: '+esc(r.nomeCliente)+'<br>Motorista: '+esc(r.nomeMotoristaDesignado||'Não atribuído')+'<br>Embarque: '+esc(r.localEmbarque)+'<br>Destino: '+esc(r.localDestino)+'<br>Viagem: '+esc(stamp(r.dataViagem))+'<br>Situação: '+esc(r.statusReserva)+'<br>Valor: '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A calcular')+'</p></article>';
- mount(4,list(drivers,d=>'<article class="item"><strong>'+esc(d.codigoMotorista||'Sem código')+'</strong><p>Nome: '+esc(d.nomeMotorista)+'<br>Situação: '+esc(d.situacao||'Não informada')+'<br>Veículo: '+esc(d.veiculoModelo||d.modeloVeiculo||'Não informado')+'</p></article>','Nenhum motorista cadastrado.'));
+ mount(4,list(drivers,d=>'<article class="item"><strong>'+esc(d.codigoMotorista||'Sem código')+'</strong><p>Nome: '+esc(d.nomeMotorista)+'<br>Situação: '+esc(d.situacao||'Não informada')+'<br>Veículo: '+esc(d.veiculoModelo||d.modeloVeiculo||'Não informado')+'</p>'+(d.situacao==='pendente'?'<div class="actions"><button type="button" data-approve="'+esc(d.id)+'">APROVAR</button><button type="button" class="danger" data-reject="'+esc(d.id)+'">RECUSAR</button></div>':'')+'</article>','Nenhum motorista cadastrado.'));
  mount(10,list(rows.filter(r=>['oferecida','confirmada','em_andamento'].includes(r.statusReserva)),trip,'Nenhum atendimento ativo.'));
  mount(11,list(rows.filter(r=>['oferecida','confirmada','em_andamento'].includes(r.statusReserva)).sort((a,b)=>(a.dataViagem?.seconds||0)-(b.dataViagem?.seconds||0)),trip,'Nenhum atendimento agendado.'));
  mount(12,list(rows.filter(r=>r.statusReserva==='concluida'),trip,'Nenhum atendimento concluído.'));
@@ -165,7 +165,7 @@ $('reservations').addEventListener('click',async e=>{
   }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
  }
 });
-$('driverApplicants').addEventListener('click',async e=>{
+async function handleDriverDecision(e){
  const reject=e.target.closest('button[data-reject]');
  if(reject){
   const d=drivers.find(x=>x.id===reject.dataset.reject&&x.situacao==='pendente');
@@ -194,7 +194,9 @@ $('driverApplicants').addEventListener('click',async e=>{
   });
   msg('Motorista autorizado.');
  }catch(err){msg(err.message||errorText(err),true)}finally{b.disabled=false}
-});
+}
+$('driverApplicants').addEventListener('click',handleDriverDecision);
+$('adminScreen4')?.addEventListener('click',handleDriverDecision);
 onAuthStateChanged(auth,async user=>{
  stop();$('dashboard').classList.add('hidden');$('login').classList.remove('hidden');
  if(!user)return;
