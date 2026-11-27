@@ -1,3 +1,4 @@
+import {offerWhatsApp} from './common.js?v=wa25';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDoc,runTransaction,writeBatch,collection,query,where,getDocs,onSnapshot,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -155,7 +156,7 @@ $('confirmRegister').onclick=async()=>{
   cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);
   currentUser=cred.user;
   await createProfile(cred.user);
-  await loadHome();message('Cadastro realizado!');
+  await loadHome();message('Cadastro realizado!');offerWhatsApp('5551990082119','Porto Mobi: novo cadastro de cliente '+(currentProfile?.codigoCliente||'')+'.');
  }catch(err){
   // Evita deixar uma conta Authentication sem perfil quando a transacao falha.
   if(cred){try{await deleteUser(cred.user);currentUser=null}catch(_){/* pode requerer suporte da administracao */}}
@@ -204,7 +205,7 @@ async function submitBooking(){
     codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
-  invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();showTracking(clientReservations.find(r=>r.codigoReserva===assignedCode));message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');
+  invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();showTracking(clientReservations.find(r=>r.codigoReserva===assignedCode));message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');offerWhatsApp('5551990082119','Porto Mobi: nova solicitação '+assignedCode+'.');
  }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();$('confirmBooking').disabled=false;$('confirmBooking').setAttribute('aria-disabled',String(!valid))}
 }
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
@@ -229,7 +230,7 @@ async function respondBudget(event){
   await batch.commit();
   await loadHome();
   show('homeView');
-  message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');
+  message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');offerWhatsApp('5551990082119','Porto Mobi: orçamento da reserva '+r.codigoReserva+' '+response+'.');
  }catch(err){message('Não foi possível registrar sua resposta: '+errorText(err),true)}
  finally{button.disabled=false}
 }
