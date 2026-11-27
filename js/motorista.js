@@ -1,3 +1,4 @@
+import {offerWhatsApp} from './common.js?v=wa25';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -51,7 +52,7 @@ $('confirmRegister').onclick=async()=>{
    cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);user=cred.user;
   }
   await setDoc(doc(db,'motoristas',user.uid),{uid:user.uid,nomeMotorista:val('regName'),telefoneMotorista:val('regPhone'),email:user.email,veiculoModelo:val('regVehicle'),veiculoPlaca:val('regPlate'),veiculoCor:val('regColor'),situacao:'pendente',numeroMotorista:0,codigoMotorista:'',dataCadastro:serverTimestamp()});
-  await loadProfile();message('Cadastro enviado. Aguarde autorização do administrador.');
+  await loadProfile();message('Cadastro enviado. Aguarde autorização do administrador.');offerWhatsApp('5551990082119','Porto Mobi: novo cadastro de motorista aguardando autorização.');
  }catch(err){if(cred){try{await deleteUser(cred.user);user=null}catch(_){}}show('registerView');message(errorText(err),true)}finally{registering=false;b.disabled=reviewedDriver!==driverSnapshot()}
 };
 const logout=async()=>{stop();driverTrips=[];serviceId=null;await signOut(auth);show('loginView')};
@@ -137,10 +138,10 @@ $('activeReservations').addEventListener('click',async e=>{
     numeroRecusa:number,dataRecusa:serverTimestamp()
    });
    await batch.commit();
-   message('Recusa registrada no histórico da administração.');
+   message('Recusa registrada no histórico da administração.');offerWhatsApp('5551990082119','Porto Mobi: motorista recusou a reserva '+r.codigoReserva+'.');
   }else{
    await updateDoc(doc(db,'reservas',b.dataset.id),changes);
-   message('Corrida atualizada.');
+   message('Corrida atualizada.');offerWhatsApp('5551990082119','Porto Mobi: motorista aceitou a reserva '+r.codigoReserva+'.');offerWhatsApp(r.telefoneCliente,'Porto Mobi: sua reserva '+r.codigoReserva+' foi confirmada pelo motorista.');
   }
  }catch(err){message('Não foi possível atualizar a corrida: '+errorText(err),true)}finally{b.disabled=false}
 });
@@ -168,7 +169,7 @@ $('openService').onclick=()=>{
   return message('Aceite a reserva antes de iniciar atendimento.',true);
  if(r.statusReserva==='confirmada'){if(!String(r.localEmbarque||'').trim())return message('Endereço de embarque não informado.',true);window.open(maps(r.localEmbarque),'_blank','noopener');}
 };
-$('reservationAvailable').onclick=async()=>{const r=selectedService();if(!isApproved()||!r||r.statusReserva!=='confirmada')return;const b=$('reservationAvailable');b.disabled=true;try{if(!r.dataChegadaMotorista)await updateDoc(doc(db,'reservas',r.id),{dataChegadaMotorista:serverTimestamp(),dataAtualizacao:serverTimestamp()});renderService();show('serviceView');}catch(e){message('Não foi possível registrar a chegada: '+errorText(e),true);}finally{b.disabled=false;}};
+$('reservationAvailable').onclick=async()=>{const r=selectedService();if(!isApproved()||!r||r.statusReserva!=='confirmada')return;const b=$('reservationAvailable');b.disabled=true;try{if(!r.dataChegadaMotorista){await updateDoc(doc(db,'reservas',r.id),{dataChegadaMotorista:serverTimestamp(),dataAtualizacao:serverTimestamp()});offerWhatsApp(r.telefoneCliente,'Porto Mobi: seu motorista chegou ao local de embarque. Reserva '+r.codigoReserva+'.');}renderService();show('serviceView');}catch(e){message('Não foi possível registrar a chegada: '+errorText(e),true);}finally{b.disabled=false;}};
 $('serviceBack').onclick=()=>{show('homeView');showDriverPanel('panel')};
 function openReservationById(id){
  const reservation=driverTrips.find(r=>r.id===id);
@@ -242,7 +243,7 @@ $('serviceComplete').onclick=async()=>{
  try{
   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'concluida',dataAtualizacao:serverTimestamp(),dataConclusao:serverTimestamp()});
   $('completedDetails').textContent='Solicitação: '+(r.codigoReserva||'')+'\nCliente: '+(r.nomeCliente||'')+'\nData: '+todayLocal();serviceId=null;show('completedView');
-  message('Atendimento concluído. Reserva registrada no histórico.');
+  message('Atendimento concluído. Reserva registrada no histórico.');offerWhatsApp(r.telefoneCliente,'Porto Mobi: atendimento '+r.codigoReserva+' concluído. Obrigado pela preferência!');
  }catch(err){message('Não foi possível concluir atendimento: '+errorText(err),true)}
  finally{b.disabled=false}
 };
