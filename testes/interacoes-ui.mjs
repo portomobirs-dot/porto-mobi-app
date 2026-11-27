@@ -50,6 +50,7 @@ const firestoreStub=[
  'export async function getDoc(ref){return snap(records[ref.path]?.[ref.id])}',
  'export async function getDocs(q){let a=Object.entries(records[q.path]||{}).map(([id,value])=>({id,data:()=>value}));for(const f of q.filters||[])if(f.op===\'==\')a=a.filter(x=>x.data()[f.field]===f.value);return {docs:a}}',
  'export const getDocsFromServer=getDocs;',
+ 'export async function addDoc(ref,data){const bucket=records[ref.path]??={};const id=crypto.randomUUID();bucket[id]=data;notify();return {path:ref.path,id}}',
  'export async function setDoc(ref,data){(records[ref.path]??={})[ref.id]=data;notify()}',
  'export async function updateDoc(ref,data){if(!records[ref.path]?.[ref.id])throw Error(\'Not found\');Object.assign(records[ref.path][ref.id],data);notify()}',
  'export function writeBatch(db){const ops=[];return {update(ref,data){ops.push(()=>Object.assign(records[ref.path][ref.id],data))},set(ref,data){ops.push(()=>{(records[ref.path]??={})[ref.id]=data})},async commit(){for(const op of ops)op();notify()}}}',
