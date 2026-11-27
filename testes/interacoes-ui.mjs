@@ -767,6 +767,8 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
   assert.match(await page.locator('#refusedQuotes').innerText(),/PMR-000002/);
   await page.locator('#reservations select[data-driver-for="reserva001"]').selectOption('motorista01');
   await page.locator('#reservations [data-action="assign"]').click();
+  await page.locator('dialog').getByRole('button',{name:'CONFIRMAR',exact:true}).click();
+  await page.waitForFunction(()=>window.__pm.records.reservas.reserva001.statusReserva==='oferecida');
   for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
   await page.locator('#filter').selectOption('oferecida');
   await page.locator('#reservations [data-action="whatsapp"][data-id="reserva001"]').waitFor({state:'visible'});
