@@ -1,7 +1,7 @@
 import {offerWhatsApp} from './common.js?v=wa25';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,deleteUser,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {addDoc,getDocs,getFirestore,doc,getDoc,setDoc,collection,query,where,onSnapshot,updateDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,esc,formatPhone,phoneDigits,stamp,todayLocal,errorText} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-motoristas'),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 const views=['loginView','registerView','reviewView','pendingView','homeView','reservationView','serviceView','completedView','agendaView','supportView'];
@@ -260,3 +260,28 @@ $('driverPanelAgenda').onclick=()=>{
 };
 $('driverPanelSupport').onclick=()=>{$('supportInfo').textContent='';show('supportView')};
 for(const id of ['supportContact','supportDelay','supportIssue'])$(id).onclick=()=>{$('supportInfo').textContent='Canal de suporte ainda não configurado. Contate a administração pelo canal habitual.'};
+
+ // Suporte isolado do fluxo de reservas.
+ {
+ const screen=$('supportView'), panel=document.createElement('div');
+ const input=document.createElement('textarea');input.maxLength=2000;input.placeholder='Digite sua mensagem';input.setAttribute('aria-label','Mensagem de suporte');
+ const send=document.createElement('button');send.type='button';send.textContent='ENVIAR MENSAGEM';
+ const history=document.createElement('button');history.type='button';history.textContent='HISTÓRICO DE MENSAGENS';
+ const status=document.createElement('p');status.setAttribute('role','status');
+ const list=document.createElement('div');panel.append(input,send,history,status,list);screen.append(panel);
+ async function loadSupport(){
+ const uid=auth.currentUser?.uid;list.replaceChildren();if(!uid)return;
+ try{const snap=await getDocs(query(collection(db,'suporte'),where('uid','==',uid)));
+ if(auth.currentUser?.uid!==uid||screen.classList.contains('hidden'))return;
+ const items=snap.docs.map(d=>d.data()).filter(d=>d.tipo==='motorista').sort((a,b)=>(b.criadoEm?.seconds||0)-(a.criadoEm?.seconds||0));
+ for(const item of items){const p=document.createElement('p');p.textContent=item.mensagem+' — '+(item.resposta||'Aguardando resposta');list.append(p);}
+ if(!items.length)list.textContent='Nenhuma mensagem.';
+ }catch(e){status.textContent='Não foi possível consultar o suporte. '+errorText(e);}
+ }
+ history.onclick=loadSupport;
+ send.onclick=async()=>{const uid=auth.currentUser?.uid,mensagem=input.value.trim();if(!uid||!mensagem)return;send.disabled=true;
+ try{await addDoc(collection(db,'suporte'),{uid,tipo:'motorista',mensagem,criadoEm:serverTimestamp()});if(auth.currentUser?.uid!==uid)return;input.value='';status.textContent='Mensagem registrada.';await loadSupport();}
+ catch(e){status.textContent='Não foi possível enviar. '+errorText(e);}finally{send.disabled=false;}};
+ onAuthStateChanged(auth,()=>{input.value='';list.replaceChildren();status.textContent='';});
+ $('driverPanelSupport').onclick=()=>{show('supportView');loadSupport();};for(const id of ['supportContact','supportDelay','supportIssue'])$(id).onclick=()=>{input.focus();};
+ }
