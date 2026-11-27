@@ -7,7 +7,7 @@ const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
 const quoteDrafts=new Map();
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
-const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];renderQuoteStatus()};
+const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];renderQuoteStatus();renderOperationalScreens()};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 
 $('filter').onchange=render;
@@ -58,8 +58,18 @@ function renderQuoteStatus(){
  const items=rows.filter(r=>Object.hasOwn(labels,r.statusReserva));
  mount.innerHTML=items.length?items.map(r=>'<article class="item"><p>Solicitação: '+esc(r.codigoReserva)+'<br>Cliente: '+esc(r.nomeCliente)+'<br>Data: '+esc(stamp(r.dataViagem))+'<br>Valor: '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'Não informado')+'</p><p><strong>'+labels[r.statusReserva]+'</strong></p>'+(r.statusReserva==='orcamento_aceito'?'<button type="button" style="background:#218638!important;color:white!important" data-designate="'+esc(r.id)+'">DESIGNAR MOTORISTA</button>':'')+'</article>').join(''):'<p>Nenhum orçamento encontrado.</p>';
 }
+function renderOperationalScreens(){
+ const mount=(n,html)=>{const screen=$('adminScreen'+n);if(!screen)return;let node=screen.querySelector('[data-live-operational]');if(!node){node=document.createElement('div');node.dataset.liveOperational='';const back=screen.querySelector('[data-admin-screen="2"]');for(const child of [...screen.children])if(child.tagName!=='H2'&&child!==back)child.remove();screen.insertBefore(node,back);}node.innerHTML=html;};
+ const list=(items,fn,empty)=>items.length?items.map(fn).join(''):'<p class="muted">'+empty+'</p>';
+ const trip=r=>'<article class="item"><strong>'+esc(r.codigoReserva||r.id)+'</strong><p>Cliente: '+esc(r.nomeCliente)+'<br>Motorista: '+esc(r.nomeMotoristaDesignado||'Não atribuído')+'<br>Embarque: '+esc(r.localEmbarque)+'<br>Destino: '+esc(r.localDestino)+'<br>Viagem: '+esc(stamp(r.dataViagem))+'<br>Situação: '+esc(r.statusReserva)+'<br>Valor: '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A calcular')+'</p></article>';
+ mount(4,list(drivers,d=>'<article class="item"><strong>'+esc(d.codigoMotorista||'Sem código')+'</strong><p>Nome: '+esc(d.nomeMotorista)+'<br>Situação: '+esc(d.situacao||'Não informada')+'<br>Veículo: '+esc(d.veiculoModelo||d.modeloVeiculo||'Não informado')+'</p></article>','Nenhum motorista cadastrado.'));
+ mount(10,list(rows.filter(r=>['oferecida','confirmada','em_andamento'].includes(r.statusReserva)),trip,'Nenhum atendimento ativo.'));
+ mount(11,list(rows.filter(r=>['oferecida','confirmada','em_andamento'].includes(r.statusReserva)).sort((a,b)=>(a.dataViagem?.seconds||0)-(b.dataViagem?.seconds||0)),trip,'Nenhum atendimento agendado.'));
+ mount(12,list(rows.filter(r=>r.statusReserva==='concluida'),trip,'Nenhum atendimento concluído.'));
+}
 function render(){
  renderQuoteStatus();
+ renderOperationalScreens();
  const clientRefused=new Set(quoteHistory.filter(x=>x.resposta==='recusado').map(x=>x.codigoReserva).filter(Boolean));
  const driverRefused=new Set(refusalHistory.map(x=>x.codigoReserva).filter(Boolean));
  const f=$('filter').value,visible=rows.filter(r=>f==='todas'||r.statusReserva===f||(f==='cliente_recusou'&&(clientRefused.has(r.codigoReserva)||r.statusReserva==='orcamento_recusado'))||(f==='motorista_recusou'&&driverRefused.has(r.codigoReserva)));
