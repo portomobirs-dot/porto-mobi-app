@@ -1,13 +1,14 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,collection,doc,getDoc,onSnapshot,updateDoc,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,collection,doc,getDoc,onSnapshot,updateDoc,runTransaction,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,padCode,esc,stamp,phoneDigits,errorText,calculateFare,moneyBRL} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-admin');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
 const quoteDrafts=new Map();
+let manualClients=[],manualReady=false,manualBusy=false;
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
-const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];quoteDrafts.clear();renderQuoteStatus();renderOperationalScreens()};
+const stop=()=>{manualClients=[];manualReady=false;$('manualForm')?.reset();refreshManual();const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];quoteDrafts.clear();renderQuoteStatus();renderOperationalScreens()};
 $('adminVisualExit').addEventListener('click',async e=>{e.stopImmediatePropagation();try{await signOut(auth);window.adminVisualShow(2);}catch(err){msg(errorText(err),true)}},true);
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 
@@ -240,13 +241,63 @@ onAuthStateChanged(auth,async user=>{
    }
    list.textContent='Carregando clientes...';
    unsubs.push(onSnapshot(collection(db,'clientes'),snap=>{
+    manualClients=snap.docs.map(d=>({id:d.id,...d.data()}));manualReady=true;refreshManual();
     const clients=snap.docs.map(d=>d.data()).sort((a,b)=>(a.numeroCliente||0)-(b.numeroCliente||0));
     list.innerHTML='<p>Total de clientes: '+clients.length+'</p>'+ (clients.length?clients.map(c=>'<article class="item"><strong>'+esc(c.codigoCliente||'')+'</strong><p>Nome: '+esc(c.nomeCliente||'Não informado')+'<br>Cadastro: '+esc(stamp(c.dataCadastro))+'<br>Telefone: '+esc(c.telefoneCliente||'Não informado')+'<br>E-mail: '+esc(c.email||'Não informado')+'</p></article>').join(''):'<p>Nenhum cliente cadastrado.</p>');
    },err=>{list.textContent='Erro ao carregar clientes: '+errorText(err);}));
   }
   unsubs.push(onSnapshot(collection(db,'reservas'),snap=>{rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));render()},err=>msg('Erro ao carregar reservas: '+errorText(err),true)));
-  unsubs.push(onSnapshot(collection(db,'motoristas'),snap=>{drivers=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao carregar motoristas: '+errorText(err),true)));
+  unsubs.push(onSnapshot(collection(db,'motoristas'),snap=>{drivers=snap.docs.map(d=>({id:d.id,...d.data()}));refreshManual();render()},err=>msg('Erro ao carregar motoristas: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'historicoOrcamentos'),snap=>{quoteHistory=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao consultar histórico de orçamentos: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'historicoRecusasMotoristas'),snap=>{refusalHistory=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao consultar recusas dos motoristas: '+errorText(err),true)));
  }catch(err){msg('Erro ao validar autorização: '+errorText(err),true)}
 });
+
+function refreshManual(){
+ const c=$('manualClient'),d=$('manualDriver');if(!c||!d)return;
+ const cv=c.value,dv=d.value;
+ c.innerHTML='<option value="">Novo cliente sem aplicativo</option>'+manualClients.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.codigoCliente+' — '+x.nomeCliente+' — '+x.telefoneCliente)+'</option>').join('');
+ d.innerHTML='<option value="">Designar depois</option>'+drivers.filter(x=>(x.situacao==='ativo'||x.aprovado===true)&&x.codigoMotorista).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.codigoMotorista+' — '+x.nomeMotorista)+'</option>').join('');
+ c.value=cv;d.value=dv;
+ $('manualSubmit').disabled=!manualReady||manualBusy;
+}
+$('manualClient').onchange=()=>{
+ const c=manualClients.find(x=>x.id===$('manualClient').value);
+ $('manualPMC').value=c?.codigoCliente||'Automático';
+ $('manualName').value=c?.nomeCliente||'';$('manualPhone').value=c?.telefoneCliente||'';
+};
+$('manualCancel').onclick=()=>{if(manualBusy)return;$('manualForm').reset();$('manualNotice').textContent='Lançamento cancelado.';window.adminVisualShow(2)};
+$('manualForm').onsubmit=async e=>{
+ e.preventDefault();if(manualBusy||!manualReady||!auth.currentUser)return;
+ const notice=$('manualNotice'),uid=auth.currentUser.uid;
+ const selected=$('manualClient').value,name=$('manualName').value.trim(),phone=phoneDigits($('manualPhone').value);
+ const pickup=$('manualPickup').value.trim(),dest=$('manualDestination').value.trim(),date=new Date($('manualDate').value+'T'+$('manualTime').value+':00-03:00'),pass=Number($('manualPassengers').value),value=Number($('manualValue').value),notes=$('manualNotes').value.trim(),driver=$('manualDriver').value;
+ if(name.length<3||phone.length<10||phone.length>13||pickup.length<3||dest.length<3||!Number.isFinite(+date)||date<=new Date()||!Number.isInteger(pass)||pass<1||pass>4||!Number.isFinite(value)||value<0||value>1000000){notice.textContent='Confira os campos e informe uma data futura.';return}
+ if(!selected&&manualClients.some(c=>phoneDigits(c.telefoneCliente||'')===phone)){notice.textContent='Telefone já cadastrado. Selecione o cliente existente.';return}
+ manualBusy=true;refreshManual();
+ try{
+  if(!await confirmDriverDecision('Confirmar reserva manual de '+name+' por '+moneyBRL(value)+'?'))return;
+  if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada.');
+  notice.textContent='Registrando reserva...';
+  const clientRef=doc(db,'clientes',selected||'manual-'+phone),tripRef=doc(collection(db,'reservas')),cc=doc(db,'contadores','clientes'),rc=doc(db,'contadores','reservas');
+  const result=await runTransaction(db,async t=>{
+   const client=await t.get(clientRef),counter=await t.get(rc),clientCounter=client.exists()?null:await t.get(cc),driverDoc=driver?await t.get(doc(db,'motoristas',driver)):null;
+   if(selected&&!client.exists())throw Error('Cliente não encontrado.');
+   if(!selected&&client.exists())throw Error('Cliente já cadastrado. Selecione-o na lista.');
+   const d=driverDoc?.data();if(driver&&(!d||!(d.situacao==='ativo'||d.aprovado===true)||!d.codigoMotorista))throw Error('Motorista indisponível.');
+   let pmc=client.data()?.codigoCliente;
+   if(!client.exists()){
+    const n=(clientCounter.exists()?clientCounter.data().ultimo:0)+1;if(n>40)throw Error('Limite de 40 clientes atingido.');
+    pmc=padCode('PMC',n);
+    t.set(cc,{ultimo:n,ultimoUid:clientRef.id});
+    t.set(clientRef,{uid:clientRef.id,numeroCliente:n,codigoCliente:pmc,nomeCliente:name,telefoneCliente:phone,email:'',origemCadastro:'manual',dataCadastro:serverTimestamp()});
+   }
+   const n=(counter.exists()?counter.data().ultimo:0)+1,pmr=padCode('PMR',n);
+   t.set(rc,{ultimo:n,ultimoReservaId:tripRef.id,ultimoClienteUid:clientRef.id});
+   t.set(tripRef,{numeroReserva:n,codigoReserva:pmr,clienteUid:clientRef.id,codigoCliente:pmc,nomeCliente:name,telefoneCliente:phone,codigoMotorista:d?.codigoMotorista||'',motoristaUid:driver,nomeMotoristaDesignado:d?.nomeMotorista||'',localEmbarque:pickup,localDestino:dest,dataViagem:Timestamp.fromDate(date),dataSolicitacao:serverTimestamp(),dataAtualizacao:serverTimestamp(),passageiros:pass,observacoes:notes,statusReserva:driver?'oferecida':'orcamento_aceito',valorViagem:value,numeroOrcamento:1,origemReserva:'manual'});
+   return {pmc,pmr};
+  });
+  $('manualForm').reset();$('manualPMC').value=result.pmc;$('manualPMR').value=result.pmr;notice.textContent='Reserva '+result.pmr+' registrada com sucesso!';msg(notice.textContent);
+ }catch(err){notice.textContent='Não foi possível registrar: '+errorText(err);}
+ finally{manualBusy=false;refreshManual()}
+};
