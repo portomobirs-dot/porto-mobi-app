@@ -163,9 +163,9 @@ $('reservations').addEventListener('click',async e=>{
   const d=drivers.find(x=>x.id===selected&&(x.situacao==='ativo'||x.aprovado===true));
   if(!d)return msg('Selecione um motorista autorizado.',true);
   try{scheduleConflict(d.id,r.dataViagem,Number(r.tempoPercursoMin),Number(r.intervaloDeslocamentoMin??30),r.id)}catch(err){return msg(err.message,true)}
-  if(!await confirmDriverDecision('Oferecer '+r.codigoReserva+' para '+d.nomeMotorista+'?'))return;
-  try{scheduleConflict(d.id,r.dataViagem,Number(r.tempoPercursoMin),Number(r.intervaloDeslocamentoMin??30),r.id)}catch(err){return msg(err.message,true)}
   b.disabled=true;try{
+   if(!await confirmDriverDecision('Oferecer '+r.codigoReserva+' para '+d.nomeMotorista+'?'))return;
+   scheduleConflict(d.id,r.dataViagem,Number(r.tempoPercursoMin),Number(r.intervaloDeslocamentoMin??30),r.id);
    await updateDoc(doc(db,'reservas',r.id),{statusReserva:'oferecida',motoristaUid:d.id,codigoMotorista:d.codigoMotorista,nomeMotoristaDesignado:d.nomeMotorista,dataAtualizacao:serverTimestamp()});
    if($('filter').value==='orcamento_aceito'){$('filter').value='oferecida';render();}
    msg('Corrida oferecida. Use o botão WhatsApp para avisar o motorista.');offerWhatsApp(d.telefoneMotorista||d.telefone,'Porto Mobi: nova oferta '+r.codigoReserva+'. Consulte o aplicativo.');
@@ -261,13 +261,13 @@ onAuthStateChanged(auth,async user=>{
 
 
 function scheduleConflict(driver,start,duration,buffer,exclude=''){
- const ms=v=>v?.toMillis?.()??(v instanceof Date?+v:NaN);
+ const ms=v=>v?.toMillis?.()??(v instanceof Date?+v:v?.toDate?+v.toDate():NaN);
  const begin=ms(start),end=begin+(duration+buffer)*60000;
- if(!Number.isFinite(begin)||!Number.isFinite(duration)||duration<=0)throw Error('Informe a duração estimada do atendimento.');
+ if(!Number.isFinite(begin)||!Number.isFinite(duration)||duration<=0||!Number.isFinite(buffer)||buffer<0)throw Error('Informe a duração estimada do atendimento.');
  for(const r of rows){
   if(r.id===exclude||r.motoristaUid!==driver||!['oferecida','confirmada','em_andamento'].includes(r.statusReserva))continue;
   const other=ms(r.dataViagem),minutes=Number(r.tempoPercursoMin),gap=Number(r.intervaloDeslocamentoMin??30);
-  if(!Number.isFinite(other)||!Number.isFinite(minutes)||minutes<=0)throw Error('CONFLITO DE HORÁRIOS: confira a duração da reserva '+r.codigoReserva+' antes de designar.');
+  if(!Number.isFinite(other)||!Number.isFinite(minutes)||minutes<=0||!Number.isFinite(gap)||gap<0)throw Error('CONFLITO DE HORÁRIOS: confira a duração da reserva '+r.codigoReserva+' antes de designar.');
   if(r.statusReserva==='em_andamento'&&begin<=Date.now())throw Error('Motorista em atendimento.');
   if(begin<other+(minutes+gap)*60000&&other<end)throw Error('CONFLITO DE HORÁRIOS: '+r.codigoReserva+' — '+stamp(r.dataViagem)+'. Selecione outro motorista ou altere o horário.');
  }
