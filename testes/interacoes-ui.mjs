@@ -829,3 +829,35 @@ test('Motorista recusa oferta e evento historico registra a recusa', {timeout:30
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
+
+test('Administrador: inventario de navegacao e comandos desativados', {timeout:60000},async()=>{
+ const {context,page,errors}=await pageFor('admin.html','administrador');
+ page.setDefaultTimeout(5000);
+ try{
+  await page.locator('#dashboard').waitFor({state:'visible'});
+  const pending=[];
+  for(let n=3;n<=15;n++){
+   await page.locator('#adminVisualPanel [data-admin-screen="'+n+'"]').click();
+   const screen=page.locator('#adminScreen'+n);
+   await screen.waitFor({state:'visible'});
+   pending.push(...await screen.locator('button:disabled').allTextContents());
+   if(n===15){
+    const links=await screen.locator('button[data-admin-screen]').evaluateAll(bs=>bs.map(b=>Number(b.dataset.adminScreen)).filter(n=>n>=16&&n<=19));
+    for(const dest of links){
+     await screen.locator('button[data-admin-screen="'+dest+'"]').click();
+     const sub=page.locator('#adminScreen'+dest);
+     await sub.waitFor({state:'visible'});
+     pending.push(...await sub.locator('button:disabled').allTextContents());
+     await page.evaluate(()=>window.adminVisualShow(15));
+    }
+   }
+   await screen.locator('[data-admin-screen="2"]').click();
+   await page.locator('#adminVisualPanel').waitFor({state:'visible'});
+  }
+  await page.locator('#adminVisualExit').click();
+  await page.locator('#login').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>window.__pm.user),null);
+  assert.deepEqual(errors,[]);
+  assert.deepEqual(pending,[],'Comandos ainda desativados: '+pending.join(', '));
+ }finally{await context.close()}
+});
