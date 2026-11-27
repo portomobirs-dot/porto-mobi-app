@@ -7,7 +7,7 @@ const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
 const quoteDrafts=new Map();
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
-const stop=()=>{for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[]};
+const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[]};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 
 $('filter').onchange=render;
@@ -170,6 +170,19 @@ onAuthStateChanged(auth,async user=>{
   const byDocument=user.email?.toLowerCase()==='portomobirs@gmail.com' && adminDoc.exists() && adminDoc.data().ativo===true && adminDoc.data().papel==='administrador' && adminDoc.data().codigo==='PMA-001';
   if(!byDocument){msg('Esta conta não possui autorização administrativa.',true);await signOut(auth);return}
   $('who').textContent=user.email||'';$('login').classList.add('hidden');$('dashboard').classList.remove('hidden');msg('');
+  const clientScreen=$('adminScreen3');
+  if(clientScreen){
+   let list=clientScreen.querySelector('[data-live-clients]');
+   if(!list){
+    list=document.createElement('div');list.dataset.liveClients='';list.setAttribute('aria-live','polite');
+    const sample=clientScreen.querySelector('p');if(sample)sample.replaceWith(list);else clientScreen.insertBefore(list,clientScreen.querySelector('button'));
+   }
+   list.textContent='Carregando clientes...';
+   unsubs.push(onSnapshot(collection(db,'clientes'),snap=>{
+    const clients=snap.docs.map(d=>d.data()).sort((a,b)=>(a.numeroCliente||0)-(b.numeroCliente||0));
+    list.innerHTML='<p>Total de clientes: '+clients.length+'</p>'+ (clients.length?clients.map(c=>'<article class="item"><strong>'+esc(c.codigoCliente||'')+'</strong><p>Nome: '+esc(c.nomeCliente||'Não informado')+'<br>Cadastro: '+esc(stamp(c.dataCadastro))+'<br>Telefone: '+esc(c.telefoneCliente||'Não informado')+'<br>E-mail: '+esc(c.email||'Não informado')+'</p></article>').join(''):'<p>Nenhum cliente cadastrado.</p>');
+   },err=>{list.textContent='Erro ao carregar clientes: '+errorText(err);}));
+  }
   unsubs.push(onSnapshot(collection(db,'reservas'),snap=>{rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));render()},err=>msg('Erro ao carregar reservas: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'motoristas'),snap=>{drivers=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao carregar motoristas: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'historicoOrcamentos'),snap=>{quoteHistory=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao consultar histórico de orçamentos: '+errorText(err),true)));
