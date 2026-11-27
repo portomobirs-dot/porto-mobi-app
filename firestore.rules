@@ -64,6 +64,64 @@ service cloud.firestore {
         getAfter(driverPath(request.resource.data.ultimoUid)).data.situacao == 'ativo' &&
         getAfter(driverPath(request.resource.data.ultimoUid)).data.numeroMotorista == request.resource.data.ultimo;
     }
+
+    function manualClientCreate(uid) {
+      let c = request.resource.data;
+      return isAdmin() && uid.matches('manual-[0-9]{10,13}') &&
+        c.keys().hasOnly(['uid','numeroCliente','codigoCliente','nomeCliente','telefoneCliente','email','dataCadastro','origemCadastro']) &&
+        c.uid == uid && c.origemCadastro == 'manual' && c.email == '' &&
+        c.telefoneCliente is string && uid == 'manual-' + c.telefoneCliente &&
+        c.nomeCliente is string && c.nomeCliente.size() >= 3 && c.nomeCliente.size() <= 150 &&
+        c.numeroCliente is int && c.numeroCliente >= 1 && c.numeroCliente <= 40 &&
+        c.codigoCliente == code('PMC',c.numeroCliente) && c.dataCadastro == request.time &&
+        nextCount('clientes',c.numeroCliente) &&
+        getAfter(counterPath('clientes')).data.ultimo == c.numeroCliente &&
+        getAfter(counterPath('clientes')).data.ultimoUid == uid;
+    }
+    function manualCounter(kind) {
+      let c = request.resource.data;
+      return isAdmin() && (
+        (kind == 'clientes' && c.keys().hasOnly(['ultimo','ultimoUid']) &&
+         c.ultimoUid is string && c.ultimoUid.matches('manual-[0-9]{10,13}') &&
+         c.ultimo is int && c.ultimo >= 1 && c.ultimo <= 40 &&
+         !exists(clientPath(c.ultimoUid)) &&
+         getAfter(clientPath(c.ultimoUid)).data.numeroCliente == c.ultimo &&
+         getAfter(clientPath(c.ultimoUid)).data.origemCadastro == 'manual') ||
+        (kind == 'reservas' && c.keys().hasOnly(['ultimo','ultimoReservaId','ultimoClienteUid']) &&
+         c.ultimo is int && c.ultimo >= 1 && c.ultimo <= 999999 &&
+         c.ultimoReservaId is string && c.ultimoClienteUid is string &&
+         !exists(tripPath(c.ultimoReservaId)) &&
+         getAfter(tripPath(c.ultimoReservaId)).data.numeroReserva == c.ultimo &&
+         getAfter(tripPath(c.ultimoReservaId)).data.clienteUid == c.ultimoClienteUid &&
+         getAfter(tripPath(c.ultimoReservaId)).data.origemReserva == 'manual')
+      );
+    }
+    function manualTripCreate(id) {
+      let r = request.resource.data;
+      return isAdmin() &&
+        r.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','nomeMotoristaDesignado','localEmbarque','localDestino','dataViagem','dataSolicitacao','dataAtualizacao','passageiros','observacoes','statusReserva','valorViagem','numeroOrcamento','origemReserva']) &&
+        r.origemReserva == 'manual' && r.clienteUid is string &&
+        r.codigoCliente == getAfter(clientPath(r.clienteUid)).data.codigoCliente &&
+        r.nomeCliente is string && r.nomeCliente.size() >= 3 && r.nomeCliente.size() <= 150 &&
+        r.telefoneCliente is string && r.telefoneCliente.size() >= 10 && r.telefoneCliente.size() <= 20 &&
+        r.numeroReserva is int && r.numeroReserva >= 1 && r.numeroReserva <= 999999 &&
+        r.codigoReserva == code('PMR',r.numeroReserva) &&
+        r.localEmbarque is string && r.localEmbarque.size() >= 3 && r.localEmbarque.size() <= 500 &&
+        r.localDestino is string && r.localDestino.size() >= 3 && r.localDestino.size() <= 500 &&
+        r.passageiros is int && r.passageiros >= 1 && r.passageiros <= 4 &&
+        r.observacoes is string && r.observacoes.size() <= 2000 &&
+        r.dataViagem is timestamp && r.dataViagem > request.time &&
+        r.dataSolicitacao == request.time && r.dataAtualizacao == request.time &&
+        r.valorViagem is number && r.valorViagem >= 0 && r.valorViagem <= 1000000 &&
+        r.numeroOrcamento == 1 &&
+        ((r.statusReserva == 'orcamento_aceito' && r.motoristaUid == '' && r.codigoMotorista == '' && r.nomeMotoristaDesignado == '') ||
+         (r.statusReserva == 'oferecida' && validAssignedDriver() &&
+          r.nomeMotoristaDesignado == get(driverPath(r.motoristaUid)).data.nomeMotorista)) &&
+        nextCount('reservas',r.numeroReserva) &&
+        getAfter(counterPath('reservas')).data.ultimo == r.numeroReserva &&
+        getAfter(counterPath('reservas')).data.ultimoReservaId == id &&
+        getAfter(counterPath('reservas')).data.ultimoClienteUid == r.clienteUid;
+    }
     match /administradores/{uid} {
       // Primeiro documento criado exclusivamente no Console Firebase, nunca pelo aplicativo.
       allow get: if signedIn() && me() == uid;
@@ -72,16 +130,17 @@ service cloud.firestore {
     match /contadores/{kind} {
       allow get: if signedIn() && (kind in ['clientes','reservas'] || isAdmin());
       allow list, delete: if false;
-      allow create: if
+      allow create: if (manualCounter(kind) && request.resource.data.ultimo == 1) ||
         (kind == 'clientes' && clientCounterWrite() && request.resource.data.ultimo == 1) ||
         (kind == 'reservas' && reservationCounterWrite() && request.resource.data.ultimo == 1) ||
         (kind == 'motoristas' && driverCounterWrite() && request.resource.data.ultimo == 1);
-      allow update: if
+      allow update: if (manualCounter(kind) && request.resource.data.ultimo == resource.data.ultimo + 1) ||
         (kind == 'clientes' && clientCounterWrite() && request.resource.data.ultimo == resource.data.ultimo + 1) ||
         (kind == 'reservas' && reservationCounterWrite() && request.resource.data.ultimo == resource.data.ultimo + 1) ||
         (kind == 'motoristas' && driverCounterWrite() && request.resource.data.ultimo == resource.data.ultimo + 1);
     }
     match /clientes/{uid} {
+      allow create: if manualClientCreate(uid);
       allow get: if isAdmin() || (signedIn() && me() == uid);
       allow list: if isAdmin();
       allow create: if signedIn() && me() == uid && !isAdmin() &&
@@ -313,7 +372,7 @@ service cloud.firestore {
       allow get, list: if isAdmin() ||
         (signedIn() && resource.data.clienteUid == me()) ||
         (signedIn() && resource.data.motoristaUid == me() && activeDriver());
-      allow create: if clientTripCreate(id);
+      allow create: if clientTripCreate(id) || manualTripCreate(id);
       allow update: if adminTripUpdate() || driverTripUpdate(id) || clientQuoteAnswer(id);
       allow delete: if false;
     }
