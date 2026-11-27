@@ -8,6 +8,7 @@ let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
 const quoteDrafts=new Map();
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
 const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];quoteDrafts.clear();renderQuoteStatus();renderOperationalScreens()};
+$('adminVisualExit').addEventListener('click',async e=>{e.stopImmediatePropagation();try{await signOut(auth);window.adminVisualShow(2);}catch(err){msg(errorText(err),true)}},true);
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 
 $('filter').onchange=render;
@@ -79,7 +80,7 @@ function render(){
  $('completed').textContent=rows.filter(r=>r.statusReserva==='concluida').length;
  $('clientRefused').textContent=rows.filter(r=>clientRefused.has(r.codigoReserva)||r.statusReserva==='orcamento_recusado').length;
  $('driverRefused').textContent=rows.filter(r=>driverRefused.has(r.codigoReserva)).length;
- const available=drivers.filter(d=>d.situacao==='ativo'||d.aprovado===true);
+ const available=drivers.filter(d=>(d.situacao==='ativo'||d.aprovado===true)&&d.codigoMotorista);
  $('reservations').innerHTML=visible.length?visible.map(r=>{
   const controls=['pendente','orcamento_recusado'].includes(r.statusReserva)?quoteForm(r):r.statusReserva==='orcamento_aceito'?`<div class="actions"><select aria-label="Motorista para reserva ${esc(r.codigoReserva)}" data-driver-for="${esc(r.id)}"><option value="">Escolha motorista autorizado</option>${available.map(d=>`<option value="${esc(d.id)}">${esc(d.nomeMotorista)} — ${esc(d.codigoMotorista)}</option>`).join('')}</select><button data-action="assign" data-id="${esc(r.id)}">CONFIRMAR</button></div>`:'';
   const notify=r.statusReserva==='oferecida'?`<div class="actions"><button class="secondary" data-action="whatsapp" data-id="${esc(r.id)}">Avisar motorista pelo WhatsApp</button></div>`:'';
@@ -101,7 +102,7 @@ function readQuoteInputs(card){
   if(!input||input.value.trim()===''||!input.checkValidity())throw Error('Preencha corretamente: '+field.label);
   data[field.name]=Number(input.value);
  }
- data.tempoPercursoMin=Number(data.tempoPercursoMin);
+ if(!Number.isInteger(data.tempoPercursoMin)||data.tempoPercursoMin>100000||data.kmPercurso>100000||['tarifaBase','valorPorKm','valorPorTempo','valorExtra'].some(k=>data[k]>1000000))throw Error('Valores fora dos limites permitidos para o orçamento.');
  const total=calculateFare(data);
  return {...data,valorViagem:total};
 }
