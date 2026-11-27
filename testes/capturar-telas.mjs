@@ -95,21 +95,21 @@ try{
  await expose(cliente,'bookingTracking',['loginView','registerView','registerReview','bookingView','bookingReview','homeView']);
  await cliente.evaluate(()=>{
   document.querySelector('#trackingClient').textContent='Cliente Exemplo';
-  document.querySelector('#trackingClientCode').value='PMC-0001';
-  document.querySelector('#trackingCode').value='PMR-000001';
-  document.querySelector('#trackingRequestDate').value='23/11/2026';
-  document.querySelector('#trackingStatus').value='Aguardando confirmação';
-  document.querySelector('#trackingDetails').textContent='Avenida Exemplo, 100 → Aeroporto\n10/12/2026 14:30\nPassageiros: 1\nValor: A definir';
+  document.querySelector('#trackingClientCode').textContent='PMC-0001';
+  document.querySelector('#trackingCode').textContent='PMR-000001';
+  document.querySelector('#trackingRequestDate').textContent='23/11/2026';
+  document.querySelector('#trackingStatus').textContent='Aguardando confirmação';
+  for(const [id,value] of Object.entries({trackingPickup:'Avenida Exemplo, 100',trackingDestination:'Aeroporto',trackingTravelDate:'10/12/2026 14:30',trackingPassengers:'1',trackingNotes:'Bagagem de mão',trackingPrice:'A definir'}))document.getElementById(id).textContent=value;
  });
  await capture(cliente,'04-cliente-acompanhamento');
  await cliente.evaluate(()=>{
-  document.querySelector('#trackingStatus').value='Confirmada';
+  document.querySelector('#trackingStatus').textContent='Confirmada';
   document.querySelector('#trackingDriverDetails').classList.remove('hidden');
   for(const [id,value] of Object.entries({trackingDriverName:'Motorista Exemplo',trackingVehicle:'Toyota Corolla',trackingPlate:'ABC1D23',trackingColor:'Preto'}))document.getElementById(id).value=value;
  });
  await capture(cliente,'04-cliente-reserva-confirmada');
  await cliente.evaluate(()=>{
-  document.querySelector('#trackingStatus').value='Recusada';
+  document.querySelector('#trackingStatus').textContent='Recusada';
   document.querySelector('#trackingDriverDetails').classList.add('hidden');
   for(const id of ['trackingDriverName','trackingVehicle','trackingPlate','trackingColor'])document.getElementById(id).value='';
  });
