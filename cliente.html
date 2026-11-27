@@ -133,7 +133,7 @@ html body[data-pm-area="cliente"] main #homeView#homeView .panel-actions button{
 <script type="module" src="./js/cliente.js?v=20261126-reserva-layout11"></script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});</script><script>
 (function(){
-let last=0, active=null, timer, generation=0;
+let last=0, active=null, timer, generation=0, bias=null;
 const cache=new Map();
 const fields=['pickup','destination'].map(id=>document.getElementById(id)).filter(Boolean);
 function clear(){clearTimeout(timer);generation++;if(active)active.abort();active=null;fields.forEach(el=>{el.nextElementSibling.replaceChildren();});}
@@ -141,7 +141,7 @@ function label(p){return [...new Set([p.street||p.name,p.housenumber,p.district,
 async function search(el,q,reverse=false,coords=null){
  const version=++generation;
  const panel=el.nextElementSibling;panel.textContent='Buscando endereços...';
- const key=reverse?'reverse:'+coords.join(','):q.toLowerCase();
+ const key=reverse?'reverse:'+coords.join(','):q.toLowerCase()+':'+(bias?bias.join(','):'sul');
  const wait=Math.max(0,1100-(Date.now()-last));
  await new Promise(r=>setTimeout(r,wait));if(version!==generation)return;
  const controller=new AbortController();active=controller;
@@ -149,16 +149,16 @@ async function search(el,q,reverse=false,coords=null){
  try{
  let results=cache.get(key);
  if(!results){last=Date.now();const url=new URL(reverse?'https://photon.komoot.io/reverse':'https://photon.komoot.io/api/');
- if(reverse){url.searchParams.set('lat',coords[0]);url.searchParams.set('lon',coords[1]);}else{url.searchParams.set('q',q);url.searchParams.set('limit','8');url.searchParams.set('bbox','-74,-34,-34,6');}
+ if(reverse){url.searchParams.set('lat',coords[0]);url.searchParams.set('lon',coords[1]);}else{url.searchParams.set('q',q);url.searchParams.set('limit','30');url.searchParams.set('bbox','-57.65,-33.76,-48.25,-25.8');if(bias){url.searchParams.set('lat',bias[0]);url.searchParams.set('lon',bias[1]);url.searchParams.set('zoom','12');}}
  const res=await fetch(url,{signal:controller.signal,referrerPolicy:'no-referrer'});if(!res.ok)throw Error('Busca indisponível');
- results=(await res.json()).features.filter(f=>f.properties?.countrycode==='BR').map(f=>label(f.properties));results=[...new Set(results)];if(cache.size>=60)cache.clear();cache.set(key,results);}
+ results=(await res.json()).features.filter(f=>f.properties?.countrycode==='BR'&&['rio grande do sul','santa catarina','rs','sc'].includes(String(f.properties.state||'').toLowerCase())).map(f=>label(f.properties));results=[...new Set(results)].slice(0,10);if(cache.size>=60)cache.clear();cache.set(key,results);}
  if(version!==generation)return;panel.replaceChildren();
- if(!results.length){panel.textContent='Nenhum endereço encontrado. Continue digitando manualmente.';return;}
+ if(!results.length){panel.textContent='Nenhum endereço encontrado no RS ou SC. Acrescente o município ou digite manualmente.';return;}
  for(const address of results){const b=document.createElement('button');b.type='button';b.className='pm-address-option';b.textContent=address;b.onclick=()=>{clear();el.value=address;el.focus();};panel.append(b);}
  }catch(e){if(version===generation)panel.textContent='Busca indisponível. Digite o endereço manualmente.';}finally{clearTimeout(timeout);if(active===controller)active=null;}
 }
 for(const el of fields){const panel=document.createElement('div');panel.className='pm-address-results';panel.setAttribute('aria-live','polite');el.after(panel);el.autocomplete='off';el.addEventListener('input',()=>{clear();const q=el.value.trim();if(q.length>=5)timer=setTimeout(()=>search(el,q),1100);});el.addEventListener('keydown',e=>{if(e.key==='Escape')clear();});}
-const pickup=fields[0];if(pickup){const b=document.createElement('button');b.type='button';b.className='pm-address-location';b.textContent='USAR MINHA LOCALIZAÇÃO';pickup.nextElementSibling.after(b);b.onclick=()=>{clear();const version=generation;if(!navigator.geolocation){pickup.nextElementSibling.textContent='Localização indisponível.';return;}pickup.nextElementSibling.textContent='Obtendo localização...';navigator.geolocation.getCurrentPosition(p=>{if(version===generation)search(pickup,'',true,[p.coords.latitude,p.coords.longitude]);},()=>{if(version===generation)pickup.nextElementSibling.textContent='Não foi possível obter localização. Digite o endereço.';},{timeout:10000,maximumAge:60000});};}
+const pickup=fields[0];if(pickup){const b=document.createElement('button');b.type='button';b.className='pm-address-location';b.textContent='USAR MINHA LOCALIZAÇÃO';pickup.nextElementSibling.after(b);b.onclick=()=>{clear();const version=generation;if(!navigator.geolocation){pickup.nextElementSibling.textContent='Localização indisponível.';return;}pickup.nextElementSibling.textContent='Obtendo localização...';navigator.geolocation.getCurrentPosition(p=>{if(version===generation){bias=[p.coords.latitude,p.coords.longitude];search(pickup,'',true,bias);}},()=>{if(version===generation)pickup.nextElementSibling.textContent='Não foi possível obter localização. Digite o endereço.';},{timeout:10000,maximumAge:60000});};}
 document.addEventListener('click',e=>{if(!e.target.closest('.pm-address-results,.pm-address-location,#pickup,#destination'))clear();});
 })();
 </script><style>
