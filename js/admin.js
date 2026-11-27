@@ -1,6 +1,6 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getFirestore,collection,doc,getDoc,onSnapshot,updateDoc,runTransaction,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,collection,doc,getDoc,getDocsFromServer,onSnapshot,updateDoc,runTransaction,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,padCode,esc,stamp,phoneDigits,errorText,calculateFare,moneyBRL} from './common.js';
 const app=initializeApp(firebaseConfig,'porto-mobi-admin');
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
@@ -71,6 +71,7 @@ function renderOperationalScreens(){
  mount(12,list(rows.filter(r=>r.statusReserva==='concluida'),trip,'Nenhum atendimento concluído.'));
 }
 function render(){
+ const selectedDrivers=new Map([...$('reservations').querySelectorAll('select[data-driver-for]')].map(el=>[el.dataset.driverFor,el.value]));
  renderQuoteStatus();
  renderOperationalScreens();
  const clientRefused=new Set(quoteHistory.filter(x=>x.resposta==='recusado').map(x=>x.codigoReserva).filter(Boolean));
@@ -89,6 +90,7 @@ function render(){
   const driver=drivers.find(d=>d.id===r.motoristaUid);
   return `<article class="item"><h3>Reserva solicitada</h3><div class="top"><strong>${esc(r.codigoReserva||r.id)}</strong><span>${esc(r.statusReserva||'')}</span></div><p><b>Cliente:</b> ${esc(r.nomeCliente)} (${esc(r.codigoCliente)})<br><b>Telefone:</b> ${esc(r.telefoneCliente)}<br><b>Origem:</b> ${esc(r.localEmbarque)}<br><b>Destino:</b> ${esc(r.localDestino)}<br><b>Viagem:</b> ${esc(stamp(r.dataViagem))}<br><b>Passageiros:</b> ${esc(r.passageiros||1)}<br><b>Motorista designado:</b> ${esc(driver?.nomeMotorista||r.nomeMotoristaDesignado||'Não atribuído')}<br><b>Valor da Reserva:</b> ${Number.isFinite(r.valorViagem)&&r.numeroOrcamento?moneyBRL(r.valorViagem):'A calcular'}<br><b>Observações:</b> ${esc(r.observacoes||'Nenhuma')}</p>${controls}${notify}</article>`;
  }).join(''):'<p>Nenhuma reserva encontrada.</p>';
+ for(const el of $('reservations').querySelectorAll('select[data-driver-for]')){const v=selectedDrivers.get(el.dataset.driverFor);if(v&&[...el.options].some(o=>o.value===v))el.value=v;}
  for(const card of $('reservations').querySelectorAll('.quote[data-quote-id]')){
   try{card.querySelector('[data-total]').textContent='Valor total: '+moneyBRL(readQuoteInputs(card).valorViagem)}catch{}
  }
@@ -225,7 +227,7 @@ async function handleDriverDecision(e){
 $('driverApplicants').addEventListener('click',handleDriverDecision);
 $('adminScreen4')?.addEventListener('click',handleDriverDecision);
 onAuthStateChanged(auth,async user=>{
- stop();$('dashboard').classList.add('hidden');$('login').classList.remove('hidden');
+ adminSessionUid=null;stop();$('dashboard').classList.add('hidden');$('login').classList.remove('hidden');
  if(!user)return;
  try{
   const token=await getIdTokenResult(user,true);
@@ -233,6 +235,7 @@ onAuthStateChanged(auth,async user=>{
   const adminDoc=byClaim?null:await getDoc(doc(db,'administradores',user.uid));
   const byDocument=user.email?.toLowerCase()==='portomobirs@gmail.com' && adminDoc.exists() && adminDoc.data().ativo===true && adminDoc.data().papel==='administrador' && adminDoc.data().codigo==='PMA-001';
   if(!byDocument){msg('Esta conta não possui autorização administrativa.',true);await signOut(auth);return}
+  adminSessionUid=user.uid;
   $('who').textContent=user.email||'';$('login').classList.add('hidden');$('dashboard').classList.remove('hidden');msg('');
   const clientScreen=$('adminScreen3');
   if(clientScreen){
@@ -243,9 +246,7 @@ onAuthStateChanged(auth,async user=>{
    }
    list.textContent='Carregando clientes...';
    unsubs.push(onSnapshot(collection(db,'clientes'),snap=>{
-    manualClients=snap.docs.map(d=>({id:d.id,...d.data()}));manualReady=true;refreshManual();
-    const clients=snap.docs.map(d=>d.data()).sort((a,b)=>(a.numeroCliente||0)-(b.numeroCliente||0));
-    list.innerHTML='<p>Total de clientes: '+clients.length+'</p>'+ (clients.length?clients.map(c=>'<article class="item"><strong>'+esc(c.codigoCliente||'')+'</strong><p>Nome: '+esc(c.nomeCliente||'Não informado')+'<br>Cadastro: '+esc(stamp(c.dataCadastro))+'<br>Telefone: '+esc(c.telefoneCliente||'Não informado')+'<br>E-mail: '+esc(c.email||'Não informado')+'</p></article>').join(''):'<p>Nenhum cliente cadastrado.</p>');
+    applyClientSnapshot(snap,list);
    },err=>{list.textContent='Erro ao carregar clientes: '+errorText(err);}));
   }
   unsubs.push(onSnapshot(collection(db,'reservas'),snap=>{rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));render()},err=>msg('Erro ao carregar reservas: '+errorText(err),true)));
@@ -319,3 +320,32 @@ $('manualForm').onsubmit=async e=>{
  }catch(err){notice.textContent='Não foi possível registrar: '+(err.message||errorText(err));}
  finally{manualBusy=false;refreshManual()}
 };
+
+function applyClientSnapshot(snap,list){
+    manualClients=snap.docs.map(d=>({id:d.id,...d.data()}));manualReady=true;refreshManual();
+    const clients=snap.docs.map(d=>d.data()).sort((a,b)=>(a.numeroCliente||0)-(b.numeroCliente||0));
+    list.innerHTML='<p>Total de clientes: '+clients.length+'</p>'+ (clients.length?clients.map(c=>'<article class="item"><strong>'+esc(c.codigoCliente||'')+'</strong><p>Nome: '+esc(c.nomeCliente||'Não informado')+'<br>Cadastro: '+esc(stamp(c.dataCadastro))+'<br>Telefone: '+esc(c.telefoneCliente||'Não informado')+'<br>E-mail: '+esc(c.email||'Não informado')+'</p></article>').join(''):'<p>Nenhum cliente cadastrado.</p>');
+}
+let refreshBusy=false,adminSessionUid=null;
+async function refreshAdminData(){
+ if(refreshBusy||manualBusy||!adminSessionUid||auth.currentUser?.uid!==adminSessionUid)return;
+ const uid=adminSessionUid,buttons=[...document.querySelectorAll('[data-admin-refresh]')],notices=[...document.querySelectorAll('[data-refresh-notice]')];
+ const status=(message,bad=false)=>{for(const n of notices){n.textContent=message;n.style.color=bad?'#ff7777':'#8de49b';}};
+ refreshBusy=true;for(const b of buttons)b.disabled=true;status('Consultando Firebase...');
+ try{
+  const names=['clientes','motoristas','reservas','historicoOrcamentos','historicoRecusasMotoristas'];
+  const [clients,ds,rs,qs,fs]=await Promise.all(names.map(n=>getDocsFromServer(collection(db,n))));
+  if(auth.currentUser?.uid!==uid||adminSessionUid!==uid)return;
+  const map=snap=>snap.docs.map(d=>({id:d.id,...d.data()}));
+  drivers=map(ds);rows=map(rs).sort((a,b)=>(b.dataSolicitacao?.seconds||0)-(a.dataSolicitacao?.seconds||0));quoteHistory=map(qs);refusalHistory=map(fs);
+  applyClientSnapshot(clients,$('adminScreen3').querySelector('[data-live-clients]'));render();
+  status('Dados atualizados às '+new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+'.');
+ }catch(err){if(adminSessionUid===uid)status('Não foi possível atualizar. '+errorText(err),true);}
+ finally{refreshBusy=false;for(const b of buttons)b.disabled=false;}
+}
+for(const screen of [$('adminVisualPanel'),...document.querySelectorAll('.admin-visual-screen')]){
+ const heading=screen.querySelector('h1,h2');if(!heading)continue;
+ const wrap=document.createElement('div');wrap.className='admin-refresh-row';
+ const b=document.createElement('button');b.type='button';b.dataset.adminRefresh='';b.textContent='↻ ATUALIZAR';b.onclick=refreshAdminData;
+ const notice=document.createElement('p');notice.dataset.refreshNotice='';notice.setAttribute('role','status');wrap.append(b,notice);heading.after(wrap);
+}
