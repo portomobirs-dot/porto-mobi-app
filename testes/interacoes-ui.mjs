@@ -751,6 +751,8 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
   await page.evaluate(async()=>{
    const m=window.__pm,r=m.records.reservas.reserva001;
    r.statusReserva='orcamento_aceito';
+   const tripTime=Date.now()+86400000;
+   r.dataViagem={seconds:Math.floor(tripTime/1000),toDate:()=>new Date(tripTime),toMillis:()=>tripTime};
    m.records.historicoOrcamentos={
     'reserva001-1':{reservaId:'reserva001',resposta:'aceito',nomeCliente:'Cliente Exemplo',codigoReserva:'PMR-000001',numeroOrcamento:1,valorTotal:70,dataResposta:{seconds:1000,toDate:()=>new Date('2026-11-23')}},
     'reserva002-1':{reservaId:'reserva002',resposta:'recusado',nomeCliente:'Cliente Exemplo 2',codigoReserva:'PMR-000002',numeroOrcamento:1,valorTotal:90,dataResposta:{seconds:2000,toDate:()=>new Date('2026-11-23')}}
