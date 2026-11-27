@@ -165,22 +165,45 @@ $('reservations').addEventListener('click',async e=>{
   }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
  }
 });
+function driverDecisionMessage(message,bad=false){
+ msg(message,bad);
+ for(const id of ['adminScreen4','adminScreen5']){
+  const screen=$(id);if(!screen)continue;
+  let notice=screen.querySelector('[data-driver-notice]');
+  if(!notice){notice=document.createElement('p');notice.dataset.driverNotice='';notice.setAttribute('role','status');screen.querySelector('h2')?.after(notice);}
+  notice.textContent=message;notice.style.color=bad?'#ff7777':'#8de49b';
+ }
+}
+function confirmDriverDecision(message){
+ return new Promise(resolve=>{
+  const dialog=document.createElement('dialog');
+  dialog.style.cssText='background:#080808;color:white;border:2px solid #D4AF37;border-radius:12px;padding:20px;max-width:85vw';
+  const p=document.createElement('p');p.textContent=message;
+  const yes=document.createElement('button');yes.type='button';yes.textContent='CONFIRMAR';
+  const no=document.createElement('button');no.type='button';no.textContent='CANCELAR';
+  dialog.append(p,yes,no);document.body.append(dialog);
+  const finish=value=>{dialog.remove();resolve(value)};
+  yes.onclick=()=>finish(true);no.onclick=()=>finish(false);
+  dialog.addEventListener('cancel',e=>{e.preventDefault();finish(false)});
+  if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
+ });
+}
 async function handleDriverDecision(e){
  const reject=e.target.closest('button[data-reject]');
  if(reject){
   const d=drivers.find(x=>x.id===reject.dataset.reject&&x.situacao==='pendente');
-  if(!d)return msg('Cadastro não está pendente.',true);
-  if(!confirm('Recusar o cadastro de '+d.nomeMotorista+'? Esta ação não pode ser desfeita pelo aplicativo.'))return;
+  if(!d)return driverDecisionMessage('Cadastro não está pendente.',true);
+  if(!await confirmDriverDecision('Recusar o cadastro de '+d.nomeMotorista+'? Esta ação não pode ser desfeita pelo aplicativo.'))return;
   reject.disabled=true;
-  try{await updateDoc(doc(db,'motoristas',d.id),{situacao:'recusado',dataRecusa:serverTimestamp()});msg('Cadastro de '+d.nomeMotorista+' recusado.')}
-  catch(err){msg('Não foi possível recusar: '+errorText(err),true)}
+  try{await updateDoc(doc(db,'motoristas',d.id),{situacao:'recusado',dataRecusa:serverTimestamp()});driverDecisionMessage('Cadastro de '+d.nomeMotorista+' recusado.')}
+  catch(err){driverDecisionMessage('Não foi possível recusar: '+errorText(err),true)}
   finally{reject.disabled=false}
   return;
  }
 
  const b=e.target.closest('button[data-approve]');if(!b)return;
  const d=drivers.find(x=>x.id===b.dataset.approve&&x.situacao==='pendente');if(!d)return;
- if(!confirm('Autorizar '+d.nomeMotorista+' como motorista?'))return;
+ if(!await confirmDriverDecision('Autorizar '+d.nomeMotorista+' como motorista?'))return;
  b.disabled=true;try{
   const ref=doc(db,'motoristas',d.id),counter=doc(db,'contadores','motoristas');
   await runTransaction(db,async t=>{
@@ -192,8 +215,8 @@ async function handleDriverDecision(e){
    t.set(counter,{ultimo:next,ultimoUid:d.id});
    t.update(ref,{situacao:'ativo',numeroMotorista:next,codigoMotorista:padCode('PMM',next),dataAprovacao:serverTimestamp()});
   });
-  msg('Motorista autorizado.');
- }catch(err){msg(err.message||errorText(err),true)}finally{b.disabled=false}
+  driverDecisionMessage('Motorista autorizado.');
+ }catch(err){driverDecisionMessage(err.message||errorText(err),true)}finally{b.disabled=false}
 }
 $('driverApplicants').addEventListener('click',handleDriverDecision);
 $('adminScreen4')?.addEventListener('click',handleDriverDecision);
