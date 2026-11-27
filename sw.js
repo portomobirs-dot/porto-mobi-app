@@ -1,5 +1,5 @@
 // Cache limitado ao shell publico. Dados pessoais e respostas do Firebase NAO sao salvos aqui.
-const CACHE='porto-mobi-shell-v19-atualizar-admin';
+const CACHE='porto-mobi-shell-v20-atualizar-azul';
 const SHELL=['./index.html','./cliente.html','./motorista.html','./admin.html','./js/common.js','./js/cliente.js','./js/motorista.js','./js/admin.js','./estilo-porto-mobi.css','./logo-porto-mobi.png','./icon-192.png','./icon-512.png','./icon-cliente.svg','./icon-motorista.svg','./icon-motorista-v2.svg','./icon-admin.svg','./icon-admin-v2.svg','./manifest-cliente.webmanifest','./manifest-motorista.webmanifest','./manifest-admin.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
