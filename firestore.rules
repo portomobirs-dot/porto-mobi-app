@@ -406,8 +406,17 @@ service cloud.firestore {
         request.resource.data.total is int && request.resource.data.total >= 0 &&
         request.resource.data.desconto is int && request.resource.data.desconto >= 0 &&
         request.resource.data.desconto <= request.resource.data.total &&
-        request.resource.data.recebido == 0 &&
-        request.resource.data.pagamentos == [] &&
+        request.resource.data.recebido is int &&
+        request.resource.data.recebido >= 0 &&
+        request.resource.data.recebido <= request.resource.data.total - request.resource.data.desconto &&
+        ((request.resource.data.recebido == 0 && request.resource.data.pagamentos == []) ||
+         (request.resource.data.recebido > 0 &&
+          request.resource.data.pagamentos is list &&
+          request.resource.data.pagamentos.size() == 1 &&
+          request.resource.data.pagamentos[0].keys().hasOnly(['valor','data','forma']) &&
+          request.resource.data.pagamentos[0].valor == request.resource.data.recebido &&
+          request.resource.data.pagamentos[0].data is string &&
+          request.resource.data.pagamentos[0].forma == 'Adiantamento')) &&
         request.resource.data.reservas is list &&
         request.resource.data.vencimento is string &&
         request.resource.data.criadoEm == request.time;
