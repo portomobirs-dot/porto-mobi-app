@@ -20,13 +20,73 @@ const moneyFields=[
  {name:'valorPorTempo',label:'Valor por tempo (R$/min)',step:'0.01'},
  {name:'valorExtra',label:'Valor extra (R$)',step:'0.01'}
 ];
+
+const routeKeyName='pm.admin.ors.key';
+let routeBusy=false;
+function getRouteKey(){try{return localStorage.getItem(routeKeyName)||''}catch{return ''}}
+async function routeApi(path,key,body){
+ const res=await fetch('https://api.heigit.org'+path,{headers:{Authorization:key,...(body?{'Content-Type':'application/json'}:{})},...(body?{method:'POST',body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(15000),referrerPolicy:'no-referrer'});
+ if(!res.ok)throw Error(res.status===429?'Limite de consultas atingido.':res.status===401||res.status===403?'Chave inválida ou sem permissão.':'Serviço indisponível ('+res.status+').');
+ return res.json();
+}
+async function routeSummary(key,coordinates){
+ const data=await routeApi('/openrouteservice/v2/directions/driving-car/json',key,{coordinates,instructions:false});
+ const v=data.routes?.[0]?.summary;
+ if(!v||!Number.isFinite(v.distance)||!Number.isFinite(v.duration)||v.distance<=0||v.duration<=0)throw Error('Percurso não encontrado.');
+ return v;
+}
+function routeConfig(){
+ const d=document.createElement('dialog');
+ d.style.cssText='background:#080808;color:white;border:2px solid #D4AF37;border-radius:12px;padding:20px;max-width:85vw';
+ d.innerHTML='<h3>CONFIGURAÇÃO DO GPS</h3><p>Chave local neste navegador. Use somente em dispositivo confiável.</p><label>Basic Key<input type="password" autocomplete="off" style="width:100%"></label><p role="status"></p><div class="actions"><button type="button" data-save>SALVAR CHAVE</button><button type="button" data-test>TESTAR CONEXÃO</button><button type="button" data-remove>REMOVER CHAVE</button><button type="button" data-close>FECHAR</button></div>';
+ const input=d.querySelector('input'),notice=d.querySelector('[role=status]');input.value=getRouteKey();
+ d.querySelector('[data-save]').onclick=()=>{try{if(!input.value.trim())throw Error('Insira a chave.');localStorage.setItem(routeKeyName,input.value.trim());notice.textContent='Chave salva neste navegador.'}catch(e){notice.textContent=e.message}};
+ d.querySelector('[data-remove]').onclick=()=>{try{localStorage.removeItem(routeKeyName);input.value='';notice.textContent='Chave removida.'}catch{notice.textContent='Não foi possível remover a chave.'}};
+ const test=d.querySelector('[data-test]');test.onclick=async()=>{test.disabled=true;notice.textContent='Testando...';try{await routeSummary(input.value.trim(),[[-51.2300,-30.0350],[-51.2220,-30.0400]]);notice.textContent='Conexão funcionando!'}catch(e){notice.textContent='Falha no teste. '+e.message}finally{test.disabled=false}};
+ d.querySelector('[data-close]').onclick=()=>d.close();d.addEventListener('close',()=>d.remove());document.body.append(d);d.showModal();
+}
+async function chooseRoutePoint(key,address,title){
+ const q=new URLSearchParams({text:address,'boundary.country':'BRA',size:'8'});
+ const data=await routeApi('/pelias/v1/search?'+q,key);
+ const options=(data.features||[]).filter(f=>{const c=f.geometry?.coordinates;return Array.isArray(c)&&c.length===2&&c.every(Number.isFinite)&&c[0]>=-57.65&&c[0]<=-48.0&&c[1]>=-33.76&&c[1]<=-25.5&&['rio grande do sul','santa catarina','rs','sc'].includes(String(f.properties?.region||f.properties?.region_a||'').toLowerCase())&&['address','street','venue'].includes(f.properties?.layer)});
+ if(!options.length)throw Error('Endereço não localizado no RS ou SC. Confira no GPS manual.');
+ return new Promise(resolve=>{
+ const d=document.createElement('dialog');d.style.cssText='background:#080808;color:white;border:2px solid #D4AF37;border-radius:12px;padding:16px;max-width:85vw';
+ const h=document.createElement('h3');h.textContent=title;d.append(h);
+ const p=document.createElement('p');p.textContent='Confirme o endereço correspondente: '+address;d.append(p);
+ let value=null;
+ for(const f of options){const b=document.createElement('button');b.type='button';b.style.cssText='display:block;width:100%;margin:8px 0';b.textContent=f.properties.label||'Endereço sem descrição';b.onclick=()=>{value=f.geometry.coordinates;d.close()};d.append(b)}
+ const cancel=document.createElement('button');cancel.type='button';cancel.textContent='CANCELAR';cancel.onclick=()=>d.close();d.append(cancel);d.addEventListener('close',()=>{d.remove();resolve(value)});document.body.append(d);d.showModal();
+ });
+}
+async function calculateRoute(b,r){
+ if(routeBusy)return;
+ const key=getRouteKey();if(!key){routeConfig();return}
+ const card=b.closest('.quote'),note=card.querySelector('[data-route-note]'),uid=auth.currentUser?.uid;
+ if(!uid)return;
+ if(!await confirmDriverDecision('Consultar endereços de embarque e destino na HeiGIT para estimar o percurso?'))return;
+ if(routeBusy||!card.isConnected||auth.currentUser?.uid!==uid)return;
+ routeBusy=true;b.disabled=true;note.textContent='Buscando endereços...';
+ try{
+ const start=await chooseRoutePoint(key,r.localEmbarque,'CONFIRMAR EMBARQUE');if(!start)throw Error('Consulta cancelada.');
+ const end=await chooseRoutePoint(key,r.localDestino,'CONFIRMAR DESTINO');if(!end)throw Error('Consulta cancelada.');
+ if(auth.currentUser?.uid!==uid||!card.isConnected)throw Error('Tela atualizada. Repita a consulta.');
+ note.textContent='Calculando percurso...';
+ const v=await routeSummary(key,[start,end]);
+ if(auth.currentUser?.uid!==uid||!card.isConnected)throw Error('Tela atualizada. Repita a consulta.');
+ card.querySelector('[data-price="kmPercurso"]').value=(v.distance/1000).toFixed(2);
+ const time=card.querySelector('[data-price="tempoPercursoMin"]');time.value=Math.max(1,Math.round(v.duration/60));time.dispatchEvent(new Event('input',{bubbles:true}));
+ note.textContent='Percurso calculado! Estimativa sem trânsito em tempo real. Confira os valores.';
+ }catch(e){note.textContent='Não foi possível calcular: '+e.message+' Use o GPS manual.'}finally{routeBusy=false;b.disabled=false}
+}
+
 function quoteForm(r){
  const data=quoteDrafts.get(r.id)||r;
  const inputs=moneyFields.map(field=>{
   const value=data[field.name]??'';
   return '<label>'+field.label+'<input type="number" min="0" step="'+field.step+'" required data-price="'+field.name+'" value="'+esc(value)+'"></label>';
  }).join('');
- return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos da reserva</h3><div class="actions"><button type="button" data-action="gps" data-id="'+esc(r.id)+'">ABRIR GPS — CONSULTAR TRAJETO</button></div><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Consulte o trajeto no Google Maps e informe a distância e o tempo estimados nos campos do orçamento.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">ENVIAR PROPOSTA AO CLIENTE</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">RECUSAR RESERVA</button></div></div>';
+ return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos da reserva</h3><div class="actions"><button type="button" data-action="gps" data-id="'+esc(r.id)+'">ABRIR GPS — CONSULTAR TRAJETO</button><button type="button" data-action="route" data-id="'+esc(r.id)+'">CALCULAR PERCURSO AUTOMATICAMENTE</button><button type="button" data-action="route-config" data-id="'+esc(r.id)+'">CONFIGURAR GPS</button></div><p data-route-note role="status">Rotas: openrouteservice / © OpenStreetMap contributors.</p><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Consulte o trajeto no Google Maps e informe a distância e o tempo estimados nos campos do orçamento.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">ENVIAR PROPOSTA AO CLIENTE</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">RECUSAR RESERVA</button></div></div>';
 }
 function renderHistory(){
  const sorted=items=>[...items].sort((a,b)=>(b.dataResposta?.seconds||b.dataRecusa?.seconds||0)-(a.dataResposta?.seconds||a.dataRecusa?.seconds||0));
@@ -120,6 +180,8 @@ $('reservations').addEventListener('input',e=>{
 $('reservations').addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b)return;
  const r=rows.find(x=>x.id===b.dataset.id);if(!r)return;
+ if(b.dataset.action==='route-config'){routeConfig();return;}
+ if(b.dataset.action==='route'){await calculateRoute(b,r);return;}
  if(b.dataset.action==='gps'){
   const origin=String(r.localEmbarque||'').trim(),destination=String(r.localDestino||'').trim();
   if(!origin||!destination)return msg('Informe os locais de embarque e destino.',true);
