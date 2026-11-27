@@ -723,6 +723,7 @@ test('Motorista aprovado: GPS embarque, chegada interna, GPS destino e conclusao
 
 test('Administrador: orcamento calculado, historicos, autorizacao e designacao', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('admin.html','administrador');
+ page.setDefaultTimeout(5000);
  try{
   await page.locator('#dashboard').waitFor({state:'visible'});
   await page.locator('[data-admin-screen="5"]').click();
