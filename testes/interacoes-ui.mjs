@@ -726,11 +726,11 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
  page.setDefaultTimeout(5000);
  try{
   await page.locator('#dashboard').waitFor({state:'visible'});
-  await page.locator('[data-admin-screen="5"]').click();
+  await page.locator('#adminVisualPanel').getByRole('button',{name:'AUTORIZAÇÃO DOS MOTORISTAS',exact:true}).click();
   await page.locator('#driverApplicants [data-approve="motorista02"]').click();
   await page.waitForFunction(()=>window.__pm.records.motoristas.motorista02.codigoMotorista==='PMM-002');
   await page.locator('#adminScreen5 [data-admin-screen="2"]').click();
-  await page.locator('[data-admin-screen="6"]').click();
+  await page.locator('#adminVisualPanel').getByRole('button',{name:'SOLICITAÇÕES DE RESERVAS',exact:true}).click();
   await page.locator('.quote[data-quote-id="reserva001"]').waitFor({state:'visible'});
   for(const [key,value] of Object.entries({
    kmPercurso:'12.5',tempoPercursoMin:'35',tarifaBase:'10',
