@@ -356,33 +356,17 @@ for(const screen of [$('adminVisualPanel'),...document.querySelectorAll('.admin-
  wrap.append(notice);heading.after(wrap);
 }
 
- // Atendimento administrativo: registros reais, sem exemplos estáticos.
- for(const [id,tipo] of [['adminScreen13','cliente'],['adminScreen14','motorista']]){
- const screen=$(id), panel=document.createElement('div');
+ 
+// Atendimento via WhatsApp, usando os contatos cadastrados.
+for(const [id,tipo] of [['adminScreen13','cliente'],['adminScreen14','motorista']]){
+ const screen=$(id),panel=document.createElement('div');
  for(const el of [...screen.children])if(!el.matches('h2,.admin-refresh-row,button[data-admin-screen]'))el.remove();
- const select=document.createElement('select');select.setAttribute('aria-label','Mensagem de suporte');
- const detail=document.createElement('p'), input=document.createElement('textarea');input.maxLength=2000;input.placeholder='Digite sua resposta';
- const send=document.createElement('button');send.type='button';send.textContent='ENVIAR RESPOSTA';
- const history=document.createElement('button');history.type='button';history.textContent='HISTÓRICO DE MENSAGENS';
+ const select=document.createElement('select');select.setAttribute('aria-label','Selecionar '+tipo);
+ const send=document.createElement('button');send.type='button';send.textContent='CONTATAR PELO WHATSAPP';
  const notice=document.createElement('p');notice.setAttribute('role','status');
- let items=[];
- function clear(){items=[];select.replaceChildren();detail.textContent='';input.value='';notice.textContent='';}
- function display(){const item=items.find(x=>x.id===select.value);detail.textContent=item?item.mensagem+' — '+(item.resposta||'Aguardando resposta'):'Nenhuma mensagem selecionada.';}
- async function load(){const uid=adminSessionUid;if(!uid)return;try{
- const snap=await getDocsFromServer(collection(db,'suporte'));if(adminSessionUid!==uid)return;
- items=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.tipo===tipo).sort((a,b)=>(b.criadoEm?.seconds||0)-(a.criadoEm?.seconds||0));
- select.replaceChildren(new Option('Selecione uma mensagem',''));
- for(const item of items){const p=(tipo==='cliente'?manualClients:drivers).find(x=>x.id===item.uid);select.add(new Option((p?.nomeCliente||p?.nomeMotorista||item.uid)+' — '+(item.resposta?'Respondida':'Pendente'),item.id));}
- display();notice.textContent=items.length?'':'Nenhuma mensagem registrada.';
- }catch(e){notice.textContent=errorText(e);}}
- select.onchange=()=>{input.value='';display();};history.onclick=load;
- send.onclick=async()=>{const item=items.find(x=>x.id===select.value),resposta=input.value.trim(),uid=adminSessionUid;
- if(!uid||!item||item.resposta||!resposta){notice.textContent='Selecione uma mensagem pendente e digite a resposta.';return;}
- send.disabled=true;try{if(!await confirmDriverDecision('Enviar esta resposta?')||adminSessionUid!==uid)return;
- await runTransaction(db,async t=>{const ref=doc(db,'suporte',item.id),snap=await t.get(ref);if(!snap.exists()||snap.data().resposta)throw Error('Mensagem já respondida ou indisponível.');t.update(ref,{resposta,respondidoEm:serverTimestamp()});});
- if(adminSessionUid!==uid)return;input.value='';await load();notice.textContent='Resposta registrada.';
- }catch(e){notice.textContent=errorText(e);}finally{send.disabled=false;}};
- panel.append(select,detail,input,send,history,notice);screen.append(panel);
- onAuthStateChanged(auth,clear);
- document.addEventListener('click',e=>{if(e.target.closest('[data-admin-screen="'+id.replace('adminScreen','')+'"]')||e.target.closest('#'+id+' [data-admin-refresh]'))load();});
- }
+ function load(){select.replaceChildren(new Option('Selecione um '+tipo,''));if(!adminSessionUid)return;for(const p of (tipo==='cliente'?manualClients:drivers))select.add(new Option(p.nomeCliente||p.nomeMotorista||p.id,p.id));}
+ send.onclick=()=>{if(!adminSessionUid||auth.currentUser?.uid!==adminSessionUid)return;const p=(tipo==='cliente'?manualClients:drivers).find(x=>x.id===select.value);const phone=p?.telefoneCliente||p?.telefoneMotorista||p?.telefone;if(!phone){notice.textContent='Selecione um cadastro com telefone.';return;}offerWhatsApp(phone,'Olá! Aqui é o atendimento da Porto Mobi Executivo.');};
+ panel.append(select,send,notice);screen.append(panel);
+ onAuthStateChanged(auth,()=>{select.replaceChildren();notice.textContent='';});
+ document.addEventListener('click',e=>{if(e.target.closest('[data-admin-screen="'+id.replace('adminScreen','')+'"]'))load();});
+}
