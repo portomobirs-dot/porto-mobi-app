@@ -376,6 +376,26 @@ service cloud.firestore {
       allow update: if adminTripUpdate() || driverTripUpdate(id) || clientQuoteAnswer(id);
       allow delete: if false;
     }
+    match /suporte/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == me());
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly(['uid','tipo','mensagem','criadoEm']) &&
+        request.resource.data.uid == me() &&
+        ((request.resource.data.tipo == 'cliente' && exists(clientPath(me()))) ||
+         (request.resource.data.tipo == 'motorista' && activeDriver())) &&
+        request.resource.data.mensagem is string &&
+        request.resource.data.mensagem.size() > 0 &&
+        request.resource.data.mensagem.size() <= 2000 &&
+        request.resource.data.criadoEm == request.time;
+      allow update: if isAdmin() &&
+        !('resposta' in resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resposta','respondidoEm']) &&
+        request.resource.data.resposta is string &&
+        request.resource.data.resposta.size() > 0 &&
+        request.resource.data.resposta.size() <= 2000 &&
+        request.resource.data.respondidoEm == request.time;
+      allow delete: if false;
+    }
     match /{other=**} { allow read, write: if false; }
   }
 }
