@@ -242,7 +242,7 @@ onAuthStateChanged(auth,async user=>{
    let list=clientScreen.querySelector('[data-live-clients]');
    if(!list){
     list=document.createElement('div');list.dataset.liveClients='';list.setAttribute('aria-live','polite');
-    const sample=clientScreen.querySelector('p');if(sample)sample.replaceWith(list);else clientScreen.insertBefore(list,clientScreen.querySelector('button'));
+    const sample=clientScreen.querySelector(':scope > p');if(sample)sample.replaceWith(list);else clientScreen.insertBefore(list,clientScreen.querySelector('button'));
    }
    list.textContent='Carregando clientes...';
    unsubs.push(onSnapshot(collection(db,'clientes'),snap=>{
@@ -347,5 +347,8 @@ for(const screen of [$('adminVisualPanel'),...document.querySelectorAll('.admin-
  const heading=screen.querySelector('h1,h2');if(!heading)continue;
  const wrap=document.createElement('div');wrap.className='admin-refresh-row';
  const b=document.createElement('button');b.type='button';b.dataset.adminRefresh='';b.textContent='↻ ATUALIZAR';b.onclick=refreshAdminData;
- const notice=document.createElement('p');notice.dataset.refreshNotice='';notice.setAttribute('role','status');wrap.append(b,notice);heading.after(wrap);
+ const notice=document.createElement('p');notice.dataset.refreshNotice='';notice.setAttribute('role','status');wrap.append(b);
+ const back=[...screen.querySelectorAll(':scope > button[data-admin-screen="2"]')].find(el=>el.textContent.trim()==='PAINEL DO ADMINISTRADOR');
+ if(back){back.textContent='PAINEL';back.dataset.adminPanelReturn='';wrap.append(back);}
+ wrap.append(notice);heading.after(wrap);
 }
