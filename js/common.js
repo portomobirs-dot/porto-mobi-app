@@ -33,3 +33,18 @@ export function errorText(err){
   if(c.includes('too-many-requests'))return 'Muitas tentativas. Tente mais tarde.';
   return 'Não foi possível concluir a operação. '+(c?`(${c})`:'');
 }
+
+export function offerWhatsApp(phone,message){
+ try{
+ const digits=String(phone||'').replace(/\D/g,'');
+ const number=digits.length===10||digits.length===11?'55'+digits:digits;
+ if(!/^55\d{10,11}$/.test(number))return;
+ let panel=document.getElementById('pmWhatsAppQueue');
+ if(!panel){panel=document.createElement('aside');panel.id='pmWhatsAppQueue';panel.setAttribute('aria-label','Mensagens WhatsApp pendentes');panel.style.cssText='position:fixed;bottom:12px;right:12px;left:12px;max-width:460px;margin:auto;z-index:10000;background:#080808;color:white;border:2px solid #25D366;border-radius:12px;padding:12px;max-height:40vh;overflow:auto';document.body.append(panel);}
+ const row=document.createElement('div');row.style.cssText='margin:6px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+ const label=document.createElement('p');label.textContent=message;label.style.cssText='white-space:pre-wrap;font-size:13px;width:100%;margin:0';
+ const link=document.createElement('a');link.href='https://wa.me/'+number+'?text='+encodeURIComponent(message);link.target='_blank';link.rel='noopener noreferrer';link.textContent='ABRIR WHATSAPP';link.style.cssText='background:#218638;color:white;padding:10px;border-radius:6px;font-weight:bold;text-decoration:none';
+ const close=document.createElement('button');close.type='button';close.textContent='DISPENSAR';close.style.cssText='width:auto;margin:0;padding:8px';close.onclick=()=>{row.remove();if(!panel.children.length)panel.remove()};
+ row.append(label,link,close);panel.append(row);
+ }catch(e){console.warn('Não foi possível preparar aviso WhatsApp',e);}
+}
