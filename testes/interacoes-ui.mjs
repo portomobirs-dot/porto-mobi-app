@@ -26,7 +26,7 @@ after(async()=>{await browser.close();await new Promise(resolve=>server.close(re
 const appStub='export const initializeApp=(config,name)=>({name});';
 const authStub=[
  'const m=window.__pm;',
- 'export const getAuth=app=>({app});',
+ 'export const getAuth=app=>({app,get currentUser(){return m.user}});',
  'export function onAuthStateChanged(auth,cb){m.authListeners.push(cb);queueMicrotask(()=>cb(m.user));return ()=>{}}',
  'export async function createUserWithEmailAndPassword(auth,email,password){m.user={uid:m.role===\'motorista\'?\'motoristaNovo\':\'clienteNovo\',email};return {user:m.user}}',
  'export async function signInWithEmailAndPassword(auth,email,password){m.loginAttempts.push({email,password});m.user={uid:email.includes(\'motorista\')?\'motorista01\':\'cliente01\',email};for(const cb of m.authListeners)await cb(m.user);return {user:m.user}}',
@@ -49,6 +49,7 @@ const firestoreStub=[
  'export const serverTimestamp=()=>Timestamp.fromDate(new Date());',
  'export async function getDoc(ref){return snap(records[ref.path]?.[ref.id])}',
  'export async function getDocs(q){let a=Object.entries(records[q.path]||{}).map(([id,value])=>({id,data:()=>value}));for(const f of q.filters||[])if(f.op===\'==\')a=a.filter(x=>x.data()[f.field]===f.value);return {docs:a}}',
+ 'export const getDocsFromServer=getDocs;',
  'export async function setDoc(ref,data){(records[ref.path]??={})[ref.id]=data;notify()}',
  'export async function updateDoc(ref,data){if(!records[ref.path]?.[ref.id])throw Error(\'Not found\');Object.assign(records[ref.path][ref.id],data);notify()}',
  'export function writeBatch(db){const ops=[];return {update(ref,data){ops.push(()=>Object.assign(records[ref.path][ref.id],data))},set(ref,data){ops.push(()=>{(records[ref.path]??={})[ref.id]=data})},async commit(){for(const op of ops)op();notify()}}}',
@@ -512,6 +513,9 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#confirmRegister').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
+  await page.locator('#pmWhatsAppQueue a').waitFor();
+  assert.match(await page.locator('#pmWhatsAppQueue a').getAttribute('href'),/wa\.me\/5551990082119/);
+  await page.locator('#pmWhatsAppQueue button').click();
   await page.locator('#showBooking').click();
   await page.locator('#bookingView').waitFor({state:'visible'});
   assert.equal(await page.locator('#bookingCodePreview').inputValue(),'PMR-000000');
@@ -531,6 +535,7 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#confirmBooking').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
   assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
+  for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
   await page.goBack();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
@@ -728,7 +733,9 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
   await page.locator('#dashboard').waitFor({state:'visible'});
   await page.locator('#adminVisualPanel').getByRole('button',{name:'AUTORIZAÇÃO DOS MOTORISTAS',exact:true}).click();
   await page.locator('#driverApplicants [data-approve="motorista02"]').click();
+  await page.locator('dialog').getByRole('button',{name:'CONFIRMAR',exact:true}).click();
   await page.waitForFunction(()=>window.__pm.records.motoristas.motorista02.codigoMotorista==='PMM-002');
+  for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
   await page.locator('#adminScreen5 [data-admin-screen="2"]').click();
   await page.locator('#adminVisualPanel').getByRole('button',{name:'SOLICITAÇÕES DE RESERVAS',exact:true}).click();
   await page.locator('.quote[data-quote-id="reserva001"]').waitFor({state:'visible'});
@@ -740,6 +747,7 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
   await page.locator('[data-action="quote"][data-id="reserva001"]').click();
   await page.waitForFunction(()=>window.__pm.records.reservas.reserva001.statusReserva==='orcamento_pendente');
   assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.valorViagem),70);
+  for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
   await page.evaluate(async()=>{
    const m=window.__pm,r=m.records.reservas.reserva001;
    r.statusReserva='orcamento_aceito';
@@ -759,6 +767,7 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
   assert.match(await page.locator('#refusedQuotes').innerText(),/PMR-000002/);
   await page.locator('#reservations select[data-driver-for="reserva001"]').selectOption('motorista01');
   await page.locator('#reservations [data-action="assign"]').click();
+  for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
   await page.locator('#filter').selectOption('oferecida');
   await page.locator('#reservations [data-action="whatsapp"][data-id="reserva001"]').waitFor({state:'visible'});
   assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva),'oferecida');
