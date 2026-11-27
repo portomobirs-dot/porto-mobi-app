@@ -1,7 +1,7 @@
 import {offerWhatsApp} from './common.js?v=wa25';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,deleteUser,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {addDoc,getFirestore,doc,getDoc,runTransaction,writeBatch,collection,query,where,getDocs,onSnapshot,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,runTransaction,writeBatch,collection,query,where,getDocs,onSnapshot,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {firebaseConfig,padCode,todayLocal,esc,formatPhone,phoneDigits,errorText,moneyBRL} from './common.js';
 
 // Nome diferente por aplicativo = sessao Firebase Auth independente no navegador.
@@ -316,28 +316,4 @@ onAuthStateChanged(auth,async user=>{
  if(!user){currentProfile=null;clientReservations=[];$('viewServiceTracking').disabled=true;show('loginView');return}
  await loadHome();
 });
-
- // Suporte isolado do fluxo de reservas.
- {
- const screen=$('clientSupportView'), panel=document.createElement('div');
- const input=document.createElement('textarea');input.maxLength=2000;input.placeholder='Digite sua mensagem';input.setAttribute('aria-label','Mensagem de suporte');
- const send=document.createElement('button');send.type='button';send.textContent='ENVIAR MENSAGEM';
- const history=document.createElement('button');history.type='button';history.textContent='HISTÓRICO DE MENSAGENS';
- const status=document.createElement('p');status.setAttribute('role','status');
- const list=document.createElement('div');panel.append(input,send,history,status,list);screen.append(panel);
- async function loadSupport(){
- const uid=auth.currentUser?.uid;list.replaceChildren();if(!uid)return;
- try{const snap=await getDocs(query(collection(db,'suporte'),where('uid','==',uid)));
- if(auth.currentUser?.uid!==uid||screen.classList.contains('hidden'))return;
- const items=snap.docs.map(d=>d.data()).filter(d=>d.tipo==='cliente').sort((a,b)=>(b.criadoEm?.seconds||0)-(a.criadoEm?.seconds||0));
- for(const item of items){const p=document.createElement('p');p.textContent=item.mensagem+' — '+(item.resposta||'Aguardando resposta');list.append(p);}
- if(!items.length)list.textContent='Nenhuma mensagem.';
- }catch(e){status.textContent='Não foi possível consultar o suporte. '+errorText(e);}
- }
- history.onclick=loadSupport;
- send.onclick=async()=>{const uid=auth.currentUser?.uid,mensagem=input.value.trim();if(!uid||!mensagem)return;send.disabled=true;
- try{await addDoc(collection(db,'suporte'),{uid,tipo:'cliente',mensagem,criadoEm:serverTimestamp()});if(auth.currentUser?.uid!==uid)return;input.value='';status.textContent='Mensagem registrada.';await loadSupport();}
- catch(e){status.textContent='Não foi possível enviar. '+errorText(e);}finally{send.disabled=false;}};
- onAuthStateChanged(auth,()=>{input.value='';list.replaceChildren();status.textContent='';});
- $('viewClientSupport').onclick=()=>{show('clientSupportView');loadSupport();};
- }
+$('viewClientSupport').onclick=()=>{show('clientSupportView');const screen=$('clientSupportView');const p=screen.querySelector('p');p.replaceChildren();const a=document.createElement('a');a.href='https://wa.me/5551990082119';a.target='_blank';a.rel='noopener noreferrer';a.textContent='CONTATAR SUPORTE PELO WHATSAPP';p.append(a);};
