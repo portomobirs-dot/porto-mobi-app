@@ -99,7 +99,7 @@ service cloud.firestore {
     function manualTripCreate(id) {
       let r = request.resource.data;
       return isAdmin() &&
-        r.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','nomeMotoristaDesignado','localEmbarque','localDestino','dataViagem','dataSolicitacao','dataAtualizacao','passageiros','observacoes','statusReserva','valorViagem','numeroOrcamento','origemReserva']) &&
+        r.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','nomeMotoristaDesignado','localEmbarque','localDestino','dataViagem','dataSolicitacao','dataAtualizacao','passageiros','observacoes','statusReserva','valorViagem','numeroOrcamento','origemReserva','tempoPercursoMin','intervaloDeslocamentoMin']) &&
         r.origemReserva == 'manual' && r.clienteUid is string &&
         r.codigoCliente == getAfter(clientPath(r.clienteUid)).data.codigoCliente &&
         r.nomeCliente is string && r.nomeCliente.size() >= 3 && r.nomeCliente.size() <= 150 &&
@@ -113,7 +113,7 @@ service cloud.firestore {
         r.dataViagem is timestamp && r.dataViagem > request.time &&
         r.dataSolicitacao == request.time && r.dataAtualizacao == request.time &&
         r.valorViagem is number && r.valorViagem >= 0 && r.valorViagem <= 1000000 &&
-        r.numeroOrcamento == 1 &&
+        r.numeroOrcamento == 1 && r.tempoPercursoMin is int && r.tempoPercursoMin >= 1 && r.tempoPercursoMin <= 100000 && r.intervaloDeslocamentoMin is int && r.intervaloDeslocamentoMin >= 0 && r.intervaloDeslocamentoMin <= 1440 &&
         ((r.statusReserva == 'orcamento_aceito' && r.motoristaUid == '' && r.codigoMotorista == '' && r.nomeMotoristaDesignado == '') ||
          (r.statusReserva == 'oferecida' && validAssignedDriver() &&
           r.nomeMotoristaDesignado == get(driverPath(r.motoristaUid)).data.nomeMotorista)) &&
