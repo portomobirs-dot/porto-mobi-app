@@ -7,7 +7,7 @@ const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
 const quoteDrafts=new Map();
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
-const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[]};
+const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];renderQuoteStatus()};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 
 $('filter').onchange=render;
@@ -39,7 +39,27 @@ function renderHistory(){
  const refusals=sorted(refusalHistory);
  $('driverRefusals').innerHTML=refusals.length?refusals.map(r=>'<div class="item"><strong>'+esc(r.codigoReserva)+'</strong><p><b>Motorista:</b> '+esc(r.nomeMotorista||r.codigoMotorista||'')+'<br><b>Cliente:</b> '+esc(r.nomeCliente||'')+'<br><b>Data da recusa:</b> '+esc(stamp(r.dataRecusa))+'</p></div>').join(''):'<p class="muted">Nenhuma recusa de motorista registrada.</p>';
 }
+function renderQuoteStatus(){
+ const screen=$('adminScreen8');if(!screen)return;
+ let mount=screen.querySelector('[data-live-quote-status]');
+ if(!mount){
+  mount=document.createElement('div');mount.dataset.liveQuoteStatus='';mount.setAttribute('aria-live','polite');
+  const back=screen.querySelector('[data-admin-screen="2"]');
+  for(const child of [...screen.children])if(child.tagName!=='H2'&&child!==back)child.remove();
+  screen.insertBefore(mount,back);
+  mount.addEventListener('click',e=>{
+   const b=e.target.closest('[data-designate]');if(!b)return;
+   const r=rows.find(x=>x.id===b.dataset.designate&&x.statusReserva==='orcamento_aceito');if(!r)return;
+   window.adminVisualShow(9);
+   $('reservations').querySelector('select[data-driver-for="'+CSS.escape(r.id)+'"]')?.focus();
+  });
+ }
+ const labels={orcamento_pendente:'AGUARDANDO RESPOSTA',orcamento_aceito:'ORÇAMENTO ACEITO',orcamento_recusado:'ORÇAMENTO RECUSADO'};
+ const items=rows.filter(r=>Object.hasOwn(labels,r.statusReserva));
+ mount.innerHTML=items.length?items.map(r=>'<article class="item"><p>Solicitação: '+esc(r.codigoReserva)+'<br>Cliente: '+esc(r.nomeCliente)+'<br>Data: '+esc(stamp(r.dataViagem))+'<br>Valor: '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'Não informado')+'</p><p><strong>'+labels[r.statusReserva]+'</strong></p>'+(r.statusReserva==='orcamento_aceito'?'<button type="button" style="background:#218638!important;color:white!important" data-designate="'+esc(r.id)+'">DESIGNAR MOTORISTA</button>':'')+'</article>').join(''):'<p>Nenhum orçamento encontrado.</p>';
+}
 function render(){
+ renderQuoteStatus();
  const clientRefused=new Set(quoteHistory.filter(x=>x.resposta==='recusado').map(x=>x.codigoReserva).filter(Boolean));
  const driverRefused=new Set(refusalHistory.map(x=>x.codigoReserva).filter(Boolean));
  const f=$('filter').value,visible=rows.filter(r=>f==='todas'||r.statusReserva===f||(f==='cliente_recusou'&&(clientRefused.has(r.codigoReserva)||r.statusReserva==='orcamento_recusado'))||(f==='motorista_recusou'&&driverRefused.has(r.codigoReserva)));
