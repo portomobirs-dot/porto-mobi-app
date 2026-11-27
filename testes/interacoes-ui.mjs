@@ -278,7 +278,7 @@ test('Tela 04: campos, passageiros, revisao e cadastro da reserva', {timeout:300
   await page.locator('#decreasePassengers').click();
   assert.equal(await page.locator('#passengers').inputValue(),'1');
   for(let i=0;i<9;i++)await page.locator('#increasePassengers').click();
-  assert.equal(await page.locator('#passengers').inputValue(),'8');
+  assert.equal(await page.locator('#passengers').inputValue(),'4');
   for(let i=0;i<9;i++)await page.locator('#decreasePassengers').click();
   assert.equal(await page.locator('#passengers').inputValue(),'1');
   await page.locator('#increasePassengers').click();
@@ -295,8 +295,8 @@ test('Tela 04: campos, passageiros, revisao e cadastro da reserva', {timeout:300
   await page.locator('#bookingReview').waitFor({state:'visible'});
   await page.locator('#confirmBooking').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
-  assert.match(await page.locator('#trackingCode').inputValue(),/^PMR-\d{6}$/);
-  assert.notEqual(await page.locator('#trackingCode').inputValue(),'PMR-000000');
+  assert.match(await page.locator('#trackingCode').innerText(),/^PMR-\d{6}$/);
+  assert.notEqual(await page.locator('#trackingCode').innerText(),'PMR-000000');
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
@@ -366,7 +366,7 @@ test('Painel do cliente: sete comandos, codigos e navegacao', {timeout:30000},as
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewActiveReservations').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
-  assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+  assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
   await page.locator('#backToBooking').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewReservationHistory').click();
@@ -474,9 +474,9 @@ test('Tela 06: status, data, dados condicionais e retorno ao painel', {timeout:3
    await page.evaluate(status=>window.__pm.records.reservas.reserva001.statusReserva=status,status);
    await page.locator('#viewActiveReservations').click();
    await page.locator('#bookingTracking').waitFor({state:'visible'});
-   assert.equal(await page.locator('#trackingStatus').inputValue(),label);
-   assert.equal(await page.locator('#trackingRequestDate').inputValue(),'23/11/2026');
-   assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+   assert.equal(await page.locator('#trackingStatus').innerText(),label);
+   assert.equal(await page.locator('#trackingRequestDate').innerText(),'23/11/2026');
+   assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
    assert.equal(await page.locator('#trackingDriverDetails').isVisible(),visible);
    for(const [id,value] of Object.entries(fields))assert.equal(await page.locator('#'+id).inputValue(),visible?value:'');
    assert.equal(await page.locator('#backToBooking').innerText(),'VOLTAR AO PAINEL');
@@ -530,14 +530,14 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#bookingReview').waitFor({state:'visible'});
   await page.locator('#confirmBooking').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
-  assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+  assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
   await page.goBack();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
   assert.equal(await page.locator('#lastBookingCode').inputValue(),'PMR-000001');
   await page.locator('#viewActiveReservations').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
-  assert.equal(await page.locator('#trackingCode').inputValue(),'PMR-000001');
+  assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
   await page.goBack();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewReservationHistory').click();
@@ -725,8 +725,11 @@ test('Administrador: orcamento calculado, historicos, autorizacao e designacao',
  const {context,page,errors}=await pageFor('admin.html','administrador');
  try{
   await page.locator('#dashboard').waitFor({state:'visible'});
+  await page.locator('[data-admin-screen="5"]').click();
   await page.locator('#driverApplicants [data-approve="motorista02"]').click();
   await page.waitForFunction(()=>window.__pm.records.motoristas.motorista02.codigoMotorista==='PMM-002');
+  await page.locator('#adminScreen5 [data-admin-screen="2"]').click();
+  await page.locator('[data-admin-screen="6"]').click();
   await page.locator('.quote[data-quote-id="reserva001"]').waitFor({state:'visible'});
   for(const [key,value] of Object.entries({
    kmPercurso:'12.5',tempoPercursoMin:'35',tarifaBase:'10',
