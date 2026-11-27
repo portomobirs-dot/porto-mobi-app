@@ -345,10 +345,10 @@ async function refreshAdminData(){
 }
 for(const screen of [$('adminVisualPanel'),...document.querySelectorAll('.admin-visual-screen')]){
  const heading=screen.querySelector('h1,h2');if(!heading)continue;
- const wrap=document.createElement('div');wrap.className='admin-refresh-row';
- const b=document.createElement('button');b.type='button';b.dataset.adminRefresh='';b.textContent='↻ ATUALIZAR';b.onclick=refreshAdminData;
- const notice=document.createElement('p');notice.dataset.refreshNotice='';notice.setAttribute('role','status');wrap.append(b);
+ const wrap=document.createElement('div');wrap.className='admin-refresh-row';wrap.style.setProperty('display','grid','important');wrap.style.setProperty('grid-template-columns',screen.id==='adminVisualPanel'?'1fr':'repeat(2,minmax(0,1fr))','important');wrap.style.setProperty('gap','8px','important');
+ const b=document.createElement('button');b.type='button';b.dataset.adminRefresh='';b.textContent='↻ ATUALIZAR';b.onclick=refreshAdminData;for(const [k,v] of Object.entries({background:'#1565C0','background-image':'none',color:'#FFFFFF','border-color':'#1565C0',width:'100%',margin:'0'}))b.style.setProperty(k,v,'important');
+ const notice=document.createElement('p');notice.style.setProperty('grid-column','1/-1','important');notice.dataset.refreshNotice='';notice.setAttribute('role','status');wrap.append(b);
  const back=[...screen.querySelectorAll(':scope > button[data-admin-screen="2"]')].find(el=>el.textContent.trim()==='PAINEL DO ADMINISTRADOR');
- if(back){back.textContent='PAINEL';back.dataset.adminPanelReturn='';wrap.append(back);}
+ if(back){back.textContent='PAINEL';back.dataset.adminPanelReturn='';back.style.setProperty('width','100%','important');back.style.setProperty('margin','0','important');wrap.append(back);}
  wrap.append(notice);heading.after(wrap);
 }
