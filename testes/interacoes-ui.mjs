@@ -59,7 +59,7 @@ const firestoreStub=[
 async function pageFor(file,mode='visitante'){
  const context=await browser.newContext({viewport:{width:390,height:844},locale:'pt-BR',timezoneId:'America/Sao_Paulo',serviceWorkers:'block'});
  await context.addInitScript(({mode})=>{
-  const m={role:mode==='motorista-aprovado'?'motorista':mode==='administrador'?'administrador':'cliente',user:mode==='motorista-aprovado'?{uid:'motorista01',email:'motorista@example.invalid'}:mode==='administrador'?{uid:'admin01',email:'admin@example.invalid'}:null,
+  const m={role:mode==='motorista-aprovado'?'motorista':mode==='administrador'?'administrador':'cliente',user:mode==='motorista-aprovado'?{uid:'motorista01',email:'motorista@example.invalid'}:mode==='administrador'?{uid:'admin01',email:'portomobirs@gmail.com'}:null,
    records:{clientes:{},motoristas:{},reservas:{},contadores:{}},authListeners:[],dataListeners:[],opened:[],loginAttempts:[],resetEmails:[]};
   if(mode==='motorista-login'){
    m.records.motoristas.motorista01={uid:'motorista01',nomeMotorista:'Motorista Teste',codigoMotorista:'PMM-001',situacao:'ativo',veiculoModelo:'Toyota Corolla'};
@@ -83,7 +83,7 @@ async function pageFor(file,mode='visitante'){
    };
   }
   if(mode==='administrador'){
-   m.records.administradores={admin01:{ativo:true,funcao:'administrador'}};
+   m.records.administradores={admin01:{ativo:true,papel:'administrador',codigo:'PMA-001'}};
    m.records.contadores.motoristas={ultimo:1,ultimoUid:'motorista01'};
    m.records.motoristas.motorista01={nomeMotorista:'Motorista Exemplo',codigoMotorista:'PMM-001',aprovado:true,
     telefoneMotorista:'(51) 99999-2222',veiculoModelo:'Toyota Corolla'};
