@@ -159,7 +159,9 @@ $('reservations').addEventListener('click',async e=>{
   if(r.statusReserva!=='orcamento_aceito')return msg('Aguarde o Cliente aceitar o orçamento.',true);
   const d=drivers.find(x=>x.id===selected&&(x.situacao==='ativo'||x.aprovado===true));
   if(!d)return msg('Selecione um motorista autorizado.',true);
-  if(!confirm('Oferecer '+r.codigoReserva+' para '+d.nomeMotorista+'?'))return;
+  try{scheduleConflict(d.id,r.dataViagem,Number(r.tempoPercursoMin),Number(r.intervaloDeslocamentoMin??30),r.id)}catch(err){return msg(err.message,true)}
+  if(!await confirmDriverDecision('Oferecer '+r.codigoReserva+' para '+d.nomeMotorista+'?'))return;
+  try{scheduleConflict(d.id,r.dataViagem,Number(r.tempoPercursoMin),Number(r.intervaloDeslocamentoMin??30),r.id)}catch(err){return msg(err.message,true)}
   b.disabled=true;try{
    await updateDoc(doc(db,'reservas',r.id),{statusReserva:'oferecida',motoristaUid:d.id,codigoMotorista:d.codigoMotorista,nomeMotoristaDesignado:d.nomeMotorista,dataAtualizacao:serverTimestamp()});
    if($('filter').value==='orcamento_aceito'){$('filter').value='oferecida';render();}
@@ -253,6 +255,19 @@ onAuthStateChanged(auth,async user=>{
  }catch(err){msg('Erro ao validar autorização: '+errorText(err),true)}
 });
 
+
+function scheduleConflict(driver,start,duration,buffer,exclude=''){
+ const ms=v=>v?.toMillis?.()??(v instanceof Date?+v:NaN);
+ const begin=ms(start),end=begin+(duration+buffer)*60000;
+ if(!Number.isFinite(begin)||!Number.isFinite(duration)||duration<=0)throw Error('Informe a duração estimada do atendimento.');
+ for(const r of rows){
+  if(r.id===exclude||r.motoristaUid!==driver||!['oferecida','confirmada','em_andamento'].includes(r.statusReserva))continue;
+  const other=ms(r.dataViagem),minutes=Number(r.tempoPercursoMin),gap=Number(r.intervaloDeslocamentoMin??30);
+  if(!Number.isFinite(other)||!Number.isFinite(minutes)||minutes<=0)throw Error('CONFLITO DE HORÁRIOS: confira a duração da reserva '+r.codigoReserva+' antes de designar.');
+  if(r.statusReserva==='em_andamento'&&begin<=Date.now())throw Error('Motorista em atendimento.');
+  if(begin<other+(minutes+gap)*60000&&other<end)throw Error('CONFLITO DE HORÁRIOS: '+r.codigoReserva+' — '+stamp(r.dataViagem)+'. Selecione outro motorista ou altere o horário.');
+ }
+}
 function refreshManual(){
  const c=$('manualClient'),d=$('manualDriver');if(!c||!d)return;
  const cv=c.value,dv=d.value;
@@ -270,14 +285,17 @@ $('manualCancel').onclick=()=>{if(manualBusy)return;$('manualForm').reset();$('m
 $('manualForm').onsubmit=async e=>{
  e.preventDefault();if(manualBusy||!manualReady||!auth.currentUser)return;
  const notice=$('manualNotice'),uid=auth.currentUser.uid;
+ const duration=Number($('manualDuration').value),buffer=Number($('manualBuffer').value);
  const selected=$('manualClient').value,name=$('manualName').value.trim(),phone=phoneDigits($('manualPhone').value);
  const pickup=$('manualPickup').value.trim(),dest=$('manualDestination').value.trim(),date=new Date($('manualDate').value+'T'+$('manualTime').value+':00-03:00'),pass=Number($('manualPassengers').value),value=Number($('manualValue').value),notes=$('manualNotes').value.trim(),driver=$('manualDriver').value;
+ if(!Number.isInteger(duration)||duration<1||duration>100000||!Number.isInteger(buffer)||buffer<0||buffer>1440){notice.textContent='Confira duração e intervalo de deslocamento.';return}
  if(name.length<3||phone.length<10||phone.length>13||pickup.length<3||dest.length<3||!Number.isFinite(+date)||date<=new Date()||!Number.isInteger(pass)||pass<1||pass>4||!Number.isFinite(value)||value<0||value>1000000){notice.textContent='Confira os campos e informe uma data futura.';return}
  if(!selected&&manualClients.some(c=>phoneDigits(c.telefoneCliente||'')===phone)){notice.textContent='Telefone já cadastrado. Selecione o cliente existente.';return}
  manualBusy=true;refreshManual();
  try{
   if(!await confirmDriverDecision('Confirmar reserva manual de '+name+' por '+moneyBRL(value)+'?'))return;
   if(auth.currentUser?.uid!==uid)throw Error('Sessão alterada.');
+  if(driver)scheduleConflict(driver,date,duration,buffer);
   notice.textContent='Registrando reserva...';
   const clientRef=doc(db,'clientes',selected||'manual-'+phone),tripRef=doc(collection(db,'reservas')),cc=doc(db,'contadores','clientes'),rc=doc(db,'contadores','reservas');
   const result=await runTransaction(db,async t=>{
@@ -294,10 +312,10 @@ $('manualForm').onsubmit=async e=>{
    }
    const n=(counter.exists()?counter.data().ultimo:0)+1,pmr=padCode('PMR',n);
    t.set(rc,{ultimo:n,ultimoReservaId:tripRef.id,ultimoClienteUid:clientRef.id});
-   t.set(tripRef,{numeroReserva:n,codigoReserva:pmr,clienteUid:clientRef.id,codigoCliente:pmc,nomeCliente:name,telefoneCliente:phone,codigoMotorista:d?.codigoMotorista||'',motoristaUid:driver,nomeMotoristaDesignado:d?.nomeMotorista||'',localEmbarque:pickup,localDestino:dest,dataViagem:Timestamp.fromDate(date),dataSolicitacao:serverTimestamp(),dataAtualizacao:serverTimestamp(),passageiros:pass,observacoes:notes,statusReserva:driver?'oferecida':'orcamento_aceito',valorViagem:value,numeroOrcamento:1,origemReserva:'manual'});
+   t.set(tripRef,{numeroReserva:n,codigoReserva:pmr,clienteUid:clientRef.id,codigoCliente:pmc,nomeCliente:name,telefoneCliente:phone,codigoMotorista:d?.codigoMotorista||'',motoristaUid:driver,nomeMotoristaDesignado:d?.nomeMotorista||'',localEmbarque:pickup,localDestino:dest,dataViagem:Timestamp.fromDate(date),dataSolicitacao:serverTimestamp(),dataAtualizacao:serverTimestamp(),passageiros:pass,observacoes:notes,statusReserva:driver?'oferecida':'orcamento_aceito',valorViagem:value,tempoPercursoMin:duration,intervaloDeslocamentoMin:buffer,numeroOrcamento:1,origemReserva:'manual'});
    return {pmc,pmr};
   });
   $('manualForm').reset();$('manualPMC').value=result.pmc;$('manualPMR').value=result.pmr;notice.textContent='Reserva '+result.pmr+' registrada com sucesso!';msg(notice.textContent);
- }catch(err){notice.textContent='Não foi possível registrar: '+errorText(err);}
+ }catch(err){notice.textContent='Não foi possível registrar: '+(err.message||errorText(err));}
  finally{manualBusy=false;refreshManual()}
 };
