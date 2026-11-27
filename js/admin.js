@@ -1,3 +1,4 @@
+import {offerWhatsApp} from './common.js?v=wa25';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,getIdTokenResult} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,collection,doc,getDoc,getDocsFromServer,onSnapshot,updateDoc,runTransaction,serverTimestamp,Timestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
@@ -147,14 +148,14 @@ $('reservations').addEventListener('click',async e=>{
   b.disabled=true;
   try{
    await updateDoc(doc(db,'reservas',r.id),{...data,numeroOrcamento:number,statusReserva:'orcamento_pendente',dataAtualizacao:serverTimestamp()});
-   quoteDrafts.delete(r.id);msg('Orçamento '+moneyBRL(data.valorViagem)+' enviado para avaliação do Cliente.');
+   quoteDrafts.delete(r.id);msg('Orçamento '+moneyBRL(data.valorViagem)+' enviado para avaliação do Cliente.');offerWhatsApp(r.telefoneCliente,'Porto Mobi: orçamento '+r.codigoReserva+': '+moneyBRL(data.valorViagem)+'. Consulte o aplicativo.');
   }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
   return;
  }
  if(!['pendente','orcamento_aceito','orcamento_recusado'].includes(r.statusReserva))return msg('Esta reserva não pode ser alterada.',true);
  if(b.dataset.action==='refuse'){
   if(!confirm('Recusar a reserva '+r.codigoReserva+'?'))return;
-  b.disabled=true;try{await updateDoc(doc(db,'reservas',r.id),{statusReserva:'recusada',motoristaUid:'',codigoMotorista:'',dataAtualizacao:serverTimestamp()});msg('Reserva recusada.')}catch(err){msg(errorText(err),true)}finally{b.disabled=false}return;
+  b.disabled=true;try{await updateDoc(doc(db,'reservas',r.id),{statusReserva:'recusada',motoristaUid:'',codigoMotorista:'',dataAtualizacao:serverTimestamp()});msg('Reserva recusada.');offerWhatsApp(r.telefoneCliente,'Porto Mobi: reserva '+r.codigoReserva+' recusada. Entre em contato conosco.')}catch(err){msg(errorText(err),true)}finally{b.disabled=false}return;
  }
  if(b.dataset.action==='assign'){
   const selected=$('reservations').querySelector(`select[data-driver-for="${CSS.escape(r.id)}"]`)?.value;
@@ -167,7 +168,7 @@ $('reservations').addEventListener('click',async e=>{
   b.disabled=true;try{
    await updateDoc(doc(db,'reservas',r.id),{statusReserva:'oferecida',motoristaUid:d.id,codigoMotorista:d.codigoMotorista,nomeMotoristaDesignado:d.nomeMotorista,dataAtualizacao:serverTimestamp()});
    if($('filter').value==='orcamento_aceito'){$('filter').value='oferecida';render();}
-   msg('Corrida oferecida. Use o botão WhatsApp para avisar o motorista.');
+   msg('Corrida oferecida. Use o botão WhatsApp para avisar o motorista.');offerWhatsApp(d.telefoneMotorista||d.telefone,'Porto Mobi: nova oferta '+r.codigoReserva+'. Consulte o aplicativo.');
   }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
  }
 });
@@ -201,7 +202,7 @@ async function handleDriverDecision(e){
   if(!d)return driverDecisionMessage('Cadastro não está pendente.',true);
   if(!await confirmDriverDecision('Recusar o cadastro de '+d.nomeMotorista+'? Esta ação não pode ser desfeita pelo aplicativo.'))return;
   reject.disabled=true;
-  try{await updateDoc(doc(db,'motoristas',d.id),{situacao:'recusado',dataRecusa:serverTimestamp()});driverDecisionMessage('Cadastro de '+d.nomeMotorista+' recusado.')}
+  try{await updateDoc(doc(db,'motoristas',d.id),{situacao:'recusado',dataRecusa:serverTimestamp()});driverDecisionMessage('Cadastro de '+d.nomeMotorista+' recusado.');offerWhatsApp(d.telefoneMotorista||d.telefone,'Porto Mobi: cadastro de motorista não autorizado.')}
   catch(err){driverDecisionMessage('Não foi possível recusar: '+errorText(err),true)}
   finally{reject.disabled=false}
   return;
@@ -221,7 +222,7 @@ async function handleDriverDecision(e){
    t.set(counter,{ultimo:next,ultimoUid:d.id});
    t.update(ref,{situacao:'ativo',numeroMotorista:next,codigoMotorista:padCode('PMM',next),dataAprovacao:serverTimestamp()});
   });
-  driverDecisionMessage('Motorista autorizado.');
+  driverDecisionMessage('Motorista autorizado.');offerWhatsApp(d.telefoneMotorista||d.telefone,'Porto Mobi: cadastro autorizado. Acesse o aplicativo.');
  }catch(err){driverDecisionMessage(err.message||errorText(err),true)}finally{b.disabled=false}
 }
 $('driverApplicants').addEventListener('click',handleDriverDecision);
@@ -318,7 +319,7 @@ $('manualForm').onsubmit=async e=>{
    t.set(tripRef,{numeroReserva:n,codigoReserva:pmr,clienteUid:clientRef.id,codigoCliente:pmc,nomeCliente:name,telefoneCliente:phone,codigoMotorista:d?.codigoMotorista||'',motoristaUid:driver,nomeMotoristaDesignado:d?.nomeMotorista||'',localEmbarque:pickup,localDestino:dest,dataViagem:Timestamp.fromDate(date),dataSolicitacao:serverTimestamp(),dataAtualizacao:serverTimestamp(),passageiros:pass,observacoes:notes,statusReserva:driver?'oferecida':'orcamento_aceito',valorViagem:value,tempoPercursoMin:duration,intervaloDeslocamentoMin:buffer,numeroOrcamento:1,origemReserva:'manual'});
    return {pmc,pmr};
   });
-  $('manualForm').reset();$('manualPMC').value=result.pmc;$('manualPMR').value=result.pmr;notice.textContent='Reserva '+result.pmr+' registrada com sucesso!';msg(notice.textContent);
+  $('manualForm').reset();$('manualPMC').value=result.pmc;$('manualPMR').value=result.pmr;notice.textContent='Reserva '+result.pmr+' registrada com sucesso!';msg(notice.textContent);offerWhatsApp(phone,'Porto Mobi: reserva '+result.pmr+' registrada. Valor combinado: '+moneyBRL(value)+'. Aguarde confirmação.');if(driver){const d=drivers.find(x=>x.id===driver);offerWhatsApp(d?.telefoneMotorista||d?.telefone,'Porto Mobi: nova oferta '+result.pmr+'. Consulte o aplicativo.');}
  }catch(err){notice.textContent='Não foi possível registrar: '+(err.message||errorText(err));}
  finally{manualBusy=false;refreshManual()}
 };
