@@ -47,9 +47,9 @@ function renderQuoteStatus(){
  let mount=screen.querySelector('[data-live-quote-status]');
  if(!mount){
   mount=document.createElement('div');mount.dataset.liveQuoteStatus='';mount.setAttribute('aria-live','polite');
-  const back=screen.querySelector('[data-admin-screen="2"]');
+  const back=screen.querySelector(':scope > .admin-refresh-row')||screen.querySelector(':scope > [data-admin-screen="2"]');
   for(const child of [...screen.children])if(child.tagName!=='H2'&&child!==back)child.remove();
-  screen.insertBefore(mount,back);
+  screen.insertBefore(mount,back?.nextSibling||null);
   mount.addEventListener('click',e=>{
    const b=e.target.closest('[data-designate]');if(!b)return;
    const r=rows.find(x=>x.id===b.dataset.designate&&x.statusReserva==='orcamento_aceito');if(!r)return;
@@ -62,7 +62,7 @@ function renderQuoteStatus(){
  mount.innerHTML=items.length?items.map(r=>'<article class="item"><p>Solicitação: '+esc(r.codigoReserva)+'<br>Cliente: '+esc(r.nomeCliente)+'<br>Data: '+esc(stamp(r.dataViagem))+'<br>Valor: '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'Não informado')+'</p><p><strong>'+labels[r.statusReserva]+'</strong></p>'+(r.statusReserva==='orcamento_aceito'?'<button type="button" style="background:#218638!important;color:white!important" data-designate="'+esc(r.id)+'">DESIGNAR MOTORISTA</button>':'')+'</article>').join(''):'<p>Nenhum orçamento encontrado.</p>';
 }
 function renderOperationalScreens(){
- const mount=(n,html)=>{const screen=$('adminScreen'+n);if(!screen)return;let node=screen.querySelector('[data-live-operational]');if(!node){node=document.createElement('div');node.dataset.liveOperational='';const back=screen.querySelector('[data-admin-screen="2"]');for(const child of [...screen.children])if(child.tagName!=='H2'&&child!==back)child.remove();screen.insertBefore(node,back);}node.innerHTML=html;};
+ const mount=(n,html)=>{const screen=$('adminScreen'+n);if(!screen)return;let node=screen.querySelector('[data-live-operational]');if(!node){node=document.createElement('div');node.dataset.liveOperational='';const back=screen.querySelector(':scope > .admin-refresh-row')||screen.querySelector(':scope > [data-admin-screen="2"]');for(const child of [...screen.children])if(child.tagName!=='H2'&&child!==back)child.remove();screen.insertBefore(node,back?.nextSibling||null);}node.innerHTML=html;};
  const list=(items,fn,empty)=>items.length?items.map(fn).join(''):'<p class="muted">'+empty+'</p>';
  const trip=r=>'<article class="item"><strong>'+esc(r.codigoReserva||r.id)+'</strong><p>Cliente: '+esc(r.nomeCliente)+'<br>Motorista: '+esc(r.nomeMotoristaDesignado||'Não atribuído')+'<br>Embarque: '+esc(r.localEmbarque)+'<br>Destino: '+esc(r.localDestino)+'<br>Viagem: '+esc(stamp(r.dataViagem))+'<br>Situação: '+esc(r.statusReserva)+'<br>Valor: '+(Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A calcular')+'</p></article>';
  mount(4,list(drivers,d=>'<article class="item"><strong>'+esc(d.codigoMotorista||'Sem código')+'</strong><p>Nome: '+esc(d.nomeMotorista)+'<br>Situação: '+esc(d.situacao||'Não informada')+'<br>Veículo: '+esc(d.veiculoModelo||d.modeloVeiculo||'Não informado')+'</p>'+(d.situacao==='pendente'?'<div class="actions"><button type="button" data-approve="'+esc(d.id)+'">APROVAR</button><button type="button" class="danger" data-reject="'+esc(d.id)+'">RECUSAR</button></div>':'')+'</article>','Nenhum motorista cadastrado.'));
@@ -227,9 +227,11 @@ async function handleDriverDecision(e){
 $('driverApplicants').addEventListener('click',handleDriverDecision);
 $('adminScreen4')?.addEventListener('click',handleDriverDecision);
 onAuthStateChanged(auth,async user=>{
- adminSessionUid=null;stop();$('dashboard').classList.add('hidden');$('login').classList.remove('hidden');
- if(!user)return;
+ adminSessionUid=null;
  try{
+ stop();$('dashboard').classList.add('hidden');$('login').classList.remove('hidden');
+ if(!user)return;
+ msg('Validando autorização administrativa...');
   const token=await getIdTokenResult(user,true);
   const byClaim=false; // A autorização exige cadastro administrativo vinculado ao UID e e-mail.
   const adminDoc=byClaim?null:await getDoc(doc(db,'administradores',user.uid));
@@ -253,7 +255,7 @@ onAuthStateChanged(auth,async user=>{
   unsubs.push(onSnapshot(collection(db,'motoristas'),snap=>{drivers=snap.docs.map(d=>({id:d.id,...d.data()}));refreshManual();render()},err=>msg('Erro ao carregar motoristas: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'historicoOrcamentos'),snap=>{quoteHistory=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao consultar histórico de orçamentos: '+errorText(err),true)));
   unsubs.push(onSnapshot(collection(db,'historicoRecusasMotoristas'),snap=>{refusalHistory=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>msg('Erro ao consultar recusas dos motoristas: '+errorText(err),true)));
- }catch(err){msg('Erro ao validar autorização: '+errorText(err),true)}
+ }catch(err){msg('Erro ao validar autorização: '+(err.message||errorText(err)),true)}
 });
 
 
