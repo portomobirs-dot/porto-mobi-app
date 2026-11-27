@@ -396,6 +396,32 @@ service cloud.firestore {
         request.resource.data.respondidoEm == request.time;
       allow delete: if false;
     }
+    match /fechamentos/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasOnly(['clienteUid','mes','total','desconto','vencimento','reservas','recebido','pagamentos','criadoEm']) &&
+        request.resource.data.clienteUid is string &&
+        request.resource.data.mes is string &&
+        id == request.resource.data.clienteUid + '_' + request.resource.data.mes &&
+        request.resource.data.total is int && request.resource.data.total >= 0 &&
+        request.resource.data.desconto is int && request.resource.data.desconto >= 0 &&
+        request.resource.data.desconto <= request.resource.data.total &&
+        request.resource.data.recebido == 0 &&
+        request.resource.data.pagamentos == [] &&
+        request.resource.data.reservas is list &&
+        request.resource.data.vencimento is string &&
+        request.resource.data.criadoEm == request.time;
+      allow update: if isAdmin() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['recebido','pagamentos']) &&
+        request.resource.data.recebido is int &&
+        request.resource.data.recebido > resource.data.recebido &&
+        request.resource.data.recebido <= resource.data.total - resource.data.desconto &&
+        request.resource.data.pagamentos is list &&
+        request.resource.data.pagamentos.size() == resource.data.pagamentos.size() + 1 &&
+        request.resource.data.pagamentos == resource.data.pagamentos.concat([request.resource.data.pagamentos[resource.data.pagamentos.size()]]) &&
+        request.resource.data.pagamentos[resource.data.pagamentos.size()].valor == request.resource.data.recebido - resource.data.recebido;
+      allow delete: if false;
+    }
     match /{other=**} { allow read, write: if false; }
   }
 }
