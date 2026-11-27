@@ -7,7 +7,7 @@ const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let unsubs=[],rows=[],drivers=[],quoteHistory=[],refusalHistory=[];
 const quoteDrafts=new Map();
 const msg=(s,bad=false)=>{$('message').textContent=s;$('message').className=bad?'error':'success'};
-const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];renderQuoteStatus();renderOperationalScreens()};
+const stop=()=>{const clientScreen=$('adminScreen3');if(clientScreen){const list=clientScreen.querySelector('[data-live-clients]');if(list)list.textContent='Carregando clientes...';}for(const f of unsubs)f();unsubs=[];rows=[];drivers=[];quoteHistory=[];refusalHistory=[];quoteDrafts.clear();renderQuoteStatus();renderOperationalScreens()};
 $('loginForm').onsubmit=async e=>{e.preventDefault();try{msg('Entrando...');await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(err){msg(errorText(err),true)}};
 
 $('filter').onchange=render;
@@ -86,6 +86,9 @@ function render(){
   const driver=drivers.find(d=>d.id===r.motoristaUid);
   return `<article class="item"><h3>Reserva solicitada</h3><div class="top"><strong>${esc(r.codigoReserva||r.id)}</strong><span>${esc(r.statusReserva||'')}</span></div><p><b>Cliente:</b> ${esc(r.nomeCliente)} (${esc(r.codigoCliente)})<br><b>Telefone:</b> ${esc(r.telefoneCliente)}<br><b>Origem:</b> ${esc(r.localEmbarque)}<br><b>Destino:</b> ${esc(r.localDestino)}<br><b>Viagem:</b> ${esc(stamp(r.dataViagem))}<br><b>Passageiros:</b> ${esc(r.passageiros||1)}<br><b>Motorista designado:</b> ${esc(driver?.nomeMotorista||r.nomeMotoristaDesignado||'Não atribuído')}<br><b>Valor da Reserva:</b> ${Number.isFinite(r.valorViagem)&&r.numeroOrcamento?moneyBRL(r.valorViagem):'A calcular'}<br><b>Observações:</b> ${esc(r.observacoes||'Nenhuma')}</p>${controls}${notify}</article>`;
  }).join(''):'<p>Nenhuma reserva encontrada.</p>';
+ for(const card of $('reservations').querySelectorAll('.quote[data-quote-id]')){
+  try{card.querySelector('[data-total]').textContent='Valor total: '+moneyBRL(readQuoteInputs(card).valorViagem)}catch{}
+ }
  renderHistory();
  $('driverApplicants').innerHTML=drivers.filter(d=>d.situacao==='pendente').length?
   drivers.filter(d=>d.situacao==='pendente').map(d=>`<article class="item"><strong>${esc(d.nomeMotorista)}</strong><p>E-mail: ${esc(d.email)}<br>Telefone: ${esc(d.telefoneMotorista||d.telefone)}<br>Veículo: ${esc(d.veiculoModelo||d.modeloVeiculo)} — ${esc(d.veiculoPlaca||d.placaVeiculo)} — ${esc(d.veiculoCor||d.corVeiculo)}</p><div class="actions"><button data-approve="${esc(d.id)}">APROVAR</button><button class="danger" data-reject="${esc(d.id)}">RECUSAR</button></div></article>`).join(''):
@@ -156,6 +159,7 @@ $('reservations').addEventListener('click',async e=>{
   if(!confirm('Oferecer '+r.codigoReserva+' para '+d.nomeMotorista+'?'))return;
   b.disabled=true;try{
    await updateDoc(doc(db,'reservas',r.id),{statusReserva:'oferecida',motoristaUid:d.id,codigoMotorista:d.codigoMotorista,nomeMotoristaDesignado:d.nomeMotorista,dataAtualizacao:serverTimestamp()});
+   if($('filter').value==='orcamento_aceito'){$('filter').value='oferecida';render();}
    msg('Corrida oferecida. Use o botão WhatsApp para avisar o motorista.');
   }catch(err){msg(errorText(err),true)}finally{b.disabled=false}
  }
