@@ -370,3 +370,46 @@ for(const [id,tipo] of [['adminScreen13','cliente'],['adminScreen14','motorista'
  onAuthStateChanged(auth,()=>{select.replaceChildren();notice.textContent='';});
  document.addEventListener('click',e=>{if(e.target.closest('[data-admin-screen="'+id.replace('adminScreen','')+'"]'))load();});
 }
+
+ // Financeiro: competência pela conclusão, valores inteiros em centavos.
+ for(const n of [15,16,17,18,19]){
+ const screen=$('adminScreen'+n);
+ const nav=[...screen.querySelectorAll('button[data-admin-screen]')].filter(b=>!b.closest('.admin-refresh-row'));
+ for(const el of [...screen.children])if(!el.matches('h2,.admin-refresh-row'))el.remove();
+ const panel=document.createElement('div'), client=document.createElement('select'), month=document.createElement('input');
+ month.type='month';month.value=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,7);
+ client.setAttribute('aria-label','Cliente');month.setAttribute('aria-label','Mês de competência');
+ const summary=document.createElement('pre');summary.style.whiteSpace='pre-wrap';
+ const notice=document.createElement('p');notice.setAttribute('role','status');
+ let current=null, trips=[], total=0, ready=false, busy=false, revision=0;
+ const money=c=>moneyBRL(c/100);
+ const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=async()=>{if(busy)return;busy=true;try{await fn()}catch(e){notice.textContent=errorText(e)}finally{busy=false}};panel.append(b);};
+ const input=(label,type)=>{const l=document.createElement('label'),i=document.createElement('input');i.type=type;l.textContent=label;l.append(i);panel.append(l);return i;};
+ function clients(){const old=client.value;client.replaceChildren(new Option('Selecione o cliente',''));for(const p of manualClients)client.add(new Option((p.codigoCliente||'')+' — '+p.nomeCliente,p.id));client.value=old;}
+ function key(){return client.value+'_'+month.value;}
+ function authorized(){return adminSessionUid&&auth.currentUser?.uid===adminSessionUid;}
+ function monthOf(r){const d=r.dataConclusao?.toDate?.()||new Date((r.dataConclusao?.seconds||0)*1000);return d.toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,7);}
+ async function load(){const v=++revision,uid=adminSessionUid;ready=false;current=null;summary.textContent='';if(!authorized()||!month.value)return;
+ try{
+ if(n===15){const snap=await getDocsFromServer(collection(db,'fechamentos'));if(v!==revision||uid!==adminSessionUid)return;const docs=snap.docs.map(d=>d.data()).filter(d=>d.mes===month.value);const billed=docs.reduce((s,d)=>s+d.total-d.desconto,0),paid=docs.reduce((s,d)=>s+d.recebido,0);summary.textContent='Fechamentos: '+docs.length+'\nFaturado: '+money(billed)+'\nRecebido: '+money(paid)+'\nA receber: '+money(billed-paid);return;}
+ if(!client.value)return;const k=key();const snap=await getDoc(doc(db,'fechamentos',k));if(v!==revision||uid!==adminSessionUid||k!==key())return;
+ current=snap.exists()?snap.data():null;trips=rows.filter(r=>r.clienteUid===client.value&&r.statusReserva==='concluida'&&monthOf(r)===month.value);
+ if(trips.some(r=>!Number.isFinite(r.valorViagem)||r.valorViagem<0))throw Error('Existem corridas sem valor válido.');
+ total=trips.reduce((s,r)=>s+Math.round(r.valorViagem*100),0);ready=true;
+ summary.textContent=trips.map(r=>r.codigoReserva+' — '+money(Math.round(r.valorViagem*100))+' — '+r.localEmbarque+' / '+r.localDestino).join('\n')+'\nTotal de atendimentos: '+trips.length+'\nTotal: '+money(total)+(current?'\nFechamento: '+money(current.total-current.desconto)+'\nRecebido: '+money(current.recebido)+'\nSaldo: '+money(current.total-current.desconto-current.recebido)+'\nVencimento: '+current.vencimento:'\nSem fechamento registrado.');
+ notice.textContent='';
+ }catch(e){if(v===revision)notice.textContent=errorText(e)}}
+ function requireReady(){if(!authorized()||!ready||!client.value)throw Error('Selecione cliente e mês e aguarde a consulta.');}
+ function send(text){requireReady();const p=manualClients.find(p=>p.id===client.value);if(!p?.telefoneCliente)throw Error('Cliente sem telefone cadastrado.');offerWhatsApp(p.telefoneCliente,'Porto Mobi Executivo — '+month.value+'\n'+text);}
+ if(n!==15)panel.append(client);panel.append(month,summary,notice);
+ if(n===16){button('GERAR EXTRATO',async()=>{requireReady();window.print()});button('ENVIAR AO CLIENTE',async()=>send(summary.textContent));}
+ if(n===17){const discount=input('Desconto (R$)','number'),due=input('Vencimento','date');discount.min='0';discount.step='0.01';discount.value='0';
+ button('CONFIRMAR FECHAMENTO',async()=>{requireReady();const uid=adminSessionUid,k=key(),d=Math.round(Number(discount.value)*100),v=due.value;if(current||!trips.length||!Number.isSafeInteger(d)||d<0||d>total||!v)throw Error('Verifique os atendimentos, desconto e vencimento.');const data={clienteUid:client.value,mes:month.value,total,desconto:d,vencimento:v,reservas:trips.map(r=>r.id),recebido:0,pagamentos:[],criadoEm:serverTimestamp()};if(!await confirmDriverDecision('Confirmar fechamento de '+money(total-d)+'?')||adminSessionUid!==uid||key()!==k)return;await runTransaction(db,async t=>{const ref=doc(db,'fechamentos',k);if((await t.get(ref)).exists())throw Error('Fechamento já registrado.');t.set(ref,data)});await load();notice.textContent='Fechamento registrado.';});}
+ if(n===18){function receipt(){requireReady();if(!current||current.recebido<=0)throw Error('Nenhum pagamento registrado para emitir recibo.');return 'RECIBO — Porto Mobi Executivo\nCliente: '+client.selectedOptions[0].textContent+'\nCompetência: '+month.value+'\nValor recebido: '+money(current.recebido)+'\n'+current.pagamentos.map(p=>p.data+' — '+money(p.valor)+' — '+p.forma).join('\n');}button('VISUALIZAR DOCUMENTO',async()=>{summary.textContent=receipt()});button('GERAR PDF',async()=>{summary.textContent=receipt();window.print()});button('ENVIAR AO CLIENTE',async()=>send(receipt()));}
+ if(n===19){const amount=input('Valor recebido (R$)','number'),date=input('Data do pagamento','date'),method=document.createElement('select');amount.min='0.01';amount.step='0.01';for(const f of ['PIX','Dinheiro','Transferência','Cartão'])method.add(new Option(f,f));panel.append(method);
+ button('CONFIRMAR PAGAMENTO',async()=>{requireReady();const uid=adminSessionUid,k=key(),valor=Math.round(Number(amount.value)*100),data=date.value,forma=method.value;if(!current||!Number.isSafeInteger(valor)||valor<=0||!data||valor>current.total-current.desconto-current.recebido)throw Error('Informe pagamento válido dentro do saldo.');if(!await confirmDriverDecision('Registrar recebimento de '+money(valor)+'?')||adminSessionUid!==uid||key()!==k)return;await runTransaction(db,async t=>{const ref=doc(db,'fechamentos',k),snap=await t.get(ref);if(!snap.exists())throw Error('Fechamento inexistente.');const f=snap.data();if(valor>f.total-f.desconto-f.recebido)throw Error('Valor excede saldo atualizado.');t.update(ref,{recebido:f.recebido+valor,pagamentos:[...f.pagamentos,{valor,data,forma}]});});amount.value='';await load();notice.textContent='Pagamento registrado.';});
+ button('HISTÓRICO DE PAGAMENTOS',async()=>{requireReady();summary.textContent=current?.pagamentos.map(p=>p.data+' — '+money(p.valor)+' — '+p.forma).join('\n')||'Nenhum pagamento registrado.';});}
+ screen.append(panel,...nav);client.onchange=load;month.onchange=load;
+ document.addEventListener('click',e=>{if(e.target.closest('[data-admin-screen="'+n+'"]')||e.target.closest('#adminScreen'+n+' [data-admin-refresh]')){clients();load();}});
+ onAuthStateChanged(auth,()=>{revision++;ready=false;current=null;trips=[];total=0;client.replaceChildren();summary.textContent='';notice.textContent='';});
+ }
