@@ -218,7 +218,7 @@ async function handleDriverDecision(e){
    if(!p.exists()||p.data().situacao!=='pendente')throw new Error('Cadastro não está pendente.');
    if(!c.exists()&&drivers.some(v=>v.aprovado===true))throw new Error('O contador de motoristas antigos deve ser iniciado em 1 no Console Firebase antes de novas aprovações.');
    const next=(c.exists()?Number(c.data().ultimo||0):0)+1;
-   if(next>3)throw new Error('Limite de 3 motoristas atingido.');
+   if(next>100)throw new Error('Limite de 100 motoristas atingido.');
    t.set(counter,{ultimo:next,ultimoUid:d.id});
    t.update(ref,{situacao:'ativo',numeroMotorista:next,codigoMotorista:padCode('PMM',next),dataAprovacao:serverTimestamp()});
   });
@@ -309,7 +309,7 @@ $('manualForm').onsubmit=async e=>{
    const d=driverDoc?.data();if(driver&&(!d||!(d.situacao==='ativo'||d.aprovado===true)||!d.codigoMotorista))throw Error('Motorista indisponível.');
    let pmc=client.data()?.codigoCliente;
    if(!client.exists()){
-    const n=(clientCounter.exists()?clientCounter.data().ultimo:0)+1;if(n>40)throw Error('Limite de 40 clientes atingido.');
+    const n=(clientCounter.exists()?clientCounter.data().ultimo:0)+1;if(n>9999)throw Error('Limite de 9.999 clientes atingido.');
     pmc=padCode('PMC',n);
     t.set(cc,{ultimo:n,ultimoUid:clientRef.id});
     t.set(clientRef,{uid:clientRef.id,numeroCliente:n,codigoCliente:pmc,nomeCliente:name,telefoneCliente:phone,email:'',origemCadastro:'manual',dataCadastro:serverTimestamp()});
