@@ -29,7 +29,7 @@ function quoteForm(r){
   const value=data[field.name]??'';
   return '<label>'+field.label+'<input type="number" min="0" step="'+field.step+'" required data-price="'+field.name+'" value="'+esc(value)+'"></label>';
  }).join('');
- return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos da reserva</h3><div class="actions"><button type="button" data-action="gps" data-id="'+esc(r.id)+'">ABRIR GPS — CONSULTAR TRAJETO</button></div><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Consulte o trajeto no Google Maps e informe a distância e o tempo estimados nos campos do orçamento.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">ENVIAR PROPOSTA AO CLIENTE</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">RECUSAR RESERVA</button></div></div>';
+ return '<div class="quote" data-quote-id="'+esc(r.id)+'"><h3>Cálculos da reserva</h3><div class="actions"><button type="button" data-action="gps" data-id="'+esc(r.id)+'">CALCULAR PERCURSO NO GOOGLE MAPS</button></div><div class="quote-grid">'+inputs+'</div><span class="quote-total" data-total>Valor total: preencher os campos</span><p class="quote-note">Consulte o trajeto no Google Maps e informe a distância e o tempo estimados nos campos do orçamento.</p><div class="actions"><button data-action="quote" data-id="'+esc(r.id)+'">ENVIAR PROPOSTA AO CLIENTE</button><button class="danger" data-action="refuse" data-id="'+esc(r.id)+'">RECUSAR RESERVA</button></div></div>';
 }
 function renderHistory(){
  const sorted=items=>[...items].sort((a,b)=>(b.dataResposta?.seconds||b.dataRecusa?.seconds||0)-(a.dataResposta?.seconds||a.dataRecusa?.seconds||0));
@@ -129,7 +129,7 @@ $('reservations').addEventListener('click',async e=>{
   const origin=String(r.localEmbarque||'').trim(),destination=String(r.localDestino||'').trim();
   if(!origin||!destination)return msg('Informe os locais de embarque e destino.',true);
   const url=new URL('https://www.google.com/maps/dir/');
-  url.search=new URLSearchParams({api:'1',origin,destination,travelmode:'driving'}).toString();
+  const params=new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});if(Array.isArray(r.paradas)&&r.paradas.length)params.set('waypoints',r.paradas.join('|'));url.search=params.toString();
   window.open(url.toString(),'_blank','noopener,noreferrer');return;
  }
  if(b.dataset.action==='whatsapp'){
@@ -433,3 +433,6 @@ for(const [id,tipo] of [['adminScreen13','cliente'],['adminScreen14','motorista'
  document.addEventListener('click',e=>{if(e.target.closest('[data-admin-screen="'+n+'"]')||e.target.closest('#adminScreen'+n+' [data-admin-refresh]')){clients();load();}});
  onAuthStateChanged(auth,()=>{revision++;ready=false;current=null;trips=[];total=0;client.replaceChildren();summary.textContent='';notice.textContent='';});
  }
+
+// Consulta gratuita do percurso antes de registrar uma reserva manual.
+{const b=document.createElement('button');b.type='button';b.textContent='CALCULAR PERCURSO NO GOOGLE MAPS';$('manualDestination').after(b);b.onclick=()=>{const origin=$('manualPickup').value.trim(),destination=$('manualDestination').value.trim();if(!origin||!destination){$('manualNotice').textContent='Informe embarque e destino.';return;}const p=new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});window.open('https://www.google.com/maps/dir/?'+p,'_blank','noopener,noreferrer');};}
