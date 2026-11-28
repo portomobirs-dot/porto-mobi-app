@@ -173,7 +173,7 @@ test('Tela 02: comandos, campos obrigatorios e revisao de cadastro', {timeout:30
  try{
   await page.locator('#showRegister').click();
   await page.locator('#registerView').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('#registerView .register-actions button').allTextContents(),['REVISAR','CADASTRAR','PAINEL DO CLIENTE']);
+  assert.deepEqual(await page.locator('#registerView .register-actions button').allTextContents(),['REVISAR','CADASTRAR','MENU']);
   assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
   assert.equal(await page.locator('#clientCodePreview').getAttribute('readonly'),'');
   assert.equal(await page.locator('#regDate').getAttribute('readonly'),'');
@@ -262,12 +262,12 @@ test('Tela 04: campos, passageiros, revisao e cadastro da reserva', {timeout:300
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#showBooking').click();
   await page.locator('#bookingView').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('#bookingView .booking-actions button').allTextContents(),['REVISAR']);
+  assert.deepEqual(await page.locator('#bookingView .booking-actions button').allTextContents(),['REVISAR','SOLICITAR','MENU']);
   assert.equal(await page.locator('#bookingCodePreview').inputValue(),'PMR-000000');
   assert.equal(await page.locator('#bookingCodePreview').getAttribute('readonly'),'');
   assert.equal(await page.locator('#bookingCreatedDate').getAttribute('readonly'),'');
   assert.match(await page.locator('#bookingCreatedDate').inputValue(),/^\d{4}-\d{2}-\d{2}$/);
-  assert.equal(await page.locator('#confirmBooking').isDisabled(),true);
+  assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'true');
   await page.locator('#reviewBooking').click();
   assert.equal(await page.locator('#bookingReview').isVisible(),false);
   await page.locator('#pickup').fill('Avenida Exemplo, 100');
@@ -288,14 +288,17 @@ test('Tela 04: campos, passageiros, revisao e cadastro da reserva', {timeout:300
   await page.locator('#reviewBooking').click();
   await page.locator('#bookingReview').waitFor({state:'visible'});
   const summary=await page.locator('#bookingSummary').innerText();
-  for(const value of ['Avenida Exemplo, 100','Aeroporto','14:30','Passageiros: 2','Bagagem de mao'])assert.ok(summary.includes(value),value);
+  for(const value of ['Avenida Exemplo, 100','Aeroporto','14:30','Passageiros\n2','Bagagem de mao'])assert.ok(summary.includes(value),value);
   await page.locator('#editBooking').click();
-  assert.equal(await page.locator('#confirmBooking').isDisabled(),true);
+  assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'true');
   await page.locator('#notes').fill('Bagagem alterada');
-  assert.equal(await page.locator('#confirmBooking').isDisabled(),true);
+  assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'true');
   await page.locator('#reviewBooking').click();
   await page.locator('#bookingReview').waitFor({state:'visible'});
-  await page.locator('#confirmBooking').click();
+  await page.locator('#bookingReviewHome').click();
+   await page.locator('#bookingView').waitFor({state:'visible'});
+   assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'false');
+   await page.locator('#submitBookingFromForm').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
   assert.match(await page.locator('#trackingCode').innerText(),/^PMR-\d{6}$/);
   assert.notEqual(await page.locator('#trackingCode').innerText(),'PMR-000000');
@@ -319,25 +322,27 @@ test('Tela 05: resumo fiel, retorno e nova revisao da reserva', {timeout:30000},
   await page.locator('#reviewBooking').click();
   await page.locator('#bookingReview').waitFor({state:'visible'});
   assert.equal(await page.locator('#bookingReview h2').innerText(),'REVISÃO DA SOLICITAÇÃO');
-  assert.deepEqual(await page.locator('#bookingReview .booking-actions button').allTextContents(),['ALTERAR SOLICITAÇÃO','SOLICITAR','PAINEL DO CLIENTE']);
+  assert.deepEqual(await page.locator('#bookingReview .booking-actions button').allTextContents(),['ALTERAR','VOLTAR']);
   const summary=await page.locator('#bookingSummary').innerText();
-  for(const value of ['Cliente: ','Código do Cliente: PMC-','Data da Reserva: '+created,'Código da Reserva: PMR-000000','Embarque: '+fields.pickup,'Destino: '+fields.destination,'Data: '+fields.travelDate,'Horário: '+fields.travelTime,'Passageiros: '+passengers,'Observações: Nenhuma'])assert.ok(summary.includes(value),value);
+  for(const value of ['Cliente\nCliente Teste Login','Meu código\nPMC-0001','Data da reserva\n'+created,'Código da reserva\nPMR-000000','Embarque\n'+fields.pickup,'Destino\n'+fields.destination,'Data\n'+fields.travelDate,'Horário\n'+fields.travelTime,'Passageiros\n'+passengers,'Observações\nNenhuma'])assert.ok(summary.includes(value),value);
   await page.locator('#editBooking').click();
   await page.locator('#bookingView').waitFor({state:'visible'});
   for(const [id,value] of Object.entries(fields))assert.equal(await page.locator('#'+id).inputValue(),value);
   assert.equal(await page.locator('#passengers').inputValue(),passengers);
-  assert.equal(await page.locator('#confirmBooking').isDisabled(),true);
+  assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'true');
   await page.locator('#notes').fill('Bagagem de mao');
-  assert.equal(await page.locator('#confirmBooking').isDisabled(),true);
+  assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'true');
   await page.locator('#reviewBooking').click();
   await page.locator('#bookingReview').waitFor({state:'visible'});
-  assert.equal(await page.locator('#bookingSummary').innerText(),summary.replace('Observações: Nenhuma','Observações: Bagagem de mao'));
+  assert.equal(await page.locator('#bookingSummary').innerText(),summary.replace('Observações\nNenhuma','Observações\nBagagem de mao'));
   await page.locator('#editBooking').click();
   assert.equal(await page.locator('#notes').inputValue(),'Bagagem de mao');
    await page.locator('#reviewBooking').click();
    await page.locator('#bookingReviewHome').click();
+   await page.locator('#bookingView').waitFor({state:'visible'});
+   assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'false');
+   await page.locator('#bookingFormMenu').click();
    await page.locator('#homeView').waitFor({state:'visible'});
-  assert.equal(await page.locator('#confirmBooking').isDisabled(),true);
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
@@ -355,7 +360,7 @@ test('Painel do cliente: sete comandos, codigos e navegacao', {timeout:30000},as
   await page.locator('#accessClientAccount').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
-  assert.equal(await page.locator('#homeView .panel-title').innerText(),'PAINEL DO CLIENTE');
+  assert.equal(await page.locator('#homeView .panel-title').innerText(),'MEU MENU');
   assert.deepEqual(await page.locator('#homeView .panel-actions button').allTextContents(),['SOLICITAR RESERVA','VER SOLICITAÇÃO','ACOMPANHAR ATENDIMENTO','HISTÓRICO DE ATENDIMENTOS','MEU CADASTRO','SUPORTE AO CLIENTE','SAIR DO APP']);
   assert.equal(await page.locator('#homeView .panel-actions button').count(),7);
   assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
@@ -373,7 +378,7 @@ test('Painel do cliente: sete comandos, codigos e navegacao', {timeout:30000},as
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewReservationHistory').click();
   await page.locator('#historyView').waitFor({state:'visible'});
-  assert.equal(await page.locator('#historyClientCode').inputValue(),'PMC-0001');
+  assert.match(await page.locator('#historyLatestReservation').innerText(),/PMC-0001/);
   await page.locator('#historyBackToRegister').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewMyProfile').click();
@@ -383,7 +388,7 @@ test('Painel do cliente: sete comandos, codigos e navegacao', {timeout:30000},as
   assert.equal(await page.locator('#regName').getAttribute('readonly'),'');
   assert.equal(await page.locator('#regPassword').inputValue(),'');
   assert.equal(await page.locator('#confirmRegister').isDisabled(),true);
-  assert.equal(await page.locator('#registerViewLogout').innerText(),'PAINEL DO CLIENTE');
+  assert.equal(await page.locator('#registerViewLogout').innerText(),'MENU');
   await page.locator('#registerViewLogout').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#logout').click();
@@ -419,8 +424,8 @@ test('Tela 09: historico proprio, ordem, filtro, vazio e retorno ao painel', {ti
   await page.waitForFunction(()=>document.querySelector('#reservationHistory').textContent.includes('PMR-NEW'));
   await page.locator('#viewReservationHistory').click();
   await page.locator('#historyView').waitFor({state:'visible'});
-  assert.equal(await page.locator('#historyClientCode').inputValue(),'PMC-0001');
-  assert.equal(await page.locator('#historyBookingCode').inputValue(),'PMR-ACTIVE');
+  assert.match(await page.locator('#historyLatestReservation').innerText(),/PMC-0001/);
+  assert.match(await page.locator('#historyLatestReservation').innerText(),/PMR-ACTIVE/);
   const history=await page.locator('#reservationHistory').innerText();
   assert.match(history,/PMR-NEW/);assert.match(history,/PMR-OLD/);
   assert.ok(history.indexOf('PMR-NEW')<history.indexOf('PMR-OLD'));
@@ -446,8 +451,10 @@ test('Atendimento: acesso condicionado, resumo e saida', {timeout:30000},async()
   assert.equal(await page.locator('#homeView').isVisible(),false);
   for(const [key,value] of Object.entries({Client:'PMC-0001',Code:'PMR-000001',Pickup:'Origem',Destination:'Destino',Driver:'Motorista Teste',Vehicle:'Corolla',Plate:'ABC1D23',Color:'Preto'}))assert.equal(await page.locator('#serviceTracking'+key).innerText(),value);
   await page.locator('#serviceTrackingLogout').click();
-  await page.locator('#loginView').waitFor({state:'visible'});
-  assert.equal(await page.evaluate(()=>window.__pm.user),null);
+   await page.locator('#homeView').waitFor({state:'visible'});
+   assert.equal(await page.evaluate(()=>window.__pm.user.uid),'cliente01');
+   await page.locator('#logout').click();
+   await page.locator('#loginView').waitFor({state:'visible'});
   for(const status of ['pendente','cancelada','concluida','confirmada']){
    await page.evaluate(status=>{const r=window.__pm.records.reservas.r1;r.statusReserva=status;r.dataViagem={toDate:()=>new Date(Date.now()+86400000)}},status);
    await page.locator('#accessClientAccount').click();
@@ -481,7 +488,7 @@ test('Tela 06: status, data, dados condicionais e retorno ao painel', {timeout:3
    assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
    assert.equal(await page.locator('#trackingDriverDetails').isVisible(),visible);
    for(const [id,value] of Object.entries(fields))assert.equal(await page.locator('#'+id).inputValue(),visible?value:'');
-   assert.equal(await page.locator('#backToBooking').innerText(),'VOLTAR AO PAINEL');
+   assert.equal(await page.locator('#backToBooking').innerText(),'MENU');
    await page.locator('#backToBooking').click();
    await page.locator('#homeView').waitFor({state:'visible'});
   }
@@ -528,12 +535,15 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#increasePassengers').click();
   await page.locator('#reviewBooking').click();
   await page.locator('#bookingReview').waitFor({state:'visible'});
-  assert.match(await page.locator('#bookingSummary').innerText(),/Cliente: Cliente Teste/);
+  assert.match(await page.locator('#bookingSummary').innerText(),/Cliente\s+Cliente Teste/);
   await page.locator('#editBooking').click();
   await page.locator('#bookingView').waitFor({state:'visible'});
   await page.locator('#reviewBooking').click();
   await page.locator('#bookingReview').waitFor({state:'visible'});
-  await page.locator('#confirmBooking').click();
+  await page.locator('#bookingReviewHome').click();
+   await page.locator('#bookingView').waitFor({state:'visible'});
+   assert.equal(await page.locator('#submitBookingFromForm').getAttribute('aria-disabled'),'false');
+   await page.locator('#submitBookingFromForm').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
   assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
   for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
@@ -804,7 +814,7 @@ for(const [answer,status] of [['aceito','orcamento_aceito'],['recusado','orcamen
    assert.equal(await page.locator('#budgetCode').inputValue(),'PMR-000001');
    assert.match(await page.locator('#budgetValue').inputValue(),/70,00/);
    assert.match(await page.locator('#budgetDetails').innerText(),/Aeroporto/);
-   assert.deepEqual(await page.locator('#budgetDetails .actions button').allTextContents(),['ACEITAR','RECUSAR','PAINEL DO CLIENTE']);
+   assert.deepEqual(await page.locator('#budgetDetails .actions button').allTextContents(),['ACEITAR','RECUSAR','MENU']);
    await page.locator('#budgetBackToPanel').click();
    await page.locator('#homeView').waitFor({state:'visible'});
    assert.equal(await page.evaluate(()=>window.__pm.records.reservas.reserva001.statusReserva),'orcamento_pendente');
