@@ -93,6 +93,19 @@ test('Reserva com paradas: cliente autorizado cria e terceiros nao alteram',asyn
   await assertFails(updateDoc(ref,{paradas:['Rua Falsa, 1']}));
 });
 
+test('Motorista pendente com flag legada aprovado nao acessa reservas',async()=>{
+  await reset({driver:true,trips:true,status:'oferecida',assigned:true});
+  await seed(db=>setDoc(doc(db,'motoristas','motoristaB'),{
+    nomeMotorista:'Motorista Pendente',codigoMotorista:'PMM-002',
+    situacao:'pendente',aprovado:true,numeroMotorista:2
+  }));
+  const pendente=as('motoristaB');
+  await assertFails(getDoc(doc(pendente,'reservas','reservaA')));
+  await assertFails(updateDoc(doc(pendente,'reservas','reservaA'),{
+    statusReserva:'confirmada',dataAtualizacao:serverTimestamp()
+  }));
+});
+
 test('Motorista pendente nao se autoaprova',async()=>{
   await reset({driver:true});
   await assertFails(updateDoc(doc(as('motoristaB'),'motoristas','motoristaB'),{
