@@ -10,7 +10,7 @@ const env=await initializeTestEnvironment({
   firestore:{rules:fs.readFileSync(new URL('../firestore.rules',import.meta.url),'utf8')}
 });
 after(async()=>env.cleanup());
-const as=(uid,email=uid+'@example.invalid')=>env.authenticatedContext(uid,{email}).firestore();
+const as=(uid,email=uid==='fZ20p0WqT7QecSd2Oh2WWJatGFg1'?'portomobirs@gmail.com':uid+'@example.invalid')=>env.authenticatedContext(uid,{email}).firestore();
 const seed=async(fn)=>env.withSecurityRulesDisabled(ctx=>fn(ctx.firestore()));
 const trip=(uid='clienteA',status='pendente',driver='')=>({
   clienteUid:uid,codigoCliente:'PMC-0001',codigoReserva:'PMR-000001',nomeCliente:'Cliente Ficticio',
