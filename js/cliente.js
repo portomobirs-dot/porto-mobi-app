@@ -158,7 +158,7 @@ $('confirmRegister').onclick=async()=>{
   cred=await createUserWithEmailAndPassword(auth,val('regEmail'),$('regPassword').value);
   currentUser=cred.user;
   await createProfile(cred.user);
-  await loadHome();message('Cadastro realizado!');offerWhatsApp('5551990082119','Porto Mobi: novo cadastro de cliente '+(currentProfile?.codigoCliente||'')+'.');
+  await loadHome();message('Cadastro realizado!');
  }catch(err){
   // Evita deixar uma conta Authentication sem perfil quando a transacao falha.
   if(cred){try{await deleteUser(cred.user);currentUser=null}catch(_){/* pode requerer suporte da administracao */}}
@@ -210,7 +210,7 @@ async function submitBooking(){
   // A transação já foi confirmada: uma falha ao atualizar a tela não pode sugerir nova solicitação.
   invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();
   message('Solicitação '+assignedCode+' registrada! Aguarde a administração.');
-  offerWhatsApp('5551990082119','Porto Mobi: nova solicitação '+assignedCode+'.');
+  
   try{
    await loadHome();
    const saved=clientReservations.find(r=>r.codigoReserva===assignedCode);
@@ -240,7 +240,7 @@ async function respondBudget(event){
   await batch.commit();
   await loadHome();
   show('homeView');
-  message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');offerWhatsApp('5551990082119','Porto Mobi: orçamento da reserva '+r.codigoReserva+' '+response+'.');
+  message(response==='aceito'?'Orçamento aceito. Aguarde a designação do Motorista.':'Orçamento recusado. A administração poderá preparar uma nova proposta.');
  }catch(err){message('Não foi possível registrar sua resposta: '+errorText(err),true)}
  finally{button.disabled=false}
 }
