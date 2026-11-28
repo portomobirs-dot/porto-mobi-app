@@ -208,7 +208,15 @@ async function submitBooking(){
     codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),paradas:readStops(),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
-  invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();showTracking(clientReservations.find(r=>r.codigoReserva===assignedCode));message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');offerWhatsApp('5551990082119','Porto Mobi: nova solicitação '+assignedCode+'.');
+  // A transação já foi confirmada: uma falha ao atualizar a tela não pode sugerir nova solicitação.
+  invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();
+  message('Solicitação '+assignedCode+' registrada! Aguarde a administração.');
+  offerWhatsApp('5551990082119','Porto Mobi: nova solicitação '+assignedCode+'.');
+  try{
+   await loadHome();
+   const saved=clientReservations.find(r=>r.codigoReserva===assignedCode);
+   if(saved)showTracking(saved);
+  }catch(refreshError){console.warn('Reserva registrada, mas a atualização da tela falhou:',refreshError)}
  }catch(err){message('Não foi possível solicitar: '+errorText(err),true)}finally{submittingBooking=false;const valid=reviewedBooking!==null&&reviewedBooking===bookingSnapshot();$('confirmBooking').disabled=false;$('confirmBooking').setAttribute('aria-disabled',String(!valid))}
 }
 const completed=new Set(['concluida','recusada','cancelada','cancelado','encerrada','finalizada']);
