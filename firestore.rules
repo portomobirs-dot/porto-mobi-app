@@ -18,7 +18,7 @@ service cloud.firestore {
         get(adminPath(me())).data.codigo == 'PMA-001';
     }
     function activeDriver() {
-      return signedIn() && exists(driverPath(me())) && (get(driverPath(me())).data.get('situacao', '') == 'ativo' || get(driverPath(me())).data.get('aprovado', false) == true);
+      return signedIn() && exists(driverPath(me())) && (get(driverPath(me())).data.get('situacao', '') == 'ativo' || (get(driverPath(me())).data.get('situacao', '') == '' && get(driverPath(me())).data.get('aprovado', false) == true));
     }
     function code(prefix, n) {
       return prefix + '-' + (prefix == 'PMM' ? (n < 10 ? '00' : n < 100 ? '0' : '') : prefix == 'PMR' ? (n < 10 ? '00000' : n < 100 ? '0000' : n < 1000 ? '000' : n < 10000 ? '00' : n < 100000 ? '0' : '') : (n < 10 ? '000' : n < 100 ? '00' : n < 1000 ? '0' : '')) + string(n);
@@ -225,7 +225,8 @@ service cloud.firestore {
         request.resource.data.motoristaUid.size() > 0 &&
         exists(driverPath(request.resource.data.motoristaUid)) &&
         (get(driverPath(request.resource.data.motoristaUid)).data.get('situacao', '') == 'ativo' ||
-         get(driverPath(request.resource.data.motoristaUid)).data.get('aprovado', false) == true) &&
+         (get(driverPath(request.resource.data.motoristaUid)).data.get('situacao', '') == '' &&
+          get(driverPath(request.resource.data.motoristaUid)).data.get('aprovado', false) == true)) &&
         get(driverPath(request.resource.data.motoristaUid)).data.codigoMotorista == request.resource.data.codigoMotorista;
     }
     function correctQuote() {
