@@ -166,7 +166,7 @@ async function search(el,q,reverse=false,coords=null){
  const panel=el.nextElementSibling;panel.textContent='Buscando endereços...';
  // Estabelecimento conhecido: não converter a pesquisa em uma rua sem identificação.
  const normalized=q.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
- if(!reverse&&/^(shopping\\s+pontal|pontal\\s+shopping)$/.test(normalized)){
+ if(!reverse&&/^(shopping\s+pontal|pontal\s+shopping)$/.test(normalized)){
    panel.replaceChildren();
    const b=document.createElement('button');b.type='button';b.className='pm-address-option';
    const title=document.createElement('strong');title.textContent='Pontal Shopping';
