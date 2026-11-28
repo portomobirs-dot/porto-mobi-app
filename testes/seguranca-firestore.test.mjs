@@ -99,6 +99,7 @@ test('Motorista pendente com flag legada aprovado nao acessa reservas',async()=>
     nomeMotorista:'Motorista Pendente',codigoMotorista:'PMM-002',
     situacao:'pendente',aprovado:true,numeroMotorista:2
   }));
+  await seed(db=>updateDoc(doc(db,'reservas','reservaA'),{motoristaUid:'motoristaB',codigoMotorista:'PMM-002'}));
   const pendente=as('motoristaB');
   await assertFails(getDoc(doc(pendente,'reservas','reservaA')));
   await assertFails(updateDoc(doc(pendente,'reservas','reservaA'),{
