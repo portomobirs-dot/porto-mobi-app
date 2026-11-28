@@ -94,8 +94,8 @@ function openClientPanel(which){
 $('viewActiveReservations').onclick=async()=>{await loadHome();const r=clientReservations[0];if(r)showTracking(r);else openClientPanel('active')};
 $('viewReservationHistory').onclick=()=>{
  $('historyWelcome').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
- $('historyClientCode').value=currentProfile?.codigoCliente||'';
- $('historyBookingCode').value=$('lastBookingCode').value;
+ 
+ 
  $('historyLatestReservation').innerHTML=historyLatestHtml(clientReservations[0]);
  show('historyView');
  if(!history.state?.clientHistory)history.pushState({clientHistory:true},'');
