@@ -106,6 +106,24 @@ test('Motorista pendente com flag legada aprovado nao acessa reservas',async()=>
   }));
 });
 
+test('Cliente nao pode criar reserva em nome de outra pessoa nem sem contador',async()=>{
+  await reset({clients:true});
+  const cliente=as('clienteA');
+  const ref=doc(cliente,'reservas','reservaFraude01');
+  const dados={
+    numeroReserva:1,codigoReserva:'PMR-000001',clienteUid:'clienteB',
+    codigoCliente:'PMC-0001',nomeCliente:'Cliente Ficticio',telefoneCliente:'(51) 99999-1111',
+    codigoMotorista:'',motoristaUid:'',localEmbarque:'Rua Origem 100',
+    localDestino:'Rua Destino 200',dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),
+    dataSolicitacao:serverTimestamp(),passageiros:1,observacoes:'',statusReserva:'pendente',valorViagem:0
+  };
+  await assertFails(setDoc(ref,dados));
+  await assertFails(runTransaction(cliente,async t=>{
+    t.set(doc(cliente,'contadores','reservas'),{ultimo:1,ultimoReservaId:ref.id,ultimoClienteUid:'clienteA'});
+    t.set(ref,dados);
+  }));
+});
+
 test('Motorista pendente nao se autoaprova',async()=>{
   await reset({driver:true});
   await assertFails(updateDoc(doc(as('motoristaB'),'motoristas','motoristaB'),{
