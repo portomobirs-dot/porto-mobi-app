@@ -270,7 +270,7 @@ function historyLatestHtml(r){
  ['Motorista',r.nomeMotoristaDesignado||'A definir']
  ];
  const renderRow=([label,value])=>'<div class="history-data-line"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>';
- return rows.map((row,i)=>[0,2,6].includes(i)?'<div class="history-data-pair">'+renderRow(row)+renderRow(rows[i+1])+'</div>':[1,3,7].includes(i)?'':renderRow(row)).join('');
+ return rows.map((row,i)=>[0,2,6,9].includes(i)?'<div class="history-data-pair">'+renderRow(row)+renderRow(rows[i+1])+'</div>':[1,3,7,10].includes(i)?'':renderRow(row)).join('');
 }
 function reservationHtml(r, budgetOnly=false){
  const dt=r.dataViagem?.toDate?.();
