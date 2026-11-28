@@ -72,6 +72,27 @@ test('Administrador oferece e motorista antigo aprovado aceita e conclui',async(
   await assertFails(updateDoc(doc(driver,'reservas','reservaA'),{statusReserva:'pendente',dataAtualizacao:serverTimestamp()}));
 });
 
+test('Reserva com paradas: cliente autorizado cria e terceiros nao alteram',async()=>{
+  await reset({clients:true});
+  const cliente=as('clienteA'),outro=as('clienteB');
+  const ref=doc(cliente,'reservas','reservaParadas01');
+  await assertSucceeds(runTransaction(cliente,async t=>{
+    const counter=doc(cliente,'contadores','reservas');
+    t.set(counter,{ultimo:1,ultimoReservaId:ref.id,ultimoClienteUid:'clienteA'});
+    t.set(ref,{
+      numeroReserva:1,codigoReserva:'PMR-000001',clienteUid:'clienteA',codigoCliente:'PMC-0001',
+      nomeCliente:'Cliente Ficticio',telefoneCliente:'(51) 99999-1111',codigoMotorista:'',motoristaUid:'',
+      localEmbarque:'Rua Exemplo, 100, Porto Alegre',paradas:['Rua Parada, 200, Porto Alegre','Rua Parada, 300, Porto Alegre'],
+      localDestino:'Pontal Shopping, Porto Alegre',dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),
+      dataSolicitacao:serverTimestamp(),passageiros:2,observacoes:'',statusReserva:'pendente',valorViagem:0
+    });
+  }));
+  const saved=await assertSucceeds(getDoc(ref));
+  assert.equal(saved.data().paradas.length,2);
+  await assertFails(updateDoc(doc(outro,'reservas',ref.id),{paradas:['Rua Falsa, 1']}));
+  await assertFails(updateDoc(ref,{paradas:['Rua Falsa, 1']}));
+});
+
 test('Motorista pendente nao se autoaprova',async()=>{
   await reset({driver:true});
   await assertFails(updateDoc(doc(as('motoristaB'),'motoristas','motoristaB'),{
