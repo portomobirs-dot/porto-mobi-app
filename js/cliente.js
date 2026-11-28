@@ -52,7 +52,10 @@ $('showRegister').onclick=()=>{
  invalidateRegistrationReview();show('registerView');
 };
 let reviewedBooking=null,submittingBooking=false;
-const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value));
+
+const stopBox=document.createElement('div');const stopAdd=document.createElement('button');stopAdd.type='button';stopAdd.textContent='+ ADICIONAR PARADA';const stopList=document.createElement('div');stopBox.append(stopList,stopAdd);$('destination').before(stopBox);const readStops=()=>Array.from(stopList.querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);stopAdd.onclick=()=>{if(stopList.children.length>=3)return;const row=document.createElement('div'),i=document.createElement('input'),b=document.createElement('button');i.placeholder='Endereço da parada';i.required=true;i.minLength=3;i.maxLength=500;b.type='button';b.textContent='REMOVER PARADA';b.onclick=()=>{row.remove();stopAdd.disabled=false;};row.append(i,b);stopList.append(row);stopAdd.disabled=stopList.children.length>=3;};$('bookingForm').addEventListener('reset',()=>{stopList.replaceChildren();stopAdd.disabled=false;});
+const routeDestination=r=>[...(r.paradas||[]).map((p,i)=>'Parada '+(i+1)+': '+p),r.localDestino].join(' / ');
+const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value).concat(readStops()));
 function invalidateBookingReview(){reviewedBooking=null;$('confirmBooking').setAttribute('aria-disabled','true');}
 $('bookingForm').onsubmit=e=>e.preventDefault();
 $('bookingForm').addEventListener('input',invalidateBookingReview);
@@ -72,7 +75,7 @@ $('viewServiceTracking').onclick=async()=>{
  await loadHome();
  const r=eligibleService();if(!r)return;
  const d=r.dataViagem.toDate();
- const fields={Welcome:'Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!',Client:currentProfile?.codigoCliente,Code:r.codigoReserva,Date:serviceDate(d),Time:d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}),Pickup:r.localEmbarque,Destination:r.localDestino,Driver:r.nomeMotoristaDesignado,Vehicle:r.veiculoModelo,Plate:r.veiculoPlaca,Color:r.veiculoCor,Status:serviceStatus(r)};
+ const fields={Welcome:'Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!',Client:currentProfile?.codigoCliente,Code:r.codigoReserva,Date:serviceDate(d),Time:d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}),Pickup:r.localEmbarque,Destination:routeDestination(r),Driver:r.nomeMotoristaDesignado,Vehicle:r.veiculoModelo,Plate:r.veiculoPlaca,Color:r.veiculoCor,Status:serviceStatus(r)};
  for(const [key,value] of Object.entries(fields))$('serviceTracking'+key).textContent=value||'Não informado';
  show('serviceTrackingView');
  if(stopServiceTracking)stopServiceTracking();
@@ -182,7 +185,7 @@ $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
- $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')}\nCódigo da Reserva: PMR-000000\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
+ $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')}\nCódigo da Reserva: PMR-000000\nEmbarque: ${val('pickup')}\nParadas: ${readStops().join(' / ')||'Nenhuma'}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
  $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('confirmBooking').setAttribute('aria-disabled','false');show('bookingReview');
 };
 async function submitBooking(){
@@ -202,7 +205,7 @@ async function submitBooking(){
    if(next>999999)throw new Error('Limite de numeração atingido.');
    assignedCode=padCode('PMR',next);
    const data={numeroReserva:next,codigoReserva:assignedCode,clienteUid:currentUser.uid,codigoCliente:currentProfile.codigoCliente,nomeCliente:currentProfile.nomeCliente,telefoneCliente:currentProfile.telefoneCliente,
-    codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
+    codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),paradas:readStops(),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
   invalidateBookingReview();$('bookingForm').reset();setBookingCount(1);$('travelDate').min=todayLocal();$('bookingCreatedDate').value=todayLocal();await loadHome();showTracking(clientReservations.find(r=>r.codigoReserva===assignedCode));message('Solicitação '+assignedCode+' enviada! Aguarde a administração.');offerWhatsApp('5551990082119','Porto Mobi: nova solicitação '+assignedCode+'.');
@@ -248,7 +251,7 @@ function historyLatestHtml(r){
  ['Código da reserva',r.codigoReserva||'Não informado'],
  ['Data da solicitação',r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Não informada'],
  ['Local de embarque',r.localEmbarque||'Não informado'],
- ['Destino',r.localDestino||'Não informado'],
+ ['Destino',routeDestination(r)||'Não informado'],
  ['Data e horário da viagem',r.dataViagem?.toDate?.().toLocaleString('pt-BR')||'Não informado'],
  ['Passageiros',String(r.passageiros||1)],
  ['Observações',r.observacoes||'Nenhuma'],
@@ -262,7 +265,7 @@ function reservationHtml(r, budgetOnly=false){
  const dt=r.dataViagem?.toDate?.();
  const money=Number.isInteger(r.numeroOrcamento)&&r.numeroOrcamento>0&&Number.isFinite(r.valorViagem)?moneyBRL(r.valorViagem):'A definir';
  const response=r.statusReserva==='orcamento_pendente'?'<div class="actions"><button data-budget-response="aceito" data-id="'+esc(r.id)+'">ACEITAR</button><button class="secondary" data-budget-response="recusado" data-id="'+esc(r.id)+'">RECUSAR</button></div>':'';
- return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(r.localDestino)+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+(budgetOnly?'':'<br><b>Valor da Reserva:</b> '+money)+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+(budgetOnly?'<label for="budgetValue" class="budget-value-title">Valor da Reserva</label><input id="budgetValue" readonly value="'+esc(money)+'">':'')+response+'</div>';
+ return '<div class="item"><strong>'+esc(r.codigoReserva)+'</strong> — '+esc(r.statusReserva)+'<p class="small">'+esc(r.localEmbarque)+' → '+esc(routeDestination(r))+'<br>'+(dt?dt.toLocaleString('pt-BR'):'Data não informada')+'<br>Passageiros: '+esc(r.passageiros||1)+(budgetOnly?'':'<br><b>Valor da Reserva:</b> '+money)+'<br><b>Motorista Designado:</b> '+esc(r.nomeMotoristaDesignado||'A definir')+'</p>'+(budgetOnly?'<label for="budgetValue" class="budget-value-title">Valor da Reserva</label><input id="budgetValue" readonly value="'+esc(money)+'">':'')+response+'</div>';
 }
 function showBudget(r){
  $('budgetWelcome').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
@@ -278,7 +281,7 @@ function showTracking(r){
  if(r?.statusReserva==='orcamento_pendente')return showBudget(r);
  if(!r)return;
  const travelDate=r.dataViagem?.toDate?.();
- const summary={trackingClient:currentProfile?.nomeCliente||'Não informado',trackingClientCode:currentProfile?.codigoCliente||'Não informado',trackingCode:r.codigoReserva||'Não informado',trackingRequestDate:r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Aguardando registro',trackingPickup:r.localEmbarque||'Não informado',trackingDestination:r.localDestino||'Não informado',trackingTravelDate:travelDate?.toLocaleString('pt-BR')||'Não informado',trackingPassengers:String(r.passageiros||1),trackingNotes:r.observacoes||'Nenhuma',trackingPrice:r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir'};
+ const summary={trackingClient:currentProfile?.nomeCliente||'Não informado',trackingClientCode:currentProfile?.codigoCliente||'Não informado',trackingCode:r.codigoReserva||'Não informado',trackingRequestDate:r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Aguardando registro',trackingPickup:r.localEmbarque||'Não informado',trackingDestination:routeDestination(r)||'Não informado',trackingTravelDate:travelDate?.toLocaleString('pt-BR')||'Não informado',trackingPassengers:String(r.passageiros||1),trackingNotes:r.observacoes||'Nenhuma',trackingPrice:r.numeroOrcamento?moneyBRL(r.valorViagem):'A definir'};
  for(const [id,value] of Object.entries(summary))$(id).textContent=value;
  const status=r.statusReserva;
  const confirmed=['confirmada','em_andamento','concluida'].includes(status);
