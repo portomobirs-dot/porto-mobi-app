@@ -53,9 +53,8 @@ $('showRegister').onclick=()=>{
 };
 let reviewedBooking=null,submittingBooking=false;
 
-const stopBox=document.createElement('div');const stopAdd=document.createElement('button');stopAdd.type='button';stopAdd.textContent='+ ADICIONAR PARADA';const stopList=document.createElement('div');stopBox.append(stopList,stopAdd);document.querySelector('label[for="destination"]').before(stopBox);const readStops=()=>Array.from(stopList.querySelectorAll('input[data-stop-address]')).map(i=>i.value.trim()).filter(Boolean);stopAdd.onclick=()=>{if(stopList.children.length>=3)return;const row=document.createElement('div'),i=document.createElement('input'),b=document.createElement('button');i.placeholder='Endereço da parada';i.dataset.stopAddress='1';i.required=true;i.minLength=3;i.maxLength=500;b.type='button';b.textContent='REMOVER PARADA';b.onclick=()=>{row.remove();stopAdd.disabled=false;};const label=document.createElement('label');label.textContent='Parada '+(stopList.children.length+1);row.append(label,i,b);stopList.append(row);stopAdd.disabled=stopList.children.length>=3;};$('bookingForm').addEventListener('reset',()=>{stopList.replaceChildren();stopAdd.disabled=false;});
 const routeDestination=r=>[...(r.paradas||[]).map((p,i)=>'Parada '+(i+1)+': '+p),r.localDestino].join(' / ');
-const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value).concat(readStops()));
+const bookingSnapshot=()=>JSON.stringify(['bookingCreatedDate','pickup','destination','travelDate','travelTime','passengers','notes'].map(id=>$(id).value));
 function invalidateBookingReview(){reviewedBooking=null;$('confirmBooking').setAttribute('aria-disabled','true');}
 $('bookingForm').onsubmit=e=>e.preventDefault();
 $('bookingForm').addEventListener('input',invalidateBookingReview);
@@ -185,7 +184,7 @@ $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
- $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')}\nCódigo da Reserva: PMR-000000\nEmbarque: ${val('pickup')}\nParadas: ${readStops().join(' / ')||'Nenhuma'}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
+ $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')}\nCódigo da Reserva: PMR-000000\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
  $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('confirmBooking').setAttribute('aria-disabled','false');show('bookingReview');
 };
 async function submitBooking(){
@@ -205,7 +204,7 @@ async function submitBooking(){
    if(next>999999)throw new Error('Limite de numeração atingido.');
    assignedCode=padCode('PMR',next);
    const data={numeroReserva:next,codigoReserva:assignedCode,clienteUid:currentUser.uid,codigoCliente:currentProfile.codigoCliente,nomeCliente:currentProfile.nomeCliente,telefoneCliente:currentProfile.telefoneCliente,
-    codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),paradas:readStops(),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
+    codigoMotorista:'',motoristaUid:'',localEmbarque:val('pickup'),localDestino:val('destination'),dataViagem:Timestamp.fromDate(new Date(`${val('travelDate')}T${val('travelTime')}:00`)),dataSolicitacao:serverTimestamp(),passageiros:Number(val('passengers')),observacoes:val('notes'),statusReserva:'pendente',valorViagem:0};
    t.set(counter,{ultimo:next,ultimoReservaId:newRef.id,ultimoClienteUid:currentUser.uid});t.set(newRef,data);
   });
   // A transação já foi confirmada: uma falha ao atualizar a tela não pode sugerir nova solicitação.
