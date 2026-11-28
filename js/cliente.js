@@ -48,7 +48,7 @@ $('showRegister').onclick=()=>{
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=false;
  $('registerForm').reset();$('clientCodePreview').value='PMC-0000';$('regDate').value=todayLocal();
  $('reviewRegister').disabled=false;
- $('registerViewLogout').textContent='PAINEL DO CLIENTE';
+ $('registerViewLogout').textContent='MENU';
  invalidateRegistrationReview();show('registerView');
 };
 let reviewedBooking=null,submittingBooking=false;
@@ -111,7 +111,7 @@ $('viewMyProfile').onclick=()=>{
  $('regPassword').value='';$('regConfirm').value='';
  for(const id of ['regName','regPhone','regEmail','regPassword','regConfirm'])$(id).readOnly=true;
  $('reviewRegister').disabled=true;
- $('registerViewLogout').textContent='PAINEL DO CLIENTE';
+ $('registerViewLogout').textContent='MENU';
  show('registerView');
 };
 $('showBooking').onclick=()=>{
