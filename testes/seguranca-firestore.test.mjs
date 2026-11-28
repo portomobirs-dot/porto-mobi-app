@@ -164,7 +164,23 @@ test('Administrador aprova PMM-002 depois do contador legado PMM-001',async()=>{
   }));
 });
 
-test('Cliente 1 e cliente 40 podem cadastrar; cliente 41 nao pode',async()=>{
+test('Limite motorista: PMM-100 permitido e PMM-101 negado',async()=>{
+  for(const next of [100,101]){
+    await reset({driver:true});
+    await seed(db=>setDoc(doc(db,'contadores','motoristas'),{ultimo:next-1,ultimoUid:'motoristaA'}));
+    const db=as('fZ20p0WqT7QecSd2Oh2WWJatGFg1');
+    const tx=runTransaction(db,async t=>{
+      const ref=doc(db,'motoristas','motoristaB'),counter=doc(db,'contadores','motoristas');
+      const profile=await t.get(ref),count=await t.get(counter);
+      assert.equal(profile.data().situacao,'pendente');assert.equal(count.data().ultimo,next-1);
+      t.set(counter,{ultimo:next,ultimoUid:'motoristaB'});
+      t.update(ref,{situacao:'ativo',numeroMotorista:next,codigoMotorista:'PMM-'+next,dataAprovacao:serverTimestamp()});
+    });
+    if(next===100)await assertSucceeds(tx);else await assertFails(tx);
+  }
+});
+
+test('Cliente 1 e cliente 9999 podem cadastrar; cliente 10000 nao pode',async()=>{
   await reset();
   const db=as('clienteNovo','clienteNovo@example.invalid');
   await assertSucceeds(runTransaction(db,async t=>{
@@ -177,27 +193,27 @@ test('Cliente 1 e cliente 40 podem cadastrar; cliente 41 nao pode',async()=>{
   }));
 
   await reset();
-  await seed(db2=>setDoc(doc(db2,'contadores','clientes'),{ultimo:39,ultimoUid:'cliente39'}));
-  const forty=as('cliente40','cliente40@example.invalid');
+  await seed(db2=>setDoc(doc(db2,'contadores','clientes'),{ultimo:9998,ultimoUid:'cliente9998'}));
+  const forty=as('cliente9999','cliente9999@example.invalid');
   await assertSucceeds(runTransaction(forty,async t=>{
-    const counter=doc(forty,'contadores','clientes'),profile=doc(forty,'clientes','cliente40');
+    const counter=doc(forty,'contadores','clientes'),profile=doc(forty,'clientes','cliente9999');
     const c=await t.get(counter),p=await t.get(profile);
-    assert.equal(c.data().ultimo,39);assert.equal(p.exists(),false);
-    t.set(counter,{ultimo:40,ultimoUid:'cliente40'});
-    t.set(profile,{uid:'cliente40',numeroCliente:40,codigoCliente:'PMC-0040',nomeCliente:'Cliente Quarenta',
-      telefoneCliente:'(51) 99999-4321',email:'cliente40@example.invalid',dataCadastro:serverTimestamp()});
+    assert.equal(c.data().ultimo,9998);assert.equal(p.exists(),false);
+    t.set(counter,{ultimo:9999,ultimoUid:'cliente9999'});
+    t.set(profile,{uid:'cliente9999',numeroCliente:9999,codigoCliente:'PMC-9999',nomeCliente:'Cliente Quarenta',
+      telefoneCliente:'(51) 99999-4321',email:'cliente9999@example.invalid',dataCadastro:serverTimestamp()});
   }));
-  const saved=await getDoc(doc(forty,'clientes','cliente40'));
-  assert.equal(saved.data().codigoCliente,'PMC-0040');
+  const saved=await getDoc(doc(forty,'clientes','cliente9999'));
+  assert.equal(saved.data().codigoCliente,'PMC-9999');
 
-  const db41=as('cliente41','cliente41@example.invalid');
+  const db41=as('cliente10000','cliente10000@example.invalid');
   await assertFails(runTransaction(db41,async t=>{
-    const counter=doc(db41,'contadores','clientes'),profile=doc(db41,'clientes','cliente41');
+    const counter=doc(db41,'contadores','clientes'),profile=doc(db41,'clientes','cliente10000');
     const c=await t.get(counter),p=await t.get(profile);
-    assert.equal(c.data().ultimo,40);assert.equal(p.exists(),false);
-    t.set(counter,{ultimo:41,ultimoUid:'cliente41'});
-    t.set(profile,{uid:'cliente41',numeroCliente:41,codigoCliente:'PMC-0041',nomeCliente:'Cliente Quarenta e Um',
-      telefoneCliente:'(51) 99999-4333',email:'cliente41@example.invalid',dataCadastro:serverTimestamp()});
+    assert.equal(c.data().ultimo,9999);assert.equal(p.exists(),false);
+    t.set(counter,{ultimo:10000,ultimoUid:'cliente10000'});
+    t.set(profile,{uid:'cliente10000',numeroCliente:10000,codigoCliente:'PMC-10000',nomeCliente:'Cliente Quarenta e Um',
+      telefoneCliente:'(51) 99999-4333',email:'cliente10000@example.invalid',dataCadastro:serverTimestamp()});
   }));
 });
 
