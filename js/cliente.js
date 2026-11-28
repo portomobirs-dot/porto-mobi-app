@@ -86,7 +86,7 @@ $('viewServiceTracking').onclick=async()=>{
 $('viewClientSupport').onclick=()=>show('clientSupportView');
 $('clientSupportBack').onclick=()=>show('homeView');
 $('clientCompletedBack').onclick=()=>show('homeView');
-$('serviceTrackingLogout').onclick=()=> $('logout').click();
+$('serviceTrackingLogout').onclick=()=>{if(stopServiceTracking){stopServiceTracking();stopServiceTracking=null;}show('homeView');};
 function openClientPanel(which){
  $('activeBlock').classList.toggle('hidden',which!=='active');
 
