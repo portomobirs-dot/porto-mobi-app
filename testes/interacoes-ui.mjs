@@ -498,6 +498,8 @@ test('Tela 06: status, data, dados condicionais e retorno ao painel', {timeout:3
 
 test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:30000},async()=>{
  const {context,page,errors}=await pageFor('cliente.html');
+ page.setDefaultTimeout(5000);
+ page.setDefaultNavigationTimeout(5000);
  try{
   assert.match(await page.locator('#loginView').innerText(),/SEJA BEM VINDO!/);
   await page.locator('#showRegister').click();
@@ -521,9 +523,12 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
   await page.locator('#confirmRegister').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   assert.equal(await page.locator('#clientCode').inputValue(),'PMC-0001');
-  await page.locator('#pmWhatsAppQueue a').waitFor();
-  assert.match(await page.locator('#pmWhatsAppQueue a').getAttribute('href'),/wa\.me\/5551990082119/);
-  await page.locator('#pmWhatsAppQueue button').click();
+  // Notificacao de cadastro e automatica no servidor; nao depende de painel local.
+  // Verifica o documento persistido que alimenta a notificacao, sem enviar WhatsApp real.
+  const profile=await page.evaluate(()=>window.__pm.records.clientes[window.__pm.user.uid]);
+  assert.equal(profile.codigoCliente,'PMC-0001');
+  assert.equal(profile.nomeCliente,'Cliente Teste');
+  console.log('Teste 10: cadastro persistido; entrega WhatsApp requer teste separado do servidor.');
   await page.locator('#showBooking').click();
   await page.locator('#bookingView').waitFor({state:'visible'});
   assert.equal(await page.locator('#bookingCodePreview').inputValue(),'PMR-000000');
@@ -546,18 +551,24 @@ test('Cliente: cadastro, revisao, reserva com codigo PMR e historico', {timeout:
    await page.locator('#submitBookingFromForm').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
   assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
-  for(const b of await page.locator('#pmWhatsAppQueue button').all())await b.click();
-  await page.goBack();
+  const saved=await page.evaluate(()=>Object.values(window.__pm.records.reservas).find(r=>r.codigoReserva==='PMR-000001'));
+  assert.equal(saved.codigoCliente,'PMC-0001');
+  assert.equal(saved.localEmbarque,'Avenida Exemplo, 100');
+  assert.equal(saved.localDestino,'Aeroporto');
+  assert.equal(saved.statusReserva,'pendente');
+  console.log('Teste 10: reserva persistida.');
+  await page.locator('#backToBooking').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.getElementById('lastBookingCode').value==='PMR-000001');
   assert.equal(await page.locator('#lastBookingCode').inputValue(),'PMR-000001');
   await page.locator('#viewActiveReservations').click();
   await page.locator('#bookingTracking').waitFor({state:'visible'});
   assert.equal(await page.locator('#trackingCode').innerText(),'PMR-000001');
-  await page.goBack();
+  await page.locator('#backToBooking').click();
   await page.locator('#homeView').waitFor({state:'visible'});
   await page.locator('#viewReservationHistory').click();
   await page.locator('#historyView').waitFor({state:'visible'});
+  assert.match(await page.locator('#historyLatestReservation').innerText(),/PMR-000001/);
   assert.deepEqual(errors,[]);
  }finally{await context.close()}
 });
