@@ -283,7 +283,7 @@ function showBudget(r){
  $('budgetCode').value=r.codigoReserva||'';
  $('budgetDetails').innerHTML=reservationHtml(r,true);
  const actions=$('budgetDetails').querySelector('.actions');
- if(actions){const b=document.createElement('button');b.type='button';b.id='budgetBackToPanel';b.textContent='PAINEL DO CLIENTE';actions.append(b)}
+ if(actions){const b=document.createElement('button');b.type='button';b.id='budgetBackToPanel';b.textContent='MENU';actions.append(b)}
  show('budgetView');
  if(!history.state?.bookingTracking)history.pushState({bookingTracking:true},'');
 }
