@@ -1,0 +1,24 @@
+name: Validar aplicativo Porto Mobi
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Verificar sintaxe e compatibilidade Expo
+        run: |
+          node -e "const fs=require('fs');const p=require('./package.json');const c=require('./app.json');if(!p.dependencies['react-native-webview']||!c.expo.android.package)process.exit(1);if(!fs.existsSync('App.js'))process.exit(1)"
+          npx expo-doctor
