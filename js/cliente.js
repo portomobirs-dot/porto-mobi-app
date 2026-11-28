@@ -187,8 +187,15 @@ $('reviewBooking').onclick=()=>{
  if(!$('bookingForm').reportValidity())return;
  const when=new Date(`${val('travelDate')}T${val('travelTime')}:00`);
  if(!Number.isFinite(when.getTime())||when.getTime()<=Date.now())return message('Escolha data e horário futuros.',true);
- $('bookingSummary').textContent=`Cliente: ${currentProfile?.nomeCliente||''}\nCódigo do Cliente: ${currentProfile?.codigoCliente||''}\nData da Reserva: ${val('bookingCreatedDate')}\nCódigo da Reserva: PMR-000000\nEmbarque: ${val('pickup')}\nDestino: ${val('destination')}\nData: ${val('travelDate')}\nHorário: ${val('travelTime')}\nPassageiros: ${val('passengers')}\nObservações: ${val('notes')||'Nenhuma'}`;
- $('bookingSummary').style.whiteSpace='pre-line';reviewedBooking=bookingSnapshot();$('submitBookingFromForm').setAttribute('aria-disabled','false');show('bookingReview');
+ const summary=$('bookingSummary');summary.replaceChildren();
+ const field=(label,value)=>{const el=document.createElement('div');el.className='review-field';const l=document.createElement('span'),v=document.createElement('strong');l.textContent=label;v.textContent=value;el.append(l,v);return el;};
+ const row=(fields)=>{const el=document.createElement('div');el.className='review-row'+(fields.length===3?' three':'');fields.forEach(([l,v])=>el.append(field(l,v)));summary.append(el);};
+ row([['Cliente',currentProfile?.nomeCliente||''],['Meu código',currentProfile?.codigoCliente||'']]);
+ row([['Código da reserva','PMR-000000'],['Data da reserva',val('bookingCreatedDate')]]);
+ summary.append(field('Embarque',val('pickup')),field('Destino',val('destination')));
+ row([['Data',val('travelDate')],['Horário',val('travelTime')],['Passageiros',val('passengers')]]);
+ summary.append(field('Observações',val('notes')||'Nenhuma'));
+ reviewedBooking=bookingSnapshot();$('submitBookingFromForm').setAttribute('aria-disabled','false');show('bookingReview');
 };
 async function submitBooking(fromForm=false){
  if(submittingBooking||$(fromForm?'bookingView':'bookingReview').classList.contains('hidden'))return;
