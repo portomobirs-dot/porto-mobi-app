@@ -34,7 +34,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['ultimo','ultimoUid']) &&
         request.resource.data.ultimoUid == me() &&
         request.resource.data.ultimo is int &&
-        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 40 &&
+        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 9999 &&
         !exists(clientPath(me())) &&
         getAfter(clientPath(me())).data.numeroCliente == request.resource.data.ultimo &&
         getAfter(clientPath(me())).data.uid == me();
@@ -58,7 +58,7 @@ service cloud.firestore {
         request.resource.data.keys().hasAll(['ultimo','ultimoUid']) &&
         request.resource.data.keys().hasOnly(['ultimo','ultimoUid']) &&
         request.resource.data.ultimo is int &&
-        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 3 &&
+        request.resource.data.ultimo >= 1 && request.resource.data.ultimo <= 100 &&
         request.resource.data.ultimoUid is string &&
         get(driverPath(request.resource.data.ultimoUid)).data.situacao == 'pendente' &&
         getAfter(driverPath(request.resource.data.ultimoUid)).data.situacao == 'ativo' &&
@@ -72,7 +72,7 @@ service cloud.firestore {
         c.uid == uid && c.origemCadastro == 'manual' && c.email == '' &&
         c.telefoneCliente is string && uid == 'manual-' + c.telefoneCliente &&
         c.nomeCliente is string && c.nomeCliente.size() >= 3 && c.nomeCliente.size() <= 150 &&
-        c.numeroCliente is int && c.numeroCliente >= 1 && c.numeroCliente <= 40 &&
+        c.numeroCliente is int && c.numeroCliente >= 1 && c.numeroCliente <= 9999 &&
         c.codigoCliente == code('PMC',c.numeroCliente) && c.dataCadastro == request.time &&
         nextCount('clientes',c.numeroCliente) &&
         getAfter(counterPath('clientes')).data.ultimo == c.numeroCliente &&
@@ -83,7 +83,7 @@ service cloud.firestore {
       return isAdmin() && (
         (kind == 'clientes' && c.keys().hasOnly(['ultimo','ultimoUid']) &&
          c.ultimoUid is string && c.ultimoUid.matches('manual-[0-9]{10,13}') &&
-         c.ultimo is int && c.ultimo >= 1 && c.ultimo <= 40 &&
+         c.ultimo is int && c.ultimo >= 1 && c.ultimo <= 9999 &&
          !exists(clientPath(c.ultimoUid)) &&
          getAfter(clientPath(c.ultimoUid)).data.numeroCliente == c.ultimo &&
          getAfter(clientPath(c.ultimoUid)).data.origemCadastro == 'manual') ||
@@ -149,7 +149,7 @@ service cloud.firestore {
         request.resource.data.uid == me() &&
         request.resource.data.email == request.auth.token.email &&
         request.resource.data.numeroCliente is int &&
-        request.resource.data.numeroCliente >= 1 && request.resource.data.numeroCliente <= 40 &&
+        request.resource.data.numeroCliente >= 1 && request.resource.data.numeroCliente <= 9999 &&
         request.resource.data.codigoCliente == code('PMC',request.resource.data.numeroCliente) &&
         request.resource.data.nomeCliente is string &&
         request.resource.data.nomeCliente.size() >= 3 && request.resource.data.nomeCliente.size() <= 150 &&
@@ -182,7 +182,7 @@ service cloud.firestore {
         resource.data.situacao == 'pendente' && request.resource.data.situacao == 'ativo' &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['situacao','numeroMotorista','codigoMotorista','dataAprovacao']) &&
         request.resource.data.numeroMotorista is int &&
-        request.resource.data.numeroMotorista >= 1 && request.resource.data.numeroMotorista <= 3 &&
+        request.resource.data.numeroMotorista >= 1 && request.resource.data.numeroMotorista <= 100 &&
         request.resource.data.codigoMotorista == code('PMM',request.resource.data.numeroMotorista) &&
         request.resource.data.dataAprovacao == request.time &&
         nextCount('motoristas',request.resource.data.numeroMotorista) &&
