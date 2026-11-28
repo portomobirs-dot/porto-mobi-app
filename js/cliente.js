@@ -257,9 +257,9 @@ function historyLatestHtml(r){
  const labels={pendente:'Aguardando confirmação',orcamento_pendente:'Orçamento aguardando resposta',orcamento_aceito:'Orçamento aceito',orcamento_recusado:'Orçamento recusado',oferecida:'Aguardando motorista',confirmada:'Confirmada',em_andamento:'Em andamento',concluida:'Concluída',recusada:'Recusada',cancelada:'Cancelada'};
  const rows=[
  ['Cliente',currentProfile?.nomeCliente||'Não informado'],
- ['Código do cliente',currentProfile?.codigoCliente||'Não informado'],
- ['Código da reserva',r.codigoReserva||'Não informado'],
- ['Data da solicitação',r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Não informada'],
+ ['Código Cliente',currentProfile?.codigoCliente||'Não informado'],
+ ['Reserva Nº',r.codigoReserva||'Não informado'],
+ ['Solicitação em',r.dataSolicitacao?.toDate?.().toLocaleDateString('pt-BR')||'Não informada'],
  ['Local de embarque',r.localEmbarque||'Não informado'],
  ['Destino',routeDestination(r)||'Não informado'],
  ['Data e horário da viagem',r.dataViagem?.toDate?.().toLocaleString('pt-BR')||'Não informado'],
@@ -269,7 +269,8 @@ function historyLatestHtml(r){
  ['Status da reserva',labels[status]||status],
  ['Motorista',r.nomeMotoristaDesignado||'A definir']
  ];
- return rows.map(([label,value])=>'<div class="history-data-line"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join('');
+ const renderRow=([label,value])=>'<div class="history-data-line"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>';
+ return rows.map((row,i)=>[0,2,6].includes(i)?'<div class="history-data-pair">'+renderRow(row)+renderRow(rows[i+1])+'</div>':[1,3,7].includes(i)?'':renderRow(row)).join('');
 }
 function reservationHtml(r, budgetOnly=false){
  const dt=r.dataViagem?.toDate?.();
