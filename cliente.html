@@ -197,4 +197,8 @@ document.addEventListener('click',e=>{if(!cities.has(e.target)&&!e.target.closes
 #bookingView .pm-address-results:not(:empty){border:1px solid #D4AF37;border-radius:8px;margin:4px 0 8px;padding:6px;color:#eee;max-height:260px;overflow:auto;font-size:14px}
 #bookingView .pm-address-option{display:block!important;width:100%!important;height:auto!important;min-height:44px!important;text-align:left!important;background:#161616!important;color:#fff!important;border-bottom:1px solid #65542d!important;margin:0!important;padding:8px!important;white-space:normal!important}
 #bookingView .pm-address-location{font-size:12px!important;min-height:36px!important;margin:4px 0!important}
+
+html body[data-pm-area="cliente"] main #registerView#registerView .register-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html body[data-pm-area="cliente"] main #registerView#registerView .register-actions > button{width:100%!important;min-width:0!important;grid-column:auto!important;margin:0!important}
+html body[data-pm-area="cliente"] main #registerView#registerView .register-actions > #registerViewLogout{grid-column:1 / -1!important}
 </style></body></html>
