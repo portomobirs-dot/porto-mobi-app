@@ -80,7 +80,7 @@ $('viewServiceTracking').onclick=async()=>{
  for(const [key,value] of Object.entries(fields))$('serviceTracking'+key).textContent=value||'Não informado';
  show('serviceTrackingView');
  if(stopServiceTracking)stopServiceTracking();
- stopServiceTracking=onSnapshot(doc(db,'reservas',r.id),snap=>{if(snap.exists()&&snap.data().clienteUid===currentUser?.uid){const latest=snap.data();if(latest.statusReserva==='concluida'){$('clientCompletedCode').textContent='Reserva: '+(latest.codigoReserva||'');show('clientCompletedView');}else $('serviceTrackingStatus').textContent=serviceStatus(latest);}},()=>message('Não foi possível atualizar o acompanhamento.',true));
+ stopServiceTracking=onSnapshot(doc(db,'reservas',r.id),snap=>{if(snap.exists()&&snap.data().clienteUid===currentUser?.uid){const latest=snap.data();if(latest.statusReserva==='concluida'){$('clientCompletedCode').textContent='Reserva Nº '+(latest.codigoReserva||'');show('clientCompletedView');}else $('serviceTrackingStatus').textContent=serviceStatus(latest);}},()=>message('Não foi possível atualizar o acompanhamento.',true));
  if(!history.state?.serviceTracking)history.pushState({serviceTracking:true},'');
 };
 $('viewClientSupport').onclick=()=>show('clientSupportView');
