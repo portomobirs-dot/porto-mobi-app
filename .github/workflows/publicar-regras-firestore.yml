@@ -1,5 +1,15 @@
 name: Publicar regras Firestore (após testes)
 on:
+  push:
+    branches:
+      - homologacao-motorista
+    paths:
+      - firestore.rules
+      - firestore.indexes.json
+      - firebase.json
+      - package.json
+      - testes/seguranca-firestore.test.mjs
+      - .github/workflows/publicar-regras-firestore.yml
   workflow_dispatch:
 permissions:
   contents: read
