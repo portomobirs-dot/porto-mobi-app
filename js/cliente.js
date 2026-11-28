@@ -118,6 +118,7 @@ $('showBooking').onclick=()=>{
  invalidateBookingReview();
  $('bookingCreatedDate').value=todayLocal();
  $('bookingGreeting').textContent='Olá, '+(currentProfile?.nomeCliente||'Cliente')+'!';
+ $('bookingClientCode').value=currentProfile?.codigoCliente||'PMC-0000';
  show('bookingView');
 };
 $('regPhone').addEventListener('input',e=>{e.target.value=formatPhone(e.target.value)});
