@@ -83,7 +83,7 @@ $('viewServiceTracking').onclick=async()=>{
  stopServiceTracking=onSnapshot(doc(db,'reservas',r.id),snap=>{if(snap.exists()&&snap.data().clienteUid===currentUser?.uid){const latest=snap.data();if(latest.statusReserva==='concluida'){$('clientCompletedCode').textContent='Reserva Nº '+(latest.codigoReserva||'');show('clientCompletedView');}else $('serviceTrackingStatus').textContent=serviceStatus(latest);}},()=>message('Não foi possível atualizar o acompanhamento.',true));
  if(!history.state?.serviceTracking)history.pushState({serviceTracking:true},'');
 };
-$('viewClientSupport').onclick=()=>show('clientSupportView');
+
 $('clientSupportBack').onclick=()=>show('homeView');
 $('clientCompletedBack').onclick=()=>show('homeView');
 $('serviceTrackingLogout').onclick=()=>{if(stopServiceTracking){stopServiceTracking();stopServiceTracking=null;}show('homeView');};
@@ -330,4 +330,4 @@ onAuthStateChanged(auth,async user=>{
  if(!user){currentProfile=null;clientReservations=[];$('viewServiceTracking').disabled=true;show('loginView');return}
  await loadHome();
 });
-$('viewClientSupport').onclick=()=>{show('clientSupportView');const screen=$('clientSupportView');const p=screen.querySelector('p');p.replaceChildren();const a=document.createElement('a');a.href='https://wa.me/5551990082119';a.target='_blank';a.rel='noopener noreferrer';a.textContent='CONTATAR SUPORTE PELO WHATSAPP';p.append(a);};
+$('viewClientSupport').onclick=()=>{const nome=currentProfile?.nomeCliente||'Não informado';const codigo=currentProfile?.codigoCliente||'Não informado';const msg=['Olá, Porto Mobi Executivo!','','Gostaria de solicitar suporte.','','Cliente: '+nome,'Código do Cliente: '+codigo,'','Como podem me ajudar:'].join('\n');$('clientSupportContact').href='https://wa.me/5551990082119?text='+encodeURIComponent(msg);show('clientSupportView');};
