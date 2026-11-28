@@ -1,0 +1,41 @@
+name: Publicar regras Firestore (após testes)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: firestore-rules-producao
+  cancel-in-progress: false
+jobs:
+  validar-e-publicar:
+    if: github.ref == 'refs/heads/homologacao-motorista'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+      - name: Validar regras no emulador
+        run: npm run test:security
+      - name: Configurar credencial temporaria
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PORTO_MOBI_HOMOLOGACAO }}
+        run: |
+          set -euo pipefail
+          test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo 'Credencial Firebase nao configurada'; exit 1; }
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
+      - name: Publicar SOMENTE regras do Firestore
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: npx --yes firebase-tools@15.32.0 deploy --only firestore:rules --project porto-mobi---executivo --non-interactive
+      - name: Apagar credencial temporaria
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-service-account.json"
