@@ -24,7 +24,7 @@ export function formatPhone(input){let n=phoneDigits(input).slice(0,11);return n
 export const stamp=x=>x?.toDate?.()?.toLocaleString('pt-BR')||'Não informada';
 export function errorText(err){
   const c=err?.code||'';
-  if(c === 'limite-clientes')return 'Limite de 40 clientes atingido. Entre em contato com a administração.';
+  if(c === 'limite-clientes')return 'Limite de 9.999 clientes atingido. Entre em contato com a administração.';
   if(c.includes('permission-denied'))return 'Acesso negado pelas regras do Firestore. Não altere as regras sem testá-las.';
   if(c.includes('email-already-in-use'))return 'E-mail já cadastrado.';
   if(c.includes('weak-password'))return 'Senha inválida: use pelo menos 6 caracteres.';
