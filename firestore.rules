@@ -99,7 +99,7 @@ service cloud.firestore {
     function manualTripCreate(id) {
       let r = request.resource.data;
       return isAdmin() &&
-        r.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','nomeMotoristaDesignado','localEmbarque','localDestino','dataViagem','dataSolicitacao','dataAtualizacao','passageiros','observacoes','statusReserva','valorViagem','numeroOrcamento','origemReserva','tempoPercursoMin','intervaloDeslocamentoMin']) &&
+        r.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','nomeMotoristaDesignado','localEmbarque','localDestino','paradas','dataViagem','dataSolicitacao','dataAtualizacao','passageiros','observacoes','statusReserva','valorViagem','numeroOrcamento','origemReserva','tempoPercursoMin','intervaloDeslocamentoMin']) &&
         r.origemReserva == 'manual' && r.clienteUid is string &&
         r.codigoCliente == getAfter(clientPath(r.clienteUid)).data.codigoCliente &&
         r.nomeCliente is string && r.nomeCliente.size() >= 3 && r.nomeCliente.size() <= 150 &&
@@ -107,7 +107,7 @@ service cloud.firestore {
         r.numeroReserva is int && r.numeroReserva >= 1 && r.numeroReserva <= 999999 &&
         r.codigoReserva == code('PMR',r.numeroReserva) &&
         r.localEmbarque is string && r.localEmbarque.size() >= 3 && r.localEmbarque.size() <= 500 &&
-        r.localDestino is string && r.localDestino.size() >= 3 && r.localDestino.size() <= 500 &&
+        (!('paradas' in r) || (r.paradas is list && r.paradas.size() <= 3 && (r.paradas.size() <= 0 || (r.paradas[0] is string && r.paradas[0].size() >= 3 && r.paradas[0].size() <= 500)) && (r.paradas.size() <= 1 || (r.paradas[1] is string && r.paradas[1].size() >= 3 && r.paradas[1].size() <= 500)) && (r.paradas.size() <= 2 || (r.paradas[2] is string && r.paradas[2].size() >= 3 && r.paradas[2].size() <= 500)))) && r.localDestino is string && r.localDestino.size() >= 3 && r.localDestino.size() <= 500 &&
         r.passageiros is int && r.passageiros >= 1 && r.passageiros <= 4 &&
         r.observacoes is string && r.observacoes.size() <= 2000 &&
         r.dataViagem is timestamp && r.dataViagem > request.time &&
@@ -199,7 +199,7 @@ service cloud.firestore {
     function clientTripCreate(id) {
       return signedIn() && exists(clientPath(me())) &&
         request.resource.data.keys().hasAll(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','dataViagem','dataSolicitacao','passageiros','observacoes','statusReserva','valorViagem']) &&
-        request.resource.data.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','dataViagem','dataSolicitacao','passageiros','observacoes','statusReserva','valorViagem']) &&
+        request.resource.data.keys().hasOnly(['numeroReserva','codigoReserva','clienteUid','codigoCliente','nomeCliente','telefoneCliente','codigoMotorista','motoristaUid','localEmbarque','localDestino','paradas','dataViagem','dataSolicitacao','passageiros','observacoes','statusReserva','valorViagem']) &&
         request.resource.data.clienteUid == me() &&
         request.resource.data.codigoCliente == get(clientPath(me())).data.codigoCliente &&
         request.resource.data.nomeCliente == get(clientPath(me())).data.nomeCliente &&
@@ -209,7 +209,7 @@ service cloud.firestore {
         request.resource.data.codigoReserva == code('PMR',request.resource.data.numeroReserva) &&
         request.resource.data.codigoMotorista == '' && request.resource.data.motoristaUid == '' &&
         request.resource.data.localEmbarque is string && request.resource.data.localEmbarque.size() >= 3 && request.resource.data.localEmbarque.size() <= 500 &&
-        request.resource.data.localDestino is string && request.resource.data.localDestino.size() >= 3 && request.resource.data.localDestino.size() <= 500 &&
+        (!('paradas' in request.resource.data) || (request.resource.data.paradas is list && request.resource.data.paradas.size() <= 3 && (request.resource.data.paradas.size() <= 0 || (request.resource.data.paradas[0] is string && request.resource.data.paradas[0].size() >= 3 && request.resource.data.paradas[0].size() <= 500)) && (request.resource.data.paradas.size() <= 1 || (request.resource.data.paradas[1] is string && request.resource.data.paradas[1].size() >= 3 && request.resource.data.paradas[1].size() <= 500)) && (request.resource.data.paradas.size() <= 2 || (request.resource.data.paradas[2] is string && request.resource.data.paradas[2].size() >= 3 && request.resource.data.paradas[2].size() <= 500)))) && request.resource.data.localDestino is string && request.resource.data.localDestino.size() >= 3 && request.resource.data.localDestino.size() <= 500 &&
         request.resource.data.passageiros is int && request.resource.data.passageiros >= 1 && request.resource.data.passageiros <= 8 &&
         request.resource.data.observacoes is string && request.resource.data.observacoes.size() <= 2000 &&
         request.resource.data.dataViagem is timestamp && request.resource.data.dataViagem > request.time &&
