@@ -103,10 +103,10 @@ function renderTrips(rows){
   const action=history?'':r.statusReserva==='oferecida'?`<div class="actions"><button data-action="accept" data-id="${esc(r.id)}">ACEITAR</button><button class="danger" data-action="reject" data-id="${esc(r.id)}">RECUSAR</button></div>`:
    r.statusReserva==='confirmada'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento da Solicitação</button></div>`:
    r.statusReserva==='em_andamento'?`<div class="actions"><button data-action="open" data-id="${esc(r.id)}">Visualizar Atendimento em Andamento</button></div>`:'';
-  return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
+  return `<article class="item"><strong>${esc(r.codigoReserva)} — ${esc(r.statusReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Telefone: ${esc(r.telefoneCliente)}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(routeDestination(r))}<br>Viagem: ${esc(stamp(r.dataViagem))}<br>Passageiros: ${esc(r.passageiros||1)}</p>${action}</article>`;
  };
  $('activeReservations').innerHTML=active.length?active.map(r=>html(r)).join(''):'<p>Nenhuma corrida atribuída.</p>';
- $('historyReservations').innerHTML=hist.length?hist.map(r=>`<article class="item"><strong>Solicitação: ${esc(r.codigoReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Data e horário: ${esc(stamp(r.dataViagem))}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(r.localDestino)}<br>Passageiros: ${esc(r.passageiros||1)}</p><p>${esc(({concluida:"Atendimento concluído",recusada:"Solicitação recusada",cancelada:"Solicitação cancelada"})[r.statusReserva]||r.statusReserva)}</p></article>`).join(''):'<p>Histórico vazio.</p>';
+ $('historyReservations').innerHTML=hist.length?hist.map(r=>`<article class="item"><strong>Solicitação: ${esc(r.codigoReserva)}</strong><p>Cliente: ${esc(r.nomeCliente)}<br>Data e horário: ${esc(stamp(r.dataViagem))}<br>Embarque: ${esc(r.localEmbarque)}<br>Destino: ${esc(routeDestination(r))}<br>Passageiros: ${esc(r.passageiros||1)}</p><p>${esc(({concluida:"Atendimento concluído",recusada:"Solicitação recusada",cancelada:"Solicitação cancelada"})[r.statusReserva]||r.statusReserva)}</p></article>`).join(''):'<p>Histórico vazio.</p>';
  if(serviceId && !$('reservationView').classList.contains('hidden'))renderReservation();
  if(serviceId && !$('serviceView').classList.contains('hidden'))renderService();
 }
@@ -223,7 +223,7 @@ function whatsappClient(r,text){
 }
 $('serviceStart').onclick=async()=>{
  const r=selectedService();
- if(!isApproved()||!r)return;if(!String(r.localDestino||'').trim())return message('Endereço de destino não informado.',true);if(r.statusReserva==='em_andamento'){window.open(maps(r.localDestino),'_blank','noopener');return}if(r.statusReserva!=='confirmada')return;
+ if(!isApproved()||!r)return;if(!String(r.localDestino||'').trim())return message('Endereço de destino não informado.',true);if(r.statusReserva==='em_andamento'){window.open(tripMaps(r),'_blank','noopener');return}if(r.statusReserva!=='confirmada')return;
  if(!confirm('Iniciar atendimento da reserva '+r.codigoReserva+' e abrir GPS até o destino?'))return;
  const b=$('serviceStart');b.disabled=true;
  // A aba vazia é aberta no clique do usuário; só recebe a rota após gravar no Firestore.
@@ -231,8 +231,8 @@ $('serviceStart').onclick=async()=>{
  try{
   await updateDoc(doc(db,'reservas',r.id),{statusReserva:'em_andamento',dataAtualizacao:serverTimestamp()});
   message('Atendimento iniciado. Abrindo rota até o destino.');
-  if(tab&&!tab.closed)tab.location.replace(maps(r.localDestino));
-  else window.location.assign(maps(r.localDestino));
+  if(tab&&!tab.closed)tab.location.replace(tripMaps(r));
+  else window.location.assign(tripMaps(r));
  }catch(err){if(tab&&!tab.closed)tab.close();message('Não foi possível iniciar atendimento: '+errorText(err),true)}
  finally{b.disabled=false}
 };
@@ -255,9 +255,12 @@ for(const id of ['completedPanel','agendaPanel','supportPanel'])$(id).onclick=re
 $('driverPanelAgenda').onclick=()=>{
  if(!isApproved())return;
  const rows=driverTrips.filter(r=>r.statusReserva==='confirmada'&&(r.dataViagem?.seconds||0)*1000>=Date.now()).sort((a,b)=>a.dataViagem.seconds-b.dataViagem.seconds);
- $('agendaList').innerHTML=rows.length?rows.map(r=>'<article class="item"><strong>'+esc(stamp(r.dataViagem))+'</strong><p>Solicitação: '+esc(r.codigoReserva)+'<br>Cliente: '+esc(r.nomeCliente)+'<br>Embarque: '+esc(r.localEmbarque)+'<br>Destino: '+esc(r.localDestino)+'</p></article>').join(''):'<p>Nenhum próximo atendimento confirmado.</p>';
+ $('agendaList').innerHTML=rows.length?rows.map(r=>'<article class="item"><strong>'+esc(stamp(r.dataViagem))+'</strong><p>Solicitação: '+esc(r.codigoReserva)+'<br>Cliente: '+esc(r.nomeCliente)+'<br>Embarque: '+esc(r.localEmbarque)+'<br>Destino: '+esc(routeDestination(r))+'</p></article>').join(''):'<p>Nenhum próximo atendimento confirmado.</p>';
  show('agendaView');
 };
 $('driverPanelSupport').onclick=()=>{$('supportInfo').textContent='';show('supportView')};
 for(const id of ['supportContact','supportDelay','supportIssue'])$(id).onclick=()=>{$('supportInfo').textContent='Canal de suporte ainda não configurado. Contate a administração pelo canal habitual.'};
 for(const id of ['supportContact','supportDelay','supportIssue'])$(id).onclick=()=>offerWhatsApp('51990082119','Porto Mobi: preciso de suporte. '+$(id).textContent);
+
+function routeDestination(r){return [...(r.paradas||[]),r.localDestino].join(' / ')}
+function tripMaps(r){const u=new URL(maps(r.localDestino));if(r.paradas?.length)u.searchParams.set('waypoints',r.paradas.join('|'));return u.toString()}
