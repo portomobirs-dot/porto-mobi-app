@@ -174,7 +174,7 @@ async function createProfile(user){
   const profile=await t.get(ref),c=await t.get(counter);
   if(profile.exists())return profile.data();
   const next=(c.exists()?Number(c.data().ultimo||0):0)+1;
-  if(next>40)throw Object.assign(new Error('Limite de 40 clientes atingido.'),{code:'limite-clientes'});
+  if(next>9999)throw Object.assign(new Error('Limite de 9.999 clientes atingido.'),{code:'limite-clientes'});
   const data={uid:user.uid,numeroCliente:next,codigoCliente:padCode('PMC',next),nomeCliente:val('regName'),telefoneCliente:val('regPhone'),email:user.email,dataCadastro:serverTimestamp()};
   t.set(counter,{ultimo:next,ultimoUid:user.uid});t.set(ref,data);return data;
  });
