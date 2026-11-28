@@ -93,6 +93,25 @@ test('Reserva com paradas: cliente autorizado cria e terceiros nao alteram',asyn
   await assertFails(updateDoc(ref,{paradas:['Rua Falsa, 1']}));
 });
 
+test('Reserva rejeita enderecos curtos e observacoes acima do limite',async()=>{
+  await reset({clients:true});
+  const cliente=as('clienteA');
+  const base={
+    numeroReserva:1,codigoReserva:'PMR-000001',clienteUid:'clienteA',codigoCliente:'PMC-0001',
+    nomeCliente:'Cliente Ficticio',telefoneCliente:'(51) 99999-1111',codigoMotorista:'',motoristaUid:'',
+    localEmbarque:'Rua Embarque 100',localDestino:'Rua Destino 200',
+    dataViagem:Timestamp.fromDate(new Date(Date.now()+86400000)),dataSolicitacao:serverTimestamp(),
+    passageiros:1,observacoes:'',statusReserva:'pendente',valorViagem:0
+  };
+  for(const [field,value] of [['localEmbarque','AB'],['localDestino','AB'],['observacoes','x'.repeat(2001)]]){
+    const ref=doc(collection(cliente,'reservas'));
+    await assertFails(runTransaction(cliente,async t=>{
+      t.set(doc(cliente,'contadores','reservas'),{ultimo:1,ultimoReservaId:ref.id,ultimoClienteUid:'clienteA'});
+      t.set(ref,{...base,[field]:value});
+    }));
+  }
+});
+
 test('Motorista pendente com flag legada aprovado nao acessa reservas',async()=>{
   await reset({driver:true,trips:true,status:'oferecida',assigned:true});
   await seed(db=>setDoc(doc(db,'motoristas','motoristaB'),{
