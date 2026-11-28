@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Porto Mobi Executivo",
+    "slug": "porto-mobi-executivo",
+    "scheme": "portomobi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "android": {
+      "package": "br.com.portomobi.executivo",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "br.com.portomobi.executivo",
+      "supportsTablet": true
+    },
+    "plugins": []
+  }
+}
